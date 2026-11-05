@@ -11,11 +11,12 @@
     editions/<号ID>.html として一緒に公開する（doctype などは付けない断片）。号IDは masthead の data-ed-id
     （発行時刻 YYYY-MM-DD-HHMM、日本時間）。バックナンバーの「本文を読む」は #ed-<号ID> へのリンクで、
     script がそのファイルを読み込んで表示する。
-  - 面: <section class="desk" id="favorites|heavy|crowdfunding|japan|column" data-nav="目次の名前" data-tone="fav|hv|cf|jp|ex">
-    色はボードゲームの手番色（青・赤・黄・緑・紫）。目次と記事数は script が自動で作る。コラムがない号は column の section ごと省く。
+  - 面: <section class="desk" id="favorites|heavy|crowdfunding|mystery|japan|column" data-nav="目次の名前" data-tone="fav|hv|cf|mm|jp|ex">
+    色はボードゲームの手番色（青・赤・黄・黒・緑・紫）。マーダーミステリー面（mystery）はシナリオの中身・犯人・トリックに一切触れない。目次と記事数は script が自動で作る。コラムがない号は column の section ごと省く。
   - 記事: <article class="item"> … div.meta(.tag/.src/time) → h3 → (ul.specs) → p → (dl.fund) → (p.fit) → (p.note) → ul.links
     ・ul.specs（重ゲー・新作向け）: <li><b>1–4</b>人</li><li><b>90–150</b>分</li>
       <li>重さ <span class="wt-meter" style="--w:3.64"></span><b>3.64</b></li>（--w はBGGのWeight 1〜5。確認できない場合は <li>重さ <b>未掲載</b></li>）
+      マーダーミステリーは重さを書かず <li><b>5</b>人</li><li><b>3</b>時間</li><li>GM <b>不要</b></li> のようにする。
     ・dl.fund（クラファン向け）: <div><dt>集まった額</dt><dd>€1,234,567</dd></div> を並べる（支援者・終了・基本プレッジ・日本発送など）。
       状況は meta に <span class="st st-live">実施中</span> / st-soon「開始予定」 / st-end「終了」 を入れる。
     ・p.fit（好みとの相性）: <p class="fit"><span class="mk">相性◎</span>バラージ好きに：…</p>（◎・○・△の3段階）
@@ -24,8 +25,8 @@
   - 短信: div.briefs > h3「短信」 + ul > li（1行ニュースとリンク、time）。
 -->
 <style>
-/* Layout: one reading column (max 42rem). Masthead → checks → desks (favorites / heavy / crowdfunding / japan / column) → back numbers.
-   Desk colors borrow the five classic player colors: blue, red, yellow, green, purple. */
+/* Layout: one reading column (max 42rem). Masthead → checks → desks (favorites / heavy / crowdfunding / murder mystery / japan / column) → back numbers.
+   Desk colors borrow the classic player colors: blue, red, yellow, black, green, purple. */
 :root{
   --bg:#f1f4f3;
   --surface:#ffffff;
@@ -36,6 +37,7 @@
   --fav:#2a55b5; --fav-soft:#e4ebf9;
   --hv:#b2332c;  --hv-soft:#f8e5e3;
   --cf:#9a6200;  --cf-soft:#f7ecd4;
+  --mm:#3b3e57;  --mm-soft:#e6e7ef;
   --jp:#1d7445;  --jp-soft:#dff1e6;
   --ex:#6a44ab;  --ex-soft:#ece5f7;
   --alert:#b2332c; --alert-soft:#f8e5e3;
@@ -49,6 +51,7 @@
     --fav:#8aa9ff; --fav-soft:#1b2744;
     --hv:#ff8d84;  --hv-soft:#3a1d1b;
     --cf:#eab558;  --cf-soft:#33270e;
+    --mm:#b8bde0;  --mm-soft:#252839;
     --jp:#5fd18f;  --jp-soft:#123224;
     --ex:#bba1f2;  --ex-soft:#271f40;
     --alert:#ff8d84; --alert-soft:#3a1d1b;
@@ -60,6 +63,7 @@
   --fav:#8aa9ff; --fav-soft:#1b2744;
   --hv:#ff8d84;  --hv-soft:#3a1d1b;
   --cf:#eab558;  --cf-soft:#33270e;
+  --mm:#b8bde0;  --mm-soft:#252839;
   --jp:#5fd18f;  --jp-soft:#123224;
   --ex:#bba1f2;  --ex-soft:#271f40;
   --alert:#ff8d84; --alert-soft:#3a1d1b;
@@ -128,6 +132,7 @@ p{margin:0}
 .toc a[data-tone="fav"]{--cube:var(--fav)}
 .toc a[data-tone="hv"]{--cube:var(--hv)}
 .toc a[data-tone="cf"]{--cube:var(--cf)}
+.toc a[data-tone="mm"]{--cube:var(--mm)}
 .toc a[data-tone="jp"]{--cube:var(--jp)}
 .toc a[data-tone="ex"]{--cube:var(--ex)}
 
@@ -147,6 +152,7 @@ p{margin:0}
 .desk[data-tone="fav"]{--tone:var(--fav); --tone-soft:var(--fav-soft)}
 .desk[data-tone="hv"]{--tone:var(--hv); --tone-soft:var(--hv-soft)}
 .desk[data-tone="cf"]{--tone:var(--cf); --tone-soft:var(--cf-soft)}
+.desk[data-tone="mm"]{--tone:var(--mm); --tone-soft:var(--mm-soft)}
 .desk[data-tone="jp"]{--tone:var(--jp); --tone-soft:var(--jp-soft)}
 .desk[data-tone="ex"]{--tone:var(--ex); --tone-soft:var(--ex-soft)}
 
@@ -265,6 +271,7 @@ footer b{color:var(--ink)}
       <li class="lbl">追跡中</li>
       <li>サイス</li><li>テラフォーミング・マーズ</li><li>SETI</li><li>オーディンの祝祭</li>
       <li>ネメシス</li><li>バラージ</li><li>クラウドエイジ</li><li>DUNE</li>
+      <li>マーダーミステリー</li>
     </ul>
   </div>
 
@@ -288,8 +295,8 @@ __EDITION__
   </section>
 
   <footer>
-    <p><b>情報源</b>　出版社の公式サイト・公式ブログ、Kickstarter・Gamefound・BackerKit・CAMPFIRE・Makuakeのキャンペーンページ、BoardGameGeek、ゲームマーケット公式、国内出版社（アークライト、ホビージャパン、ケンビルほか）の公式発表。話題探しにはBGG News、BoardGameWire、Board Game Quest、Table Games in the Worldなども使い、日付・価格・金額はできるだけ公式ページで確かめています。</p>
-    <p>「重さ」はBoardGameGeekのWeight（1〜5、ユーザー投票の平均）。クラファンの金額と支援者数は確認した時点の値で、終了日時は日本時間です。毎日2・7・12・17・22時ごろ（日本時間）に新しい号を出します。</p>
+    <p><b>情報源</b>　出版社の公式サイト・公式ブログ、Kickstarter・Gamefound・BackerKit・CAMPFIRE・Makuakeのキャンペーンページ、BoardGameGeek、ゲームマーケット公式、国内出版社（アークライト、ホビージャパン、ケンビルほか）とマーダーミステリーの制作元・店舗・配信アプリの公式発表。話題探しにはBGG News、BoardGameWire、Board Game Quest、Table Games in the Worldなども使い、日付・価格・金額はできるだけ公式ページで確かめています。</p>
+    <p>「重さ」はBoardGameGeekのWeight（1〜5、ユーザー投票の平均）。マーダーミステリーの記事はシナリオの中身に触れません。クラファンの金額と支援者数は確認した時点の値で、終了日時は日本時間です。毎日2・7・12・17・22時ごろ（日本時間）に新しい号を出します。</p>
   </footer>
 </div>
 
