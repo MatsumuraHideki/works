@@ -1,0 +1,358 @@
+<title>ボードゲーム朝夕刊</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<!--
+  編集メモ（定期実行用）
+  - 号ごとに差し替えるのは、本文中の EDITION:START〜EDITION:END と
+    BACKNUMBER:START〜BACKNUMBER:END の2つのマーカーの間だけ。style と script、ページ名、追跡リスト、フッターは変えない。
+  - 号の保存: 差し替える前の号は、EDITION:START〜EDITION:END の間の中身をそのまま
+    editions/<号ID>.html として一緒に公開する（doctype などは付けない断片）。号IDは masthead の data-ed-id
+    （発行時刻 YYYY-MM-DD-HHMM、日本時間）。バックナンバーの「本文を読む」は #ed-<号ID> へのリンクで、
+    script がそのファイルを読み込んで表示する。
+  - 面: <section class="desk" id="favorites|heavy|crowdfunding|japan|column" data-nav="目次の名前" data-tone="fav|hv|cf|jp|ex">
+    色はボードゲームの手番色（青・赤・黄・緑・紫）。目次と記事数は script が自動で作る。コラムがない号は column の section ごと省く。
+  - 記事: <article class="item"> … div.meta(.tag/.src/time) → h3 → (ul.specs) → p → (dl.fund) → (p.fit) → (p.note) → ul.links
+    ・ul.specs（重ゲー・新作向け）: <li><b>1–4</b>人</li><li><b>90–150</b>分</li>
+      <li>重さ <span class="wt-meter" style="--w:3.64"></span><b>3.64</b></li>（--w はBGGのWeight 1〜5。確認できない場合は <li>重さ <b>未掲載</b></li>）
+    ・dl.fund（クラファン向け）: <div><dt>集まった額</dt><dd>€1,234,567</dd></div> を並べる（支援者・終了・基本プレッジ・日本発送など）。
+      状況は meta に <span class="st st-live">実施中</span> / st-soon「開始予定」 / st-end「終了」 を入れる。
+    ・p.fit（好みとの相性）: <p class="fit"><span class="mk">相性◎</span>バラージ好きに：…</p>（◎・○・△の3段階）
+    ・注意喚起（発送遅延、価格改定、締切直前など）は .tag に tag-alert を足す。
+  - 締切カレンダー: クラファン面の先頭に div.tbl > table（キャンペーン／場所／終了（日本時間）／状況）。
+  - 短信: div.briefs > h3「短信」 + ul > li（1行ニュースとリンク、time）。
+-->
+<style>
+/* Layout: one reading column (max 42rem). Masthead → checks → desks (favorites / heavy / crowdfunding / japan / column) → back numbers.
+   Desk colors borrow the five classic player colors: blue, red, yellow, green, purple. */
+:root{
+  --bg:#f1f4f3;
+  --surface:#ffffff;
+  --ink:#18211f;
+  --muted:#5c6966;
+  --line:#d6dedb;
+  --track:#e3e9e7;
+  --fav:#2a55b5; --fav-soft:#e4ebf9;
+  --hv:#b2332c;  --hv-soft:#f8e5e3;
+  --cf:#9a6200;  --cf-soft:#f7ecd4;
+  --jp:#1d7445;  --jp-soft:#dff1e6;
+  --ex:#6a44ab;  --ex-soft:#ece5f7;
+  --alert:#b2332c; --alert-soft:#f8e5e3;
+  --font-display:"Dela Gothic One","Hiragino Sans","Noto Sans JP",sans-serif;
+  --font-body:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101615; --surface:#172020; --ink:#e3eae8; --muted:#97a6a2; --line:#283432; --track:#22302d;
+    --fav:#8aa9ff; --fav-soft:#1b2744;
+    --hv:#ff8d84;  --hv-soft:#3a1d1b;
+    --cf:#eab558;  --cf-soft:#33270e;
+    --jp:#5fd18f;  --jp-soft:#123224;
+    --ex:#bba1f2;  --ex-soft:#271f40;
+    --alert:#ff8d84; --alert-soft:#3a1d1b;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101615; --surface:#172020; --ink:#e3eae8; --muted:#97a6a2; --line:#283432; --track:#22302d;
+  --fav:#8aa9ff; --fav-soft:#1b2744;
+  --hv:#ff8d84;  --hv-soft:#3a1d1b;
+  --cf:#eab558;  --cf-soft:#33270e;
+  --jp:#5fd18f;  --jp-soft:#123224;
+  --ex:#bba1f2;  --ex-soft:#271f40;
+  --alert:#ff8d84; --alert-soft:#3a1d1b;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:var(--font-body); font-size:16px; line-height:1.8;
+  -webkit-text-size-adjust:100%;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{
+  max-width:42rem; margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:28px 56px;
+  display:flex; flex-direction:column; gap:36px;
+}
+a{color:inherit}
+a:focus-visible, summary:focus-visible{outline:2px solid var(--fav); outline-offset:2px; border-radius:4px}
+h1,h2,h3{text-wrap:balance; word-break:auto-phrase; line-height:1.45; margin:0}
+p{margin:0}
+
+/* masthead */
+.head{display:flex; flex-direction:column; gap:12px}
+.brand{display:flex; align-items:baseline; justify-content:space-between; gap:6px 12px; flex-wrap:wrap}
+.brand h1{font-family:var(--font-display); font-weight:400; font-size:1.75rem; letter-spacing:.04em; line-height:1.3}
+.brand .schedule{font-family:var(--font-mono); font-size:.75rem; color:var(--muted)}
+.watch{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.watch .lbl{font-size:.72rem; font-weight:700; letter-spacing:.12em; color:var(--muted); margin-right:2px}
+.watch li:not(.lbl){font-size:.8rem; padding:1px 9px; border-radius:999px; border:1px solid var(--line); background:var(--surface)}
+
+.masthead{display:flex; flex-direction:column; gap:14px}
+.edition{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:.95rem}
+.ed-label{
+  font-weight:700; padding:2px 10px; border-radius:999px;
+  background:var(--ink); color:var(--bg); font-size:.85rem; letter-spacing:.06em;
+}
+.edition time{font-family:var(--font-mono); color:var(--muted); font-size:.85rem}
+.lede{font-size:1.08rem; line-height:1.85}
+.checks{
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:14px 16px; display:flex; flex-direction:column; gap:6px;
+}
+.checks h2{font-size:.8rem; letter-spacing:.12em; color:var(--muted); font-weight:700}
+.checks ul{margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:4px}
+.checks li{font-size:.95rem; line-height:1.7}
+
+/* table of contents */
+.toc{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
+  background:var(--bg); margin-block:-12px; padding-block:10px;
+  display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
+  border-bottom:1px solid var(--line);
+}
+.toc::-webkit-scrollbar{display:none}
+.toc a{
+  flex:0 0 auto; text-decoration:none; font-size:.85rem; font-weight:700;
+  padding:5px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface);
+  display:inline-flex; align-items:center; gap:6px;
+}
+.toc a::before{content:""; width:.62em; height:.62em; border-radius:2px; background:var(--cube, var(--ink))}
+.toc a .n{font-family:var(--font-mono); font-weight:500; font-size:.75rem; color:var(--muted)}
+.toc a[data-tone="fav"]{--cube:var(--fav)}
+.toc a[data-tone="hv"]{--cube:var(--hv)}
+.toc a[data-tone="cf"]{--cube:var(--cf)}
+.toc a[data-tone="jp"]{--cube:var(--jp)}
+.toc a[data-tone="ex"]{--cube:var(--ex)}
+
+/* desks: each opens with a small wooden-cube marker in its player color */
+.desk{display:flex; flex-direction:column; scroll-margin-top:64px}
+.desk > h2{
+  font-size:1.2rem; padding-bottom:10px; margin-bottom:4px;
+  border-bottom:3px solid var(--tone, var(--ink));
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px;
+}
+.desk > h2::before{
+  content:""; align-self:center; width:.8em; height:.8em; border-radius:3px;
+  background:var(--tone, var(--ink));
+  box-shadow:inset -3px -3px 0 color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.desk > h2 small{font-size:.75rem; font-weight:400; color:var(--muted)}
+.desk[data-tone="fav"]{--tone:var(--fav); --tone-soft:var(--fav-soft)}
+.desk[data-tone="hv"]{--tone:var(--hv); --tone-soft:var(--hv-soft)}
+.desk[data-tone="cf"]{--tone:var(--cf); --tone-soft:var(--cf-soft)}
+.desk[data-tone="jp"]{--tone:var(--jp); --tone-soft:var(--jp-soft)}
+.desk[data-tone="ex"]{--tone:var(--ex); --tone-soft:var(--ex-soft)}
+
+/* articles */
+.item{padding-block:20px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:8px; min-width:0}
+.item:last-of-type{border-bottom:none}
+.meta{display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:.78rem; color:var(--muted)}
+.tag{font-weight:700; color:var(--tone); background:var(--tone-soft); padding:1px 8px; border-radius:4px; letter-spacing:.02em}
+.tag.tag-alert{color:var(--alert); background:var(--alert-soft)}
+.meta .src{font-weight:700; color:var(--ink)}
+.meta time{font-family:var(--font-mono)}
+.st{font-weight:700; padding:0 8px; border-radius:999px; border:1.5px solid currentColor; font-size:.74rem}
+.st-live{color:var(--jp)}
+.st-soon{color:var(--fav)}
+.st-end{color:var(--muted)}
+.item h3{font-size:1.08rem; font-weight:700}
+.item p{font-size:1rem}
+.note{font-size:.92rem !important; color:var(--muted); padding-left:12px; border-left:2px solid var(--line)}
+
+/* game specs: players / time / BGG weight (1–5) */
+.specs{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px 8px; font-size:.8rem; color:var(--muted)}
+.specs li{display:inline-flex; align-items:center; gap:6px; padding:1px 9px; border:1px solid var(--line); border-radius:6px; background:var(--surface)}
+.specs b{font-family:var(--font-mono); font-weight:500; color:var(--ink)}
+.wt-meter{
+  position:relative; display:inline-block; width:60px; height:7px; border-radius:2px;
+  background:linear-gradient(90deg, var(--tone) calc(var(--w) / 5 * 100%), var(--track) 0);
+}
+.wt-meter::after{
+  content:""; position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg, transparent 0 calc(20% - 2px), var(--surface) calc(20% - 2px) 20%);
+}
+
+/* crowdfunding figures */
+.fund{
+  margin:2px 0; padding:12px 14px; border-radius:10px; background:var(--tone-soft);
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(8rem, 1fr)); gap:8px 14px;
+}
+.fund div{display:flex; flex-direction:column; min-width:0}
+.fund dt{font-size:.72rem; color:var(--muted); letter-spacing:.04em}
+.fund dd{margin:0; font-family:var(--font-mono); font-size:.95rem; font-weight:500; overflow-wrap:anywhere}
+
+/* fit with the reader's favorites */
+.fit{display:flex; gap:8px; align-items:baseline; font-size:.94rem !important}
+.fit .mk{flex:0 0 auto; font-weight:700; font-size:.76rem; color:var(--tone); border:1.5px solid currentColor; border-radius:4px; padding:0 6px; line-height:1.6}
+
+.links{list-style:none; margin:2px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px 16px}
+.links a{
+  font-size:.86rem; color:var(--tone); text-decoration:none; font-weight:700;
+  border-bottom:1px solid color-mix(in srgb, var(--tone) 35%, transparent);
+}
+.links a::after{content:" ↗"; font-weight:400}
+.links a:hover{border-bottom-color:var(--tone)}
+
+/* deadline calendar and other tables */
+.tbl{overflow-x:auto; margin-block:12px 4px}
+.tbl table{border-collapse:collapse; width:100%; font-size:.84rem; line-height:1.6}
+.tbl th, .tbl td{padding:8px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+.tbl thead th{font-weight:700; color:var(--tone); border-bottom:2px solid var(--tone); white-space:nowrap}
+.tbl tbody th{font-weight:700}
+.tbl td.num{font-family:var(--font-mono); white-space:nowrap}
+.tbl tbody tr:last-child th, .tbl tbody tr:last-child td{border-bottom:none}
+.tbl caption{caption-side:top; text-align:left; font-size:.8rem; font-weight:700; letter-spacing:.08em; color:var(--muted); padding-bottom:6px}
+
+/* briefs */
+.briefs{padding-block:16px 4px; display:flex; flex-direction:column; gap:8px}
+.briefs h3{font-size:.8rem; letter-spacing:.12em; color:var(--muted)}
+.briefs ul{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px}
+.briefs li{font-size:.92rem; line-height:1.65; padding-left:14px; position:relative}
+.briefs li::before{content:""; position:absolute; left:0; top:.68em; width:6px; height:6px; border-radius:1px; background:var(--tone)}
+.briefs a{color:var(--ink); text-decoration-color:var(--line); text-underline-offset:3px}
+.briefs time{font-family:var(--font-mono); font-size:.78rem; color:var(--muted); margin-left:4px}
+
+/* edition container + archive view */
+.edition-body{display:flex; flex-direction:column; gap:36px; min-width:0}
+.archive-bar{
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 12px;
+  margin-bottom:-18px; padding:10px 14px; border-radius:10px;
+  background:var(--fav-soft); font-size:.9rem; font-weight:700;
+}
+.archive-bar a{color:var(--fav); text-decoration:none; border-bottom:1px solid currentColor; font-size:.86rem; white-space:nowrap}
+.edition-body.is-archive .ed-label{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--ink)}
+
+/* back numbers */
+.backnumber details{border-bottom:1px solid var(--line); padding-block:10px}
+.backnumber summary{cursor:pointer; font-weight:700; font-size:.92rem; list-style:none; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px}
+.backnumber summary::-webkit-details-marker{display:none}
+.backnumber summary::before{content:"▸"; color:var(--muted); font-size:.8rem; transition:transform .15s}
+.backnumber details[open] > summary::before{transform:rotate(90deg)}
+.backnumber summary time{font-family:var(--font-mono); font-weight:400; color:var(--muted); font-size:.8rem}
+.bn-open{margin-left:auto; font-size:.84rem; color:var(--fav); text-decoration:none; padding:2px 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--fav) 45%, var(--line)); background:var(--surface); white-space:nowrap}
+.bn-open:hover{background:var(--fav-soft)}
+.backnumber details.is-viewing{background:var(--fav-soft); margin-inline:-10px; padding-inline:10px; border-radius:8px}
+.backnumber ul{margin:8px 0 0; padding-left:1.2em; display:flex; flex-direction:column; gap:4px}
+.backnumber li{font-size:.9rem; line-height:1.6}
+.backnumber .empty{font-size:.92rem; color:var(--muted); padding-block:12px}
+.bn-help{font-size:.82rem; color:var(--muted); padding-top:10px}
+
+footer{font-size:.8rem; color:var(--muted); line-height:1.75; border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:8px}
+footer b{color:var(--ink)}
+
+@media (max-width:420px){
+  .brand h1{font-size:1.45rem}
+  .lede{font-size:1rem}
+}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} .backnumber summary::before{transition:none} }
+@media (prefers-reduced-motion: no-preference){ html{scroll-behavior:smooth} }
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <div class="brand">
+      <h1>ボードゲーム朝夕刊</h1>
+      <span class="schedule">毎日 2・7・12・17・22時ごろ発行</span>
+    </div>
+    <ul class="watch" aria-label="追跡中のお気に入り">
+      <li class="lbl">追跡中</li>
+      <li>サイス</li><li>テラフォーミング・マーズ</li><li>SETI</li><li>オーディンの祝祭</li>
+      <li>ネメシス</li><li>バラージ</li><li>クラウドエイジ</li><li>DUNE</li>
+    </ul>
+  </div>
+
+  <div class="archive-bar" id="archiveBar" hidden>
+    <span id="archiveLabel">過去の号を表示中</span>
+    <a href="#latest">最新号に戻る</a>
+  </div>
+
+  <main id="edition" class="edition-body">
+<!-- EDITION:START -->
+__EDITION__
+<!-- EDITION:END -->
+  </main>
+
+  <section class="desk backnumber" id="backnumber" data-nav="バックナンバー" data-tone="fav">
+    <h2>バックナンバー <small>過去の号をこのページで読めます</small></h2>
+<!-- BACKNUMBER:START -->
+    <p class="empty">まだありません。次の号から、ここに過去の号がたまっていきます。</p>
+<!-- BACKNUMBER:END -->
+    <p class="bn-help">「本文を読む」で、その号をこのページに表示します。最新の約5日分（25号）を残します。</p>
+  </section>
+
+  <footer>
+    <p><b>情報源</b>　出版社の公式サイト・公式ブログ、Kickstarter・Gamefound・BackerKit・CAMPFIRE・Makuakeのキャンペーンページ、BoardGameGeek、ゲームマーケット公式、国内出版社（アークライト、ホビージャパン、ケンビルほか）の公式発表。話題探しにはBGG News、BoardGameWire、Board Game Quest、Table Games in the Worldなども使い、日付・価格・金額はできるだけ公式ページで確かめています。</p>
+    <p>「重さ」はBoardGameGeekのWeight（1〜5、ユーザー投票の平均）。クラファンの金額と支援者数は確認した時点の値で、終了日時は日本時間です。毎日2・7・12・17・22時ごろ（日本時間）に新しい号を出します。</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var main = document.getElementById('edition');
+  var bar = document.getElementById('archiveBar');
+  var barLabel = document.getElementById('archiveLabel');
+  var latestHTML = main ? main.innerHTML : '';
+  var current = null;
+
+  // 目次：data-nav を持つ面から自動生成し、記事数を添える
+  function buildToc(){
+    var toc = document.getElementById('toc');
+    if (!toc) return;
+    toc.textContent = '';
+    document.querySelectorAll('section.desk[data-nav]').forEach(function(sec){
+      var a = document.createElement('a');
+      a.href = '#' + sec.id;
+      a.dataset.tone = sec.dataset.tone || '';
+      a.textContent = sec.dataset.nav;
+      var n = sec.querySelectorAll('article.item h3').length;
+      if (n > 0) { var s = document.createElement('span'); s.className = 'n'; s.textContent = n; a.appendChild(s); }
+      toc.appendChild(a);
+    });
+  }
+  function markViewing(id){
+    document.querySelectorAll('.backnumber details').forEach(function(d){
+      d.classList.toggle('is-viewing', !!id && d.dataset.ed === id);
+    });
+  }
+  function toTop(){ try { window.scrollTo({top: 0, behavior: 'instant'}); } catch (e) { window.scrollTo(0, 0); } }
+
+  function showLatest(){
+    main.innerHTML = latestHTML;
+    main.classList.remove('is-archive');
+    current = null; bar.hidden = true; markViewing(null);
+    buildToc(); toTop();
+  }
+  function showArchive(id){
+    bar.hidden = false; barLabel.textContent = '読み込み中…'; toTop();
+    fetch('editions/' + id + '.html', {cache: 'no-cache'})
+      .then(function(r){ if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then(function(html){
+        main.innerHTML = html;
+        main.classList.add('is-archive');
+        current = id; markViewing(id);
+        var lab = main.querySelector('.ed-label'), tm = main.querySelector('.edition time');
+        barLabel.textContent = '過去の号を表示中：' + (lab ? lab.textContent : '') + (tm ? '　' + tm.textContent : '');
+        buildToc(); toTop();
+      })
+      .catch(function(){
+        barLabel.textContent = 'この号の本文を読み込めませんでした。';
+      });
+  }
+  function route(){
+    var m = location.hash.match(/^#ed-([0-9A-Za-z-]+)$/);
+    if (m) { if (m[1] !== current) showArchive(m[1]); }
+    else if ((location.hash === '' || location.hash === '#latest') && current) { showLatest(); }
+  }
+
+  buildToc();
+  window.addEventListener('hashchange', route);
+  route();
+})();
+</script>
