@@ -21,7 +21,7 @@
 - 差し替える前に、いまの号の中身（<!-- EDITION:START --> と <!-- EDITION:END --> の間の文字列。マーカー自体は含めない）を、そのまま ./editions/<前号ID>.html として保存する（Python などで文字列を切り出して書き出す。doctype や html/head/body は付けない）。前号IDは masthead の data-ed-id の値。
 
 ## 3. 取材
-WebSearch（新しい情報なので extended モードを積極的に使う）と WebFetch で調べる。面ごと・ゲームごとに分けて検索する。
+WebSearch（新しい情報なので extended モードを積極的に使う）と WebFetch で調べる。面ごと・ゲームごとに分けて検索する。BoardGameGeek・Gamefound・Kickstarter はボット対策（Cloudflare）で WebFetch が 403 になることが多いので、その場合は検索結果やまとめ記事で補い、数字には「〇〇（サイト名）によると」と出典と時点を添える。
 - お気に入り追跡: 上の8作品の拡張・再版・新版・デジタル版・大会・日本語版。各出版社の公式サイトとニュース（Stonemaier Games、FryxGames／Stronghold Games、Czech Games Edition、Feuerland Spiele／Z-Man Games、Awaken Realms、Cranio Creations、dlp games／Capstone Games、Dire Wolf、CMON、Gale Force Nine）と、BoardGameGeekの各ゲームページ。
 - 重ゲー新作: BGGのWeightが3.5以上を目安に、新作・発売予定・話題作。重量級を多く出す出版社（Capstone Games、Board&Dice、Eagle-Gryphon Games、Feuerland、Lookout、Hans im Glück、Cranio Creations、Delicious Games、Mindclash Games、Czech Games Edition、Ludonova など）や、ヴィタル・ラセルダ、シモーネ・ルチアーニ、アレクサンダー・プフィスター、ウヴェ・ローゼンベルク、シュテファン・フェルト、トマーシュ・ホレクらの新作。人数・時間・重さ（BGGに値がある場合だけ）と、好きなゲームとの相性を書く。
 - クラウドファンディング: Kickstarter（Tabletop Games）、Gamefound、BackerKit で実施中・開始予定・終わったばかりの、重ゲー・大型の戦略ゲーム・お気に入りの関連作（拡張、新版、再販）。まとめ記事（Board Game Quest の Crowdfunding Campaigns of the Week、brettspielbox.de の Brettspiel Crowdfunding News、Tabletop Analytics など）で探し、キャンペーンページで確かめる。国内は CAMPFIRE、Makuake、GREEN FUNDING のボードゲーム。集まった額・支援者数（確認した時刻）、終了日時（日本時間に換算）、基本プレッジの価格、日本への発送可否を書く。
@@ -49,5 +49,5 @@ BACKNUMBER:START と BACKNUMBER:END の間に、前号（手順2で保存した�
 ## 6. 公開と通知
 - 書き換えたファイルを Artifact の publish で公開する。必ず url に上の紙面URL、file_path に書き換えたページ、files に {"editions/<前号ID>.html": "<手順2で保存したファイルのパス>"} を渡す（パスは作業ディレクトリかscratchpadの下）。手順5で消した号のファイルは同じ files に "editions/<その号ID>.html": null を加えて削除する。files に書かない既存のファイルはそのまま残る。icon は渡さない。publish が版の競合で拒否された場合は、返ってきた最新版に今号の内容を反映して再公開する。
 - 公開後、Artifact の action "list"、scope "files"、url に紙面URLで、editions/<前号ID>.html が公開されていることを確かめる。なければ files を付けて公開し直す。
-- 公開後、SendUserMessage でひでさんに知らせる。形式: 1行目「🎲 夜刊（11/6 22:00）が出ました」のように号名と日時、続けて主な見出しを3〜5行の箇条書き（クラファンの締切が近いものがあれば必ず1本）、最後に紙面URL。
-- Artifact ツールが使えない場合は、紙面の内容（見出し・要約・リンク）を SendUserMessage で直接送る。途中で失敗した場合も、どこまでできたかと理由を正直に伝える。
+- 公開後、ひでさんへの知らせを最後の返答として書く（この返答がアプリの通知になる。SendUserMessage ツールがある場合は、同じ文面をそれでも送る）。形式: 1行目「🎲 夜刊（11/6 22:00）が出ました」のように号名と日時、続けて主な見出しを3〜5行の箇条書き（クラファンの締切が近いものがあれば必ず1本）、最後に紙面URL。
+- Artifact ツールが見つからない場合は、ToolSearch で "select:Artifact" を試す。それでも使えない場合は、紙面の内容（見出し・要約・リンク）を最後の返答に直接書き、紙面を更新できなかったことを1行目に書く。途中で失敗した場合も、どこまでできたかと理由を正直に伝える。
