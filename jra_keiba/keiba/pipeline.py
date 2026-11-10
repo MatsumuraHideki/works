@@ -116,7 +116,7 @@ def win_bet_table(oos: pd.DataFrame, p_col: str = "p_final") -> pd.DataFrame:
     ev = oos[p_col] * oos["win_odds"]
     rows = []
     for thr in (0.0, 1.0, 1.05, 1.1, 1.2, 1.3, 1.5):
-        sel = oos[(ev >= thr) & (oos[p_col] >= 0.01)]
+        sel = oos[ev.notna()] if thr == 0 else oos[(ev >= thr) & (oos[p_col] >= 0.01)]
         if not len(sel):
             continue
         ret = (sel["win"] * sel["win_odds"]).sum()
@@ -248,7 +248,8 @@ def write_report(res: dict, raw: Path = features.RAW, log=print) -> str:
                "直前に人気が動くと期待値は変わります。")
     out.append("- JRA の控除率は 20〜27.5% あり、回収率 100% 超えは少数の買い目の当たり外れに大きく左右されます。"
                "点数が少ない行の回収率は偶然の幅が大きい数字です。")
-    out.append("- 基準タイムなど一部の基礎統計は全期間から算出しています（結果そのものは使っていません）。\n")
+    out.append("- 特徴量はすべてレース前日までの情報だけで作っています（当日の馬体重を除く）。"
+               "未来の結果が混ざらないことは tests/test_features.py で確認しています。\n")
     text = "\n".join(out)
     REPORTS.mkdir(parents=True, exist_ok=True)
     (REPORTS / "backtest.md").write_text(text)
