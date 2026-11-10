@@ -1,0 +1,13 @@
+{
+  "chunks": [
+    {"cmd": "results",  "from": "2026-11", "to": "2023-01", "max_minutes": 330},
+    {"cmd": "odds",     "from": "2026-11", "to": "2023-01", "max_minutes": 120},
+    {"cmd": "results",  "from": "2022-12", "to": "2019-01", "max_minutes": 330},
+    {"cmd": "pedigree", "from": "2026-11", "to": "2019-01", "max_minutes": 330},
+    {"cmd": "results",  "from": "2018-12", "to": "2015-01", "max_minutes": 330},
+    {"cmd": "results",  "from": "2014-12", "to": "2011-01", "max_minutes": 330},
+    {"cmd": "results",  "from": "2010-12", "to": "2007-01", "max_minutes": 330},
+    {"cmd": "odds",     "from": "2022-12", "to": "2019-01", "max_minutes": 150},
+    {"cmd": "pedigree", "from": "2026-11", "to": "2007-01", "max_minutes": 330}
+  ]
+}

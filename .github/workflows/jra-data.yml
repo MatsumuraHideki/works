@@ -1,0 +1,78 @@
+name: jra-data
+# Collects JRA race data from netkeiba in a single polite request stream
+# (>= 1 second between requests) and commits it under jra_keiba/data/raw.
+on:
+  push:
+    branches: ["claude/jra-race-prediction-model-ps1z1w"]
+    paths: ["jra_keiba/scrape_plan.json"]
+  schedule:
+    - cron: "17 13 * * 1"   # Mondays 22:17 JST: pick up the weekend's results
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "newest month (YYYY-MM); empty = current month"
+        default: ""
+      to:
+        description: "oldest month (YYYY-MM); empty = previous month"
+        default: ""
+permissions:
+  contents: write
+concurrency:
+  group: jra-data
+  cancel-in-progress: false
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      chunks: ${{ steps.plan.outputs.chunks }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          IN_FROM: ${{ inputs.from }}
+          IN_TO: ${{ inputs.to }}
+        run: |
+          if [ "$EVENT" = "push" ]; then
+            chunks=$(jq -c '.chunks' jra_keiba/scrape_plan.json)
+          else
+            from="${IN_FROM:-$(TZ=Asia/Tokyo date +%Y-%m)}"
+            to="${IN_TO:-$(TZ=Asia/Tokyo date -d '-1 month' +%Y-%m)}"
+            chunks=$(jq -nc --arg f "$from" --arg t "$to" '[
+              {cmd:"results",  from:$f, to:$t, max_minutes:330},
+              {cmd:"odds",     from:$f, to:$t, max_minutes:120},
+              {cmd:"pedigree", from:$f, to:$t, max_minutes:120}]')
+          fi
+          echo "chunks=$chunks" >> "$GITHUB_OUTPUT"
+  scrape:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        chunk: ${{ fromJson(needs.plan.outputs.chunks) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests beautifulsoup4 lxml pandas
+      - name: Scrape ${{ matrix.chunk.cmd }} ${{ matrix.chunk.from }}..${{ matrix.chunk.to }}
+        working-directory: jra_keiba
+        env:
+          CMD: ${{ matrix.chunk.cmd }}
+          FROM: ${{ matrix.chunk.from }}
+          TO: ${{ matrix.chunk.to }}
+          MAXMIN: ${{ matrix.chunk.max_minutes }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          extra=""
+          if [ "$CMD" = "pedigree" ]; then extra="--since ${TO%%-*}"; fi
+          python -m keiba.scrape "$CMD" --from "$FROM" --to "$TO" --max-minutes "$MAXMIN" --push $extra
