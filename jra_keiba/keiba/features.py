@@ -117,33 +117,54 @@ def build_frame(races: pd.DataFrame, results: pd.DataFrame, pedigree: pd.DataFra
 
 def add_speed_figures(df: pd.DataFrame) -> pd.DataFrame:
     """Time-based figures: seconds per km faster than the course par, corrected by a
-    per-day track variant. Outcome columns (only ever used through past races)."""
+    per-day track variant.
+
+    Pars and class effects for a season come from *earlier* seasons only (the first
+    season in the data uses itself), so a figure never depends on later results.
+    These are outcome columns: features only ever read them through past races.
+    """
     key = ["place", "surface", "distance"]
+    df = df.copy()
+    df["_year"] = df["date"].dt.year
     ok = df["time_sec"].notna() & (df["ran"] == 1)
-    par = df[ok].groupby(key)["time_sec"].agg(par_time="median", par_n="size").reset_index()
-    par3 = df[ok & df["last3f"].notna()].groupby(key)["last3f"].median().rename("par_l3f").reset_index()
-    df = df.merge(par, on=key, how="left").merge(par3, on=key, how="left")
     km = df["distance"] / 1000.0
-    df["_resid"] = (df["time_sec"] - df["par_time"]) / km          # sec/km slower than par
-    df.loc[df["par_n"] < 30, "_resid"] = np.nan
-    # class effect so that the variant is not biased by the class mix of a day
-    top = df[(df["finish"] <= 5) & df["_resid"].notna() & (df["ran"] == 1)]
-    race_lvl = top.groupby("race_id").agg(r=("_resid", "mean"), level=("level", "first"),
-                                          surface=("surface", "first"), date=("date", "first"),
-                                          place=("place", "first"))
-    cls = race_lvl.groupby(["surface", "level"])["r"].mean().rename("cls_eff").reset_index()
-    race_lvl = race_lvl.reset_index().merge(cls, on=["surface", "level"], how="left")
-    race_lvl["dev"] = race_lvl["r"] - race_lvl["cls_eff"]
-    variant = race_lvl.groupby(["date", "place", "surface"])["dev"].median().rename("variant").reset_index()
+    years = sorted(df["_year"].unique())
+    par_time = pd.Series(np.nan, index=df.index)
+    par_l3f = pd.Series(np.nan, index=df.index)
+    cls_eff = pd.Series(np.nan, index=df.index)
+    resid = pd.Series(np.nan, index=df.index)
+    for y in years:
+        cur = df["_year"] == y
+        base = (df["_year"] < y) if y != years[0] else cur
+        g = df[base & ok].groupby(key)["time_sec"].agg(["median", "size"])
+        g = g[g["size"] >= 30]["median"]
+        idx = pd.MultiIndex.from_frame(df.loc[cur, key])
+        par_time[cur] = g.reindex(idx).to_numpy()
+        g3 = df[base & ok & df["last3f"].notna()].groupby(key)["last3f"].median()
+        par_l3f[cur] = g3.reindex(idx).to_numpy()
+        resid[cur] = (df.loc[cur, "time_sec"] - par_time[cur]) / km[cur]   # sec/km slower than par
+        # class effect, so the day variant is not biased by the class mix of the card
+        top = base & (df["finish"] <= 5) & resid.notna() & (df["ran"] == 1)
+        if top.any():
+            t = df.loc[top, ["race_id", "surface", "level"]].assign(r=resid[top])
+            race_r = t.groupby("race_id").agg(r=("r", "mean"), surface=("surface", "first"), level=("level", "first"))
+            ce = race_r.groupby(["surface", "level"])["r"].mean()
+            cls_eff[cur] = ce.reindex(pd.MultiIndex.from_frame(df.loc[cur, ["surface", "level"]])).to_numpy()
+    df["_resid"] = resid
+    top = (df["finish"] <= 5) & df["_resid"].notna() & (df["ran"] == 1)
+    t = df.loc[top, ["race_id", "date", "place", "surface"]].assign(dev=df.loc[top, "_resid"] - cls_eff[top].fillna(0.0))
+    race_dev = t.groupby("race_id").agg(dev=("dev", "mean"), date=("date", "first"), place=("place", "first"),
+                                        surface=("surface", "first"))
+    variant = race_dev.groupby(["date", "place", "surface"])["dev"].median().rename("variant").reset_index()
     df = df.merge(variant, on=["date", "place", "surface"], how="left")
     df["fig"] = -(df["_resid"] - df["variant"].fillna(0.0))
     df.loc[df["fig"].abs() > 15, "fig"] = np.nan                    # eased / broken-down runs
-    df["fig_l3f"] = -(df["last3f"] - df["par_l3f"])
+    df["fig_l3f"] = -(df["last3f"] - par_l3f.to_numpy())
     df.loc[df["fig_l3f"].abs() > 8, "fig_l3f"] = np.nan
     # early position: first call as a fraction of the field (0 = led)
     first = pd.to_numeric(df["passing"].astype(str).str.split("-").str[0], errors="coerce")
     df["early_pos"] = ((first - 1) / (df["n_runners"] - 1).clip(lower=1)).clip(0, 1)
-    return df.drop(columns=["_resid", "par_n"])
+    return df.drop(columns=["_resid", "_year"])
 
 
 # ------------------------------------------------------------------ Elo ratings
@@ -151,7 +172,8 @@ def add_speed_figures(df: pd.DataFrame) -> pd.DataFrame:
 def add_elo(df: pd.DataFrame, k_horse: float = 28.0, k_other: float = 6.0) -> pd.DataFrame:
     """Multi-runner Elo for horses (overall and per surface), jockeys, trainers and sires.
 
-    Ratings stored on a row are the values *before* that race.
+    Ratings stored on a row are the values at the start of that race *day*: updates
+    are applied once the whole day is over, so same-day results never feed a rating.
     """
     n = len(df)
     out = {name: np.full(n, np.nan) for name in ("elo_h", "elo_hs", "elo_j", "elo_t", "elo_sire", "elo_bms")}
@@ -165,11 +187,19 @@ def add_elo(df: pd.DataFrame, k_horse: float = 28.0, k_other: float = 6.0) -> pd
     finish = df["finish"].to_numpy(dtype=float)
     is_card = df["is_card"].to_numpy()
     level = df["level"].to_numpy(dtype=float)
+    dates = df["date"].to_numpy()
     race_codes, starts = np.unique(df["race_id"].to_numpy(), return_index=True)
     order = np.argsort(starts)
     bounds = list(starts[order]) + [n]
+    pending: list[tuple[str, object, float]] = []
+    day = None
     for b in range(len(order)):
         lo, hi = bounds[b], bounds[b + 1]
+        if dates[lo] != day:
+            for name, key, d in pending:
+                tab = tables[name]
+                tab[key] = tab.get(key, 0.0) + d
+            pending, day = [], dates[lo]
         idx = np.arange(lo, hi)
         keys = {
             "elo_h": [horse[i] for i in idx],
@@ -210,7 +240,9 @@ def add_elo(df: pd.DataFrame, k_horse: float = 28.0, k_other: float = 6.0) -> pd
             tab = tables[name]
             for j, key in enumerate(ks):
                 if key is not None and valid[j]:
-                    tab[key] = r[j] + k * delta[j]
+                    if key not in tab:
+                        tab[key] = r[j]          # materialise the starting rating
+                    pending.append((name, key, k * delta[j]))
     for name, arr in out.items():
         df[name] = arr
     return df
@@ -422,6 +454,8 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     rel = ["elo_h", "elo_hs", "fig_max5", "fig_mean3", "l3f_mean3", "form_class5", "h_prize_per_start",
            "pos_mean3", "elo_j", "elo_t", "j_win365", "weight_carried", "h_top3_rate", "apt_band_top3",
            "elo_sire"]
+    df = df.copy()  # defragment before adding many columns
+    gr = df.groupby("race_id", sort=False)
     for c in rel:
         g = gr[c]
         mean, std = g.transform("mean"), g.transform("std")
