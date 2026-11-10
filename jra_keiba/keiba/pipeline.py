@@ -27,7 +27,17 @@ REPORTS = ROOT / "reports"
 ORDERED = ("馬単", "三連単")
 
 
-def fit_all(raw: Path = features.RAW, oof_years: int = 6, log=print) -> dict:
+def fold_ids(dates: pd.Series, fold_months: int) -> pd.Series:
+    """Walk-forward period of each row: calendar years, or shorter blocks when data is short."""
+    return ((dates.dt.year * 12 + dates.dt.month - 1) // fold_months).astype(int)
+
+
+def fold_label(fid: int, fold_months: int) -> str:
+    y, m = divmod(fid * fold_months, 12)
+    return str(y) if fold_months == 12 else f"{y}-{m + 1:02d}〜"
+
+
+def fit_all(raw: Path = features.RAW, oof_years: int = 6, fold_months: int | None = None, log=print) -> dict:
     t0 = time.time()
     df = features.build_features(raw)
     feats = features.feature_columns()
@@ -35,9 +45,13 @@ def fit_all(raw: Path = features.RAW, oof_years: int = 6, log=print) -> dict:
     log(f"features: {len(df):,} runners, {df['race_id'].nunique():,} races, {len(feats)} features "
         f"({time.time() - t0:.0f}s)")
     hist = df[(~df["is_card"]) & df["win"].notna()].copy()
-    hist["year"] = hist["date"].dt.year
+    span_years = hist["date"].dt.year.nunique()
+    if fold_months is None:          # yearly folds need several seasons; fall back to shorter blocks
+        fold_months = 12 if span_years >= 5 else (6 if span_years >= 2 else 2)
+    hist["year"] = fold_ids(hist["date"], fold_months)   # "year" = walk-forward period id
     hist["m"] = model.market_logprob(hist)
     years = sorted(hist["year"].unique())
+    log(f"walk-forward periods: {len(years)} x {fold_months} months")
     test_years = years[1:][-oof_years:]
     rounds = model.tune_rounds(hist, feats, years[-2]) if len(years) >= 3 else dict(model.N_ROUNDS)
     log(f"boosting rounds: {rounds}")
@@ -71,6 +85,7 @@ def fit_all(raw: Path = features.RAW, oof_years: int = 6, log=print) -> dict:
         "s2_fund": s2_fund.coef, "s2_full": s2_full.coef, "lam2": lam2, "lam3": lam3,
         "trained_through": str(hist["date"].max().date()), "n_races": int(hist["race_id"].nunique()),
         "years": [int(y) for y in years], "oos_years": [int(y) for y in test_years[1:]],
+        "fold_months": fold_months, "data_from": str(hist["date"].min().date()),
     }
     log(f"fit_all done in {time.time() - t0:.0f}s")
     return {"art": art, "oos": oos}
@@ -180,8 +195,10 @@ def _md(df: pd.DataFrame, pct: tuple[str, ...] = ()) -> str:
 def write_report(res: dict, raw: Path = features.RAW, log=print) -> str:
     art, oos = res["art"], res["oos"]
     out = ["# バックテスト結果（学習に使っていない期間での検証）\n"]
-    out.append(f"- 学習データ: {art['years'][0]}〜{art['trained_through']} / {art['n_races']:,} レース（平地のみ、新馬〜G1）")
-    out.append(f"- 検証期間: {art['oos_years']}（各年とも、その年より前のデータだけで学習したモデルで予測）")
+    fm = art["fold_months"]
+    labels = [fold_label(y, fm) for y in art["oos_years"]]
+    out.append(f"- 学習データ: {art['data_from']}〜{art['trained_through']} / {art['n_races']:,} レース（平地のみ、新馬〜G1）")
+    out.append(f"- 検証期間: {'、'.join(labels)}（{fm}か月ごとに区切り、各期間をそれより前のデータだけで学習したモデルで予測）")
     out.append(f"- 特徴量 {len(art['feats'])} 個 / 着順モデルの補正係数 λ2={art['lam2']:.2f}, λ3={art['lam3']:.2f}\n")
     if not len(oos):
         out.append("検証に必要な年数のデータがまだありません。\n")
@@ -191,7 +208,7 @@ def write_report(res: dict, raw: Path = features.RAW, log=print) -> str:
 
     out.append("## 1. 予測精度（勝ち馬の対数損失。小さいほど良い）\n")
     rows = []
-    for label, d in [("全レース", oos), ("重賞(G1-G3)", graded)] + [(str(y), oos[oos["year"] == y]) for y in art["oos_years"]]:
+    for label, d in [("全レース", oos), ("重賞(G1-G3)", graded)] + [(fold_label(y, fm), oos[oos["year"] == y]) for y in art["oos_years"]]:
         if not len(d):
             continue
         top = d.loc[d.groupby("race_id")["p_final"].idxmax()]
@@ -242,9 +259,10 @@ def write_report(res: dict, raw: Path = features.RAW, log=print) -> str:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--oof-years", type=int, default=6)
+    ap.add_argument("--fold-months", type=int, default=None, help="walk-forward block length (default: auto)")
     ap.add_argument("--no-report", action="store_true")
     args = ap.parse_args(argv)
-    res = fit_all(oof_years=args.oof_years)
+    res = fit_all(oof_years=args.oof_years, fold_months=args.fold_months)
     save_artifacts(res["art"])
     if not args.no_report:
         print(write_report(res))
