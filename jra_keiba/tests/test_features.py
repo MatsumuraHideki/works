@@ -75,3 +75,11 @@ def test_card_rows_get_features_without_results():
     b = card[card["race_id"] == last].set_index("horse_id")[cols].sort_index().astype(float)
     diff = [c for c in cols if not np.allclose(a[c], b[c], equal_nan=True, atol=1e-9)]
     assert diff == [], f"card features differ from historical features: {diff}"
+
+
+def test_partial_pedigree_is_not_used():
+    races, results, ped = _toy()
+    assert features.pedigree_usable(results, ped) == (True, 1.0)
+    ok, cov = features.pedigree_usable(results, ped.iloc[: len(ped) // 2])
+    assert not ok and 0.4 < cov < 0.6
+    assert features.pedigree_usable(results, ped.iloc[:0]) == (False, 0.0)

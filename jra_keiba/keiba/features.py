@@ -486,12 +486,35 @@ def feature_columns() -> list[str]:
     return cols
 
 
+PEDIGREE_MIN_COVERAGE = 0.995
+
+
+def pedigree_usable(results: pd.DataFrame, ped: pd.DataFrame) -> tuple[bool, float]:
+    """Pedigree may only be used when (almost) every horse in the results has it.
+
+    It is collected starting from the most recent race cards, so while coverage is
+    partial, "has pedigree" means "was still racing later" - a look-ahead signal
+    (in 2024 maiden races: 20% winners with pedigree vs 3% without). Partial pedigree
+    is therefore dropped entirely rather than left for the model to exploit.
+    """
+    horses = results["horse_id"].dropna().unique()
+    if not len(horses) or not len(ped):
+        return False, 0.0
+    cov = float(pd.Series(horses).isin(ped["horse_id"]).mean())
+    return cov >= PEDIGREE_MIN_COVERAGE, cov
+
+
 def build_features(raw: Path = RAW, card_races: pd.DataFrame | None = None,
-                   card_runners: pd.DataFrame | None = None, pedigree_extra: pd.DataFrame | None = None
-                   ) -> pd.DataFrame:
+                   card_runners: pd.DataFrame | None = None, pedigree_extra: pd.DataFrame | None = None,
+                   log=print) -> pd.DataFrame:
     races, results, _ = load_raw(raw)
     ped = load_pedigree(raw)
-    if pedigree_extra is not None and len(pedigree_extra):
+    ok, cov = pedigree_usable(results, ped)
+    if not ok:
+        if len(ped):
+            log(f"pedigree covers only {cov:.1%} of horses -> not used (partial coverage leaks the future)")
+        ped = None
+    elif pedigree_extra is not None and len(pedigree_extra):
         ped = pd.concat([ped, pedigree_extra], ignore_index=True).drop_duplicates("horse_id")
     df = build_frame(races, results, ped, card_races, card_runners)
     return add_features(df)
