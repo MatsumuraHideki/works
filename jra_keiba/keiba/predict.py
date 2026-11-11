@@ -187,17 +187,18 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
         out.append("")
     if res.get("validated"):
         out.append("### 過去の検証で成績が良かった買い方を当てはめた買い目\n")
-        out.append("| 買い方 | 選び方 | 条件 | 買い目 | 検証回収率 | 前半/後半 | 偶然の幅 | レース数 |")
-        out.append("|---|---|---|---|---|---|---|---|")
+        out.append("| 区分 | 買い方 | 選び方 | 条件 | 買い目 | 検証回収率 | 前半/後半 | 偶然の幅 | レース数 |")
+        out.append("|---|---|---|---|---|---|---|---|---|")
         for v in res["validated"]:
             sep = "→" if v["bet_type"] in ("馬単", "三連単") else "-"
             tix = "、".join(sep.join(map(str, t)) for t in v["tickets"][:10])
             tix += f" ほか{len(v['tickets']) - 10}点" if len(v["tickets"]) > 10 else ""
-            out.append(f"| {v['formation']} | {v['ranker']} | {v['condition']} | {tix} | {_pct(v['roi'])} | "
+            out.append(f"| {v.get('kind', '')} | {v['formation']} | {v['ranker']} | {v['condition']} | {tix} | {_pct(v['roi'])} | "
                        f"{_pct(v['roi_first'])} / {_pct(v['roi_second'])} | {_pct(v['ci_low'])}〜{_pct(v['ci_high'])} | "
                        f"{v['races']:,} |")
-        out.append("\n検証回収率は過去の実績で、今後を保証するものではありません。"
-                   "偶然の幅の下限が 100% を下回るものは、プラスと言い切れない買い方です。\n")
+        out.append("\n「堅実」は回収率がほぼ確定している買い方（多くは 100% 未満）、「狙い目候補」は過去は 100% を"
+                   "超えたが少数の高配当頼みでまだ確かめられていない買い方です。"
+                   "偶然の幅の下限が 100% を下回るものは、プラスと言い切れません。\n")
     if kind == "real" and res["drawn"]:
         pass
     elif kind == "yoso":

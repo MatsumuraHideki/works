@@ -327,18 +327,25 @@ def summarise(res: pd.DataFrame, race: pd.DataFrame, min_races: int = 150) -> pd
     return pd.DataFrame(rows)
 
 
-def top_strategies(summ: pd.DataFrame, n: int = 8) -> list[dict]:
-    """Strategies to carry into live predictions: ranked by their *worse* half, so a
-    strategy only ranks high if it held up in both the earlier and the later period."""
+def top_strategies(summ: pd.DataFrame, n: int = 4) -> list[dict]:
+    """Strategies to carry into live predictions, in two honest groups:
+
+    堅実      highest 95% lower bound: the return is known fairly precisely (usually < 100%).
+    狙い目候補  at least 100% in both the earlier and the later half, ranked by the worse
+              half. These rest on few big payouts, so the interval is wide and unproven.
+    """
     if not len(summ):
         return []
     s = summ.copy()
-    s["弱い方の回収率"] = s[["前半の回収率", "後半の回収率"]].min(axis=1)
-    s = s.sort_values(["弱い方の回収率", "95%下限"], ascending=False)
-    s = s.drop_duplicates(["買い方", "条件"]).drop_duplicates(["買い方"]).head(n)
-    return [{"ranker": r["選び方"], "formation": r["買い方"], "condition": r["条件"], "races": int(r["レース数"]),
-             "roi": float(r["回収率"]), "roi_first": float(r["前半の回収率"]), "roi_second": float(r["後半の回収率"]),
-             "ci_low": float(r["95%下限"]), "ci_high": float(r["95%上限"])} for _, r in s.iterrows()]
+    s["weak"] = s[["前半の回収率", "後半の回収率"]].min(axis=1)
+    solid = s.sort_values("95%下限", ascending=False).drop_duplicates(["買い方"]).head(n).assign(kind="堅実")
+    cand = s[(s["weak"] >= 1.0) & ~s.index.isin(solid.index)]
+    cand = cand.sort_values(["weak", "95%下限"], ascending=False).drop_duplicates(["買い方"]).head(n).assign(kind="狙い目候補")
+    return [{"kind": r["kind"], "ranker": r["選び方"], "formation": r["買い方"], "condition": r["条件"],
+             "races": int(r["レース数"]), "hit": float(r["的中率"]), "roi": float(r["回収率"]),
+             "roi_first": float(r["前半の回収率"]), "roi_second": float(r["後半の回収率"]),
+             "ci_low": float(r["95%下限"]), "ci_high": float(r["95%上限"])}
+            for _, r in pd.concat([solid, cand]).iterrows()]
 
 
 def apply_strategies(strategies: list[dict], g: pd.DataFrame, rid: str) -> list[dict]:
@@ -432,10 +439,12 @@ def write_strategy_report(res: dict, raw: Path = features.RAW, log=print) -> str
     tops = top_strategies(summ)
     if tops:
         out.append("## 今後の予想に当てはめる買い方\n")
-        out.append("前半・後半のうち悪い方の回収率が高い順（＝どちらの期間でも崩れなかった順）に選んでいます。"
-                   "予想レポートでは、条件に当てはまるレースでこの買い方の買い目を表示します。\n")
-        out.append(md_table(pd.DataFrame([{"買い方": t["formation"], "選び方": t["ranker"], "条件": t["condition"],
-                                            "レース数": t["races"], "回収率": t["roi"], "前半の回収率": t["roi_first"],
+        out.append("- **堅実**: 偶然の幅の下限が最も高い買い方。回収率がほぼ確定していて、大きくは負けにくい。\n"
+                   "- **狙い目候補**: 前半・後半とも 100% 以上だった買い方。少数の高配当に支えられていて幅が広く、"
+                   "本当にプラスかはまだ分からない。\n\n"
+                   "予想レポートでは、条件に当てはまるレースでこれらの買い目を表示します。\n")
+        out.append(md_table(pd.DataFrame([{"区分": t["kind"], "買い方": t["formation"], "選び方": t["ranker"], "条件": t["condition"],
+                                            "レース数": t["races"], "的中率": t["hit"], "回収率": t["roi"], "前半の回収率": t["roi_first"],
                                             "後半の回収率": t["roi_second"], "95%下限": t["ci_low"],
                                             "95%上限": t["ci_high"]} for t in tops])))
     (REPORTS / "strategy_top.json").parent.mkdir(parents=True, exist_ok=True)
