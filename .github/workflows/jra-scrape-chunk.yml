@@ -1,0 +1,69 @@
+name: jra-scrape-chunk
+# One step of the data-collection plan. Called by jra-data.yml, one chunk after another,
+# so there is only ever a single slow request stream to netkeiba.
+on:
+  workflow_call:
+    inputs:
+      index:
+        type: number
+        required: true
+      from:
+        type: string
+        default: ""
+      to:
+        type: string
+        default: ""
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          INDEX: ${{ inputs.index }}
+          IN_FROM: ${{ inputs.from }}
+          IN_TO: ${{ inputs.to }}
+        run: |
+          if [ "$EVENT" = "push" ]; then
+            chunks=$(jq -c '.chunks' jra_keiba/scrape_plan.json)
+          else
+            from="${IN_FROM:-$(TZ=Asia/Tokyo date +%Y-%m)}"
+            to="${IN_TO:-$(TZ=Asia/Tokyo date -d '-1 month' +%Y-%m)}"
+            chunks=$(jq -nc --arg f "$from" --arg t "$to" '[
+              {cmd:"results",  from:$f, to:$t, max_minutes:330},
+              {cmd:"odds",     from:$f, to:$t, max_minutes:120},
+              {cmd:"pedigree", from:$f, to:$t, max_minutes:120}]')
+          fi
+          chunk=$(echo "$chunks" | jq -c --argjson i "$INDEX" '.[$i] // empty')
+          echo "chunk=$chunk"
+          if [ -z "$chunk" ]; then echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          {
+            echo "run=true"
+            echo "cmd=$(echo "$chunk" | jq -r .cmd)"
+            echo "from=$(echo "$chunk" | jq -r .from)"
+            echo "to=$(echo "$chunk" | jq -r .to)"
+            echo "max_minutes=$(echo "$chunk" | jq -r '.max_minutes // 330')"
+          } >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        if: steps.plan.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+      - name: Scrape ${{ steps.plan.outputs.cmd }} ${{ steps.plan.outputs.from }}..${{ steps.plan.outputs.to }}
+        if: steps.plan.outputs.run == 'true'
+        working-directory: jra_keiba
+        env:
+          CMD: ${{ steps.plan.outputs.cmd }}
+          FROM: ${{ steps.plan.outputs.from }}
+          TO: ${{ steps.plan.outputs.to }}
+          MAXMIN: ${{ steps.plan.outputs.max_minutes }}
+        run: |
+          pip install -q requests beautifulsoup4 lxml pandas
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          extra=""
+          if [ "$CMD" = "pedigree" ]; then extra="--since ${TO%%-*}"; fi
+          python -m keiba.scrape "$CMD" --from "$FROM" --to "$TO" --max-minutes "$MAXMIN" --push $extra

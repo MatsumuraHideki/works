@@ -332,7 +332,7 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--from", dest="start", default=this_month, help="newest month YYYY-MM")
         p.add_argument("--to", dest="end", default=this_month, help="oldest month YYYY-MM")
         p.add_argument("--max-minutes", type=float, default=330)
-        p.add_argument("--interval", type=float, default=1.0, help="minimum seconds between requests")
+        p.add_argument("--interval", type=float, default=3.0, help="minimum seconds between requests")
         p.add_argument("--push", action="store_true", help="git commit+push data periodically")
         p.add_argument("--push-every", type=float, default=40, help="minutes between pushes")
         if name == "odds":

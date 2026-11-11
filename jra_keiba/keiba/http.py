@@ -1,4 +1,8 @@
-"""Polite HTTP client: one request stream, fixed minimum interval, retries."""
+"""Polite HTTP client: one request stream, a minimum interval plus jitter, retries.
+
+netkeiba answers HTTP 400 once it considers a client too busy (seen after ~3,800
+requests at ~1.2 s spacing), so the default spacing is deliberately slow.
+"""
 from __future__ import annotations
 
 import random
@@ -13,7 +17,7 @@ USER_AGENT = (
 
 
 class Fetcher:
-    def __init__(self, min_interval: float = 1.2, timeout: float = 30.0, retries: int = 4):
+    def __init__(self, min_interval: float = 3.0, timeout: float = 30.0, retries: int = 4):
         self.min_interval = min_interval
         self.timeout = timeout
         self.retries = retries
@@ -25,7 +29,7 @@ class Fetcher:
         self.n_requests = 0
 
     def _wait(self) -> None:
-        gap = self.min_interval + random.uniform(0, 0.3) - (time.monotonic() - self._last)
+        gap = self.min_interval * random.uniform(1.0, 1.5) - (time.monotonic() - self._last)
         if gap > 0:
             time.sleep(gap)
         self._last = time.monotonic()

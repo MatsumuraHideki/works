@@ -64,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dates", default="", help="comma separated YYYYMMDD; default: race days in the next 6 days")
     ap.add_argument("--grades", default="G1,G2,G3", help="comma separated grades, or 'all'")
-    ap.add_argument("--interval", type=float, default=1.0)
+    ap.add_argument("--interval", type=float, default=2.0)
     args = ap.parse_args(argv)
     f = Fetcher(min_interval=args.interval)
     try:
