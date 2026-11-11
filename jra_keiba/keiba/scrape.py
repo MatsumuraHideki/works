@@ -209,6 +209,7 @@ def cmd_odds(args) -> int:
     f = Fetcher(min_interval=args.interval)
     deadline = time.monotonic() + args.max_minutes * 60
     grades = set(args.grades.split(","))
+    types = tuple(int(t) for t in args.types.split(","))
     state = load_state()
     done = set(state.get("odds_done", []))
     last_push = time.monotonic()
@@ -217,7 +218,11 @@ def cmd_odds(args) -> int:
         races = read_month("races", ym)
         if not len(races):
             continue
-        target = [r for r in races.loc[races["grade"].isin(grades), "race_id"] if r not in done]
+        sel = races["grade"].isin(grades)
+        if args.op_class:                      # every open-class race (OP, Listed and graded)
+            sel |= races["class"].eq("OP")
+        sel &= races["surface"].isin(["芝", "ダ"])
+        target = [r for r in races.loc[sel, "race_id"] if r not in done]
         if not target:
             continue
         rows = []
@@ -226,9 +231,9 @@ def cmd_odds(args) -> int:
                 if time.monotonic() > deadline:
                     break
                 ok = True
-                for t in (1, 2, 4, 5, 6, 7, 8):
+                for t in types:
                     if t == 2:
-                        continue  # type 1 response already carries 複勝
+                        continue  # the type 1 response already carries 複勝
                     body = fetch_text(f, nk.url_odds(rid, t), referer=nk.url_shutuba(rid))
                     types = (1, 2) if t == 1 else (t,)
                     for tt in types:
@@ -337,6 +342,9 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--push-every", type=float, default=40, help="minutes between pushes")
         if name == "odds":
             p.add_argument("--grades", default="G1,G2,G3")
+            p.add_argument("--op-class", action="store_true", help="also all open-class races (OP / Listed)")
+            p.add_argument("--types", default="1,4,5,6,7,8",
+                           help="odds API types: 1 単勝+複勝, 4 馬連, 5 ワイド, 6 馬単, 7 三連複, 8 三連単")
         if name == "pedigree":
             p.add_argument("--since", type=int, default=2000, help="only races from this year on")
             p.add_argument("--min-unknown", type=int, default=1)

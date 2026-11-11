@@ -1,15 +1,67 @@
 {
-  "note": "Chunks run one after another. A results chunk resumes where the previous one stopped.",
-  "chunks": [
-    {"cmd": "results",  "from": "2026-11", "to": "2023-01", "max_minutes": 330},
-    {"cmd": "pedigree", "from": "2026-11", "to": "2025-01", "max_minutes": 90},
-    {"cmd": "results",  "from": "2026-11", "to": "2023-01", "max_minutes": 330},
-    {"cmd": "odds",     "from": "2026-11", "to": "2025-01", "max_minutes": 120},
-    {"cmd": "results",  "from": "2026-11", "to": "2021-01", "max_minutes": 330},
-    {"cmd": "results",  "from": "2026-11", "to": "2021-01", "max_minutes": 330},
-    {"cmd": "pedigree", "from": "2026-11", "to": "2021-01", "max_minutes": 240},
-    {"cmd": "results",  "from": "2026-11", "to": "2019-01", "max_minutes": 330},
-    {"cmd": "results",  "from": "2026-11", "to": "2019-01", "max_minutes": 330},
-    {"cmd": "odds",     "from": "2026-11", "to": "2023-01", "max_minutes": 240}
-  ]
+ "note": "Chunks run one after another. Results / odds / pedigree chunks each resume where the previous one stopped.",
+ "chunks": [
+  {
+   "cmd": "odds",
+   "from": "2024-12",
+   "to": "2023-01",
+   "max_minutes": 240
+  },
+  {
+   "cmd": "odds",
+   "from": "2026-11",
+   "to": "2023-01",
+   "max_minutes": 330,
+   "args": "--op-class --types 1,4,5,7"
+  },
+  {
+   "cmd": "odds",
+   "from": "2026-11",
+   "to": "2023-01",
+   "max_minutes": 330,
+   "args": "--op-class --types 1,4,5,7"
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2019-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "pedigree",
+   "from": "2026-11",
+   "to": "2021-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2019-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2019-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "pedigree",
+   "from": "2026-11",
+   "to": "2019-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2019-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "pedigree",
+   "from": "2026-11",
+   "to": "2019-01",
+   "max_minutes": 330
+  }
+ ]
 }
