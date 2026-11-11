@@ -3,6 +3,7 @@
 JRA の過去レース（新馬〜G1 の全クラス。G1/G2/G3 を含む）を集めて勝率を推定し、
 オッズと掛け合わせて期待値の高い買い目を出します。
 
+- **どう買えば回収率が高いか**: [`reports/strategy.md`](reports/strategy.md)（券種・人気・条件・買い方別の回収率）
 - 予想の最新版: [`reports/latest.md`](reports/latest.md)
 - 学習に使っていない期間での検証結果: [`reports/backtest.md`](reports/backtest.md)
 
@@ -15,6 +16,7 @@ JRA の過去レース（新馬〜G1 の全クラス。G1/G2/G3 を含む）を�
 | 3. 勝率モデル | LightGBM（勝ち・3 着内の 2 モデル）→ レース内で条件付きロジットにかけ、市場オッズと統合 | `keiba/model.py` |
 | 4. 買い目 | 着順確率（補正付き Harville）から全券種の的中確率を計算し、期待値 = 確率 × オッズ で選別、1/4 ケリーで配分 | `keiba/betting.py` |
 | 5. 予想 | 出馬表と最新オッズを取得してレポート出力 | `keiba/cards.py`, `keiba/predict.py` |
+| 6. 回収率分析 | 券種・人気・レース条件・買い方（フォーメーション）ごとの回収率を、前半/後半の再現性と誤差幅つきで集計 | `keiba/strategy.py` |
 
 ### 予想に使う 6 つの観点
 
@@ -54,7 +56,7 @@ JRA の過去レース（新馬〜G1 の全クラス。G1/G2/G3 を含む）を�
 cd jra_keiba
 pip install -r requirements.txt
 python -m keiba.scrape results --from 2026-11 --to 2026-10   # 結果を追加取得
-python -m keiba.pipeline                                    # 学習 + バックテスト
+python -m keiba.pipeline                                    # 学習 + バックテスト + 回収率分析
 python -m keiba.cards --grades G1,G2,G3                     # 出馬表とオッズ
 python -m keiba.predict --bankroll 100000 --min-ev 1.15     # 予想レポート
 ```

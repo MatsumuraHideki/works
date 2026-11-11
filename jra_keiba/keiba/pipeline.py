@@ -267,6 +267,8 @@ def main(argv: list[str] | None = None) -> int:
     save_artifacts(res["art"])
     if not args.no_report:
         print(write_report(res))
+        from . import strategy
+        strategy.write_strategy_report(res)
     return 0
 
 

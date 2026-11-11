@@ -211,6 +211,8 @@ def main(argv: list[str] | None = None) -> int:
         art = res["art"]
         pipeline.save_artifacts(art)
         pipeline.write_report(res)
+        from . import strategy
+        strategy.write_strategy_report(res)
     boosters = pipeline.boosters(art)
     races, runners, ped = cards_to_frames(cards)
     df = features.build_features(card_races=races, card_runners=runners, pedigree_extra=ped)
