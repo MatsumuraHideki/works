@@ -29,6 +29,8 @@ ID_COLS = {"race_id": str, "horse_id": str, "jockey_id": str, "trainer_id": str,
 GRADE_LEVEL = {"L": 5.5, "G3": 6.0, "G2": 7.0, "G1": 8.0, "重賞": 6.0}
 CLASS_LEVEL = {"新馬": 1.0, "未勝利": 1.0, "1勝": 2.0, "2勝": 3.0, "3勝": 4.0, "OP": 5.0, "不明": 3.0}
 GOING_CODE = {"良": 0, "稍重": 1, "重": 2, "不良": 3}
+NUMERIC_COLS = ["finish", "bracket", "number", "age", "weight_carried", "time_sec", "last3f", "win_odds",
+                "popularity", "body_weight", "body_weight_diff", "prize"]
 
 
 # ------------------------------------------------------------------ loading
@@ -82,6 +84,11 @@ def build_frame(races: pd.DataFrame, results: pd.DataFrame, pedigree: pd.DataFra
         races = pd.concat([races[~races["race_id"].isin(cr["race_id"])], cr], ignore_index=True)
         results = pd.concat([results[~results["race_id"].isin(cr["race_id"])], card_runners],
                             ignore_index=True)
+    # A card before the draw has no 馬番 / 馬体重 at all; an all-None column would turn the
+    # merged column into dtype object and break the model input, so force numerics.
+    for c in NUMERIC_COLS:
+        if c in results.columns:
+            results[c] = pd.to_numeric(results[c], errors="coerce").astype(float)
     races["level"] = class_level(races)
     keep = ["race_id", "date", "place", "surface", "direction", "inout", "distance", "going", "weather",
             "class", "grade", "level", "race_no", "name", "is_card", "cond"]

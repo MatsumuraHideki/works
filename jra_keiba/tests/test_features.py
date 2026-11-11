@@ -83,3 +83,20 @@ def test_partial_pedigree_is_not_used():
     ok, cov = features.pedigree_usable(results, ped.iloc[: len(ped) // 2])
     assert not ok and 0.4 < cov < 0.6
     assert features.pedigree_usable(results, ped.iloc[:0]) == (False, 0.0)
+
+
+def test_pre_draw_card_without_weights_or_numbers_stays_numeric():
+    races, results, ped = _toy()
+    last = races["race_id"].iloc[-1]
+    card_r = races[races["race_id"] == last].assign(date=lambda d: d["date"].dt.strftime("%Y-%m-%d"))
+    card_x = results[results["race_id"] == last].copy().astype(object)
+    for c in ("finish", "time_sec", "last3f", "win_odds", "popularity", "prize", "number", "body_weight",
+              "body_weight_diff"):
+        card_x[c] = None                      # what a card looks like before the draw
+    card_x["finish_raw"], card_x["passing"] = "", None
+    hist_r, hist_x = races[races["race_id"] != last], results[results["race_id"] != last]
+    df = features.add_features(features.build_frame(hist_r, hist_x, ped, card_r, card_x))
+    cols = features.feature_columns()
+    bad = [c for c in cols if df[c].dtype.kind not in "fiub"]
+    assert bad == [], f"non-numeric feature columns: {bad}"
+    assert df["is_card"].sum() == len(card_x)
