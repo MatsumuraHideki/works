@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 WORK = ROOT / "data" / "work"
 REPORTS = ROOT / "reports"
 ORDERED = ("馬単", "三連単")
+FULL_COLS = ["s_win", "s_top3", "m", "s_res"]
 
 
 def fold_ids(dates: pd.Series, fold_months: int) -> pd.Series:
@@ -50,7 +51,7 @@ def fit_all(raw: Path = features.RAW, oof_years: int = 6, fold_months: int | Non
     if fold_months is None:          # yearly folds need several seasons; fall back to shorter blocks
         fold_months = 12 if span_years >= 5 else (6 if span_years >= 2 else 2)
     hist["year"] = fold_ids(hist["date"], fold_months)   # "year" = walk-forward period id
-    hist["m"] = model.market_logprob(hist)
+    hist = model.add_market_features(hist)
     years = sorted(hist["year"].unique())
     log(f"walk-forward periods: {len(years)} x {fold_months} months")
     test_years = years[1:][-oof_years:]
@@ -69,12 +70,12 @@ def fit_all(raw: Path = features.RAW, oof_years: int = 6, fold_months: int | Non
         if not len(tr) or not len(te):
             continue
         o.loc[te.index, "p_fund"] = model.Stage2(["s_win", "s_top3"]).fit(tr).predict(te)
-        o.loc[te.index, "p_final"] = model.Stage2(["s_win", "s_top3", "m"]).fit(tr).predict(te)
+        o.loc[te.index, "p_final"] = model.Stage2(FULL_COLS).fit(tr).predict(te)
     oos = o.dropna(subset=["p_final"]).copy()
     oos["p_market"] = np.exp(oos["m"])
 
     s2_fund = model.Stage2(["s_win", "s_top3"]).fit(o)
-    s2_full = model.Stage2(["s_win", "s_top3", "m"]).fit(o)
+    s2_full = model.Stage2(FULL_COLS).fit(o)
     src = oos if len(oos) else o.assign(p_final=s2_full.predict(o))
     lam2, lam3 = model.fit_place_discount(src, "p_final")
     log(f"stage2 fund={np.round(s2_fund.coef, 3)} full={np.round(s2_full.coef, 3)} lam2={lam2:.3f} lam3={lam3:.3f}")
@@ -116,7 +117,7 @@ def win_bet_table(oos: pd.DataFrame, p_col: str = "p_final") -> pd.DataFrame:
     """Flat-stake 単勝 backtest at final odds for several EV thresholds."""
     ev = oos[p_col] * oos["win_odds"]
     rows = []
-    for thr in (0.0, 1.0, 1.05, 1.1, 1.2, 1.3, 1.5):
+    for thr in (0.0, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.2, 1.3, 1.5):
         sel = oos[ev.notna()] if thr == 0 else oos[(ev >= thr) & (oos[p_col] >= 0.01)]
         if not len(sel):
             continue
@@ -232,6 +233,8 @@ def write_report(res: dict, raw: Path = features.RAW, log=print) -> str:
     out.append(_md(win_bet_table(oos)))
     out.append("### 重賞(G1-G3)のみ\n")
     out.append(_md(win_bet_table(graded)))
+    out.append("期待値が 1.00 に届く買い目がほとんど無い場合でも、期待値が高い行ほど回収率が高ければ、"
+               "モデルは「どれが割に合うか」を正しく並べられています。\n")
     out.append("### モデル単独の確率で選んだ場合（全レース、参考）\n")
     out.append(_md(win_bet_table(oos, "p_fund")))
 

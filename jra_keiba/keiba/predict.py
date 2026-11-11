@@ -84,16 +84,15 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
                  ) -> dict:
     feats = art["feats"]
     rows = rows.copy()
-    s = model.predict_stage1(boosters, rows, feats)
-    rows["s_win"], rows["s_top3"] = s["s_win"], s["s_top3"]
-    rows["p_fund"] = model.Stage2(["s_win", "s_top3"], np.asarray(art["s2_fund"])).predict(rows)
     tables, win_odds, kind = card_odds(card, rows)
     rows["odds"] = win_odds
     use_market = kind != "none" and rows["odds"].notna().all()
+    rows = model.add_market_features(rows, "odds")       # NaN when there are no odds
+    s = model.predict_stage1(boosters, rows, feats)
+    rows["s_win"], rows["s_top3"], rows["s_res"] = s["s_win"], s["s_top3"], s["s_res"]
+    rows["p_fund"] = model.Stage2(["s_win", "s_top3"], np.asarray(art["s2_fund"])).predict(rows)
     if use_market:
-        inv = 1.0 / rows["odds"]
-        rows["m"] = np.log(inv / inv.sum())
-        rows["p"] = model.Stage2(["s_win", "s_top3", "m"], np.asarray(art["s2_full"])).predict(rows)
+        rows["p"] = model.Stage2(pipeline.FULL_COLS, np.asarray(art["s2_full"])).predict(rows)
     else:
         rows["p"] = rows["p_fund"]
     rows["ev"] = rows["p"] * rows["odds"]

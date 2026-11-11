@@ -23,7 +23,28 @@ LGB_PARAMS = dict(
     feature_fraction=0.6, bagging_fraction=0.8, bagging_freq=1, lambda_l2=10.0,
     max_bin=127, verbose=-1, num_threads=0, seed=7,
 )
-N_ROUNDS = {"win": 450, "top3": 550}
+# Residual head: starts from the market's implied probability (as init score) and only
+# learns where the market is systematically off. Heavily regularised: the signal is tiny.
+RES_PARAMS = dict(LGB_PARAMS, learning_rate=0.02, num_leaves=15, min_data_in_leaf=400,
+                  feature_fraction=0.5, lambda_l2=30.0)
+N_ROUNDS = {"win": 450, "top3": 550, "res": 150}
+MARKET_FEATS = ["m", "mkt_rank", "mkt_gap", "mkt_top_p"]
+
+
+def add_market_features(df: pd.DataFrame, odds_col: str = "win_odds") -> pd.DataFrame:
+    """m = log odds-implied probability (normalised in the race) plus simple shape features.
+    Rows of races with a missing price get NaN."""
+    df = df.copy()
+    inv = 1.0 / df[odds_col].astype(float)
+    g = inv.groupby(df["race_id"])
+    ok = g.transform(lambda s: s.notna().all())
+    p = (inv / g.transform("sum")).where(ok)
+    df["m"] = np.log(p)
+    df["mkt_rank"] = p.groupby(df["race_id"]).rank(ascending=False, method="min")
+    top = p.groupby(df["race_id"]).transform("max")
+    df["mkt_gap"] = df["m"] - np.log(top)
+    df["mkt_top_p"] = top
+    return df
 
 
 def _logit(p: np.ndarray) -> np.ndarray:
@@ -38,6 +59,11 @@ def train_stage1(df: pd.DataFrame, feats: list[str], rounds: dict[str, int] | No
     for target in ("win", "top3"):
         ds = lgb.Dataset(df[feats], label=df[target], free_raw_data=False)
         models[target] = lgb.train(LGB_PARAMS, ds, num_boost_round=rounds[target])
+    if "m" in df.columns:
+        d = df[np.isfinite(df["m"])]
+        if len(d) > 5000:
+            ds = lgb.Dataset(d[feats + MARKET_FEATS], label=d["win"], init_score=_logit(np.exp(d["m"].to_numpy())))
+            models["res"] = lgb.train(RES_PARAMS, ds, num_boost_round=rounds.get("res", N_ROUNDS["res"]))
     return models
 
 
@@ -45,6 +71,11 @@ def predict_stage1(models: dict[str, lgb.Booster], df: pd.DataFrame, feats: list
     out = pd.DataFrame(index=df.index)
     out["s_win"] = _logit(models["win"].predict(df[feats]))
     out["s_top3"] = _logit(models["top3"].predict(df[feats]))
+    out["s_res"] = 0.0
+    if "res" in models and "m" in df.columns:
+        ok = np.isfinite(df["m"].to_numpy(dtype=float))
+        if ok.any():   # raw score excludes the init score: this is the correction to the market
+            out.loc[ok, "s_res"] = models["res"].predict(df.loc[ok, feats + MARKET_FEATS], raw_score=True)
     return out
 
 
@@ -58,6 +89,16 @@ def tune_rounds(df: pd.DataFrame, feats: list[str], valid_year: int) -> dict[str
         m = lgb.train(LGB_PARAMS, dtr, num_boost_round=3000, valid_sets=[dva],
                       callbacks=[lgb.early_stopping(100, verbose=False)])
         rounds[target] = int(max(150, m.best_iteration))
+    if "m" in df.columns:
+        trm, vam = tr[np.isfinite(tr["m"])], va[np.isfinite(va["m"])]
+        if len(trm) > 5000 and len(vam) > 1000:
+            cols = feats + MARKET_FEATS
+            dtr = lgb.Dataset(trm[cols], label=trm["win"], init_score=_logit(np.exp(trm["m"].to_numpy())))
+            dva = lgb.Dataset(vam[cols], label=vam["win"], init_score=_logit(np.exp(vam["m"].to_numpy())),
+                              reference=dtr)
+            m = lgb.train(RES_PARAMS, dtr, num_boost_round=1500, valid_sets=[dva],
+                          callbacks=[lgb.early_stopping(100, verbose=False)])
+            rounds["res"] = int(min(600, max(30, m.best_iteration)))
     return rounds
 
 
@@ -72,7 +113,7 @@ def walk_forward(df: pd.DataFrame, feats: list[str], test_years: list[int],
         models = train_stage1(tr, feats, rounds)
         parts.append(predict_stage1(models, te, feats))
         log(f"  fold {y}: train={len(tr):,} test={len(te):,}")
-    return pd.concat(parts) if parts else pd.DataFrame(columns=["s_win", "s_top3"])
+    return pd.concat(parts) if parts else pd.DataFrame(columns=["s_win", "s_top3", "s_res"])
 
 
 # ------------------------------------------------------------------ stage 2
