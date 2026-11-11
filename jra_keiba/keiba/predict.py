@@ -276,8 +276,10 @@ def main(argv: list[str] | None = None) -> int:
         sections.append(text)
         print(text)
     header = (f"# JRA 予想（{today_jst().isoformat()} 更新）\n\n"
-              "期待値は「推定的中確率 × オッズ」。1.00 が損益ゼロで、モデルの誤差を見込んで "
-              f"{args.min_ev:.2f} 以上だけを推奨しています。検証結果は [backtest.md](backtest.md)。\n\n")
+              "期待値は「推定的中確率 × オッズ」で、1.00 が損益ゼロです。"
+              f"買い目は期待値 {args.min_ev:.2f} 以上のものを挙げています。"
+              "過去の検証では、この選び方は回収率を上げますが、100% を確実に超えるとは言えていません。"
+              "買い方ごとの成績は [strategy.md](strategy.md) と [backtest.md](backtest.md)。\n\n")
     (ROOT / "reports" / "latest.md").write_text(header + "\n---\n\n".join(sections))
     return 0
 
