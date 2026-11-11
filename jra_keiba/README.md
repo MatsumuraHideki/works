@@ -4,6 +4,7 @@ JRA の過去レース（新馬〜G1 の全クラス。G1/G2/G3 を含む）を�
 オッズと掛け合わせて期待値の高い買い目を出します。
 
 - **どう買えば回収率が高いか**: [`reports/strategy.md`](reports/strategy.md)（券種・人気・条件・買い方別の回収率）
+- 買い方を 1 本の表で比べたもの: [`reports/summary.json`](reports/summary.json)（`python -m keiba.summary` で再生成）
 - 予想の最新版: [`reports/latest.md`](reports/latest.md)
 - 学習に使っていない期間での検証結果: [`reports/backtest.md`](reports/backtest.md)
 
