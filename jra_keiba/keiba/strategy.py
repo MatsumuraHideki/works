@@ -16,6 +16,7 @@ Usage:
 """
 from __future__ import annotations
 
+import json
 import sys
 from dataclasses import dataclass
 from itertools import combinations, permutations
@@ -251,6 +252,26 @@ def race_filters(race: pd.DataFrame) -> dict[str, pd.Series]:
     return f
 
 
+def race_attrs(rid: str, g: pd.DataFrame) -> dict:
+    """Race-level facts the filters look at. ``g``: runners with p_final, p_fund, p_market, win_odds."""
+    nums = g["number"].astype(int).to_numpy()
+    pm = g["p_market"].to_numpy(dtype=float)
+    has_odds = bool(np.isfinite(pm).all())
+    fav_i = int(np.argmax(pm)) if has_odds else 0
+    top_i = int(np.argmax(g["p_final"].to_numpy()))
+    fund_i = int(np.argmax(g["p_fund"].to_numpy()))
+    odds = g["win_odds"].to_numpy(dtype=float)
+    pop = pd.Series(odds).rank(method="min").to_numpy() if has_odds else np.full(len(g), np.nan)
+    first = g.iloc[0]
+    return {"race_id": rid, "date": first["date"], "grade": first["grade"], "class": first["class"],
+            "surface": first["surface"], "n_runners": len(g),
+            "fav": int(nums[fav_i]) if has_odds else -1,
+            "fav_odds": float(odds[fav_i]) if has_odds else np.nan, "model_top": int(nums[top_i]),
+            "model_top_p": float(g["p_final"].iloc[top_i]),
+            "model_top_ev": float(g["p_final"].iloc[top_i] * odds[top_i]) if has_odds else np.nan,
+            "fund_top_pop": float(pop[fund_i])}
+
+
 def formation_results(oos: pd.DataFrame, pay: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Stake and return of every (ranker, formation) on every test race.
 
@@ -264,16 +285,7 @@ def formation_results(oos: pd.DataFrame, pay: dict) -> tuple[pd.DataFrame, pd.Da
             continue
         nums = g["number"].astype(int).to_numpy()
         order = {name: nums[np.argsort(-g[col].to_numpy(), kind="stable")] for name, col in RANKERS.items()}
-        fav_i = int(np.argmax(g["p_market"].to_numpy()))
-        top_i = int(np.argmax(g["p_final"].to_numpy()))
-        fund_i = int(np.argmax(g["p_fund"].to_numpy()))
-        first = g.iloc[0]
-        race_rows.append({"race_id": rid, "date": first["date"], "grade": first["grade"], "class": first["class"],
-                          "surface": first["surface"], "n_runners": len(g), "fav": int(nums[fav_i]),
-                          "fav_odds": float(g["win_odds"].iloc[fav_i]), "model_top": int(nums[top_i]),
-                          "model_top_p": float(g["p_final"].iloc[top_i]),
-                          "model_top_ev": float(g["p_final"].iloc[top_i] * g["win_odds"].iloc[top_i]),
-                          "fund_top_pop": float(g["popularity"].iloc[fund_i])})
+        race_rows.append(race_attrs(rid, g))
         for rk, top in order.items():
             top = [int(x) for x in top]
             for fm in FORMATIONS:
@@ -313,6 +325,41 @@ def summarise(res: pd.DataFrame, race: pd.DataFrame, min_races: int = 150) -> pd
                 "95%下限": lo, "95%上限": hi,
             })
     return pd.DataFrame(rows)
+
+
+def top_strategies(summ: pd.DataFrame, n: int = 8) -> list[dict]:
+    """Strategies to carry into live predictions: ranked by their *worse* half, so a
+    strategy only ranks high if it held up in both the earlier and the later period."""
+    if not len(summ):
+        return []
+    s = summ.copy()
+    s["弱い方の回収率"] = s[["前半の回収率", "後半の回収率"]].min(axis=1)
+    s = s.sort_values(["弱い方の回収率", "95%下限"], ascending=False)
+    s = s.drop_duplicates(["買い方", "条件"]).drop_duplicates(["買い方"]).head(n)
+    return [{"ranker": r["選び方"], "formation": r["買い方"], "condition": r["条件"], "races": int(r["レース数"]),
+             "roi": float(r["回収率"]), "roi_first": float(r["前半の回収率"]), "roi_second": float(r["後半の回収率"]),
+             "ci_low": float(r["95%下限"]), "ci_high": float(r["95%上限"])} for _, r in s.iterrows()]
+
+
+def apply_strategies(strategies: list[dict], g: pd.DataFrame, rid: str) -> list[dict]:
+    """Tickets each stored strategy would buy in one (upcoming) race, if its condition holds."""
+    if not strategies or g["number"].isna().any() or len(g) < 5:
+        return []
+    race = pd.DataFrame([race_attrs(rid, g)]).set_index("race_id")
+    filt = race_filters(race)
+    nums = g["number"].astype(int).to_numpy()
+    forms = {f.name: f for f in FORMATIONS}
+    out = []
+    for st in strategies:
+        col = RANKERS[st["ranker"]]
+        if g[col].isna().any() or st["condition"] not in filt or not bool(filt[st["condition"]].fillna(False).iloc[0]):
+            continue
+        fm = forms[st["formation"]]
+        top = [int(x) for x in nums[np.argsort(-g[col].to_numpy(), kind="stable")]]
+        if len(top) < fm.k:
+            continue
+        out.append({**st, "bet_type": fm.bet_type, "tickets": [list(t) for t in fm.tickets(top)]})
+    return out
 
 
 # ------------------------------------------------------------------ report
@@ -382,6 +429,17 @@ def write_strategy_report(res: dict, raw: Path = features.RAW, log=print) -> str
 
     out.append("## まとめ\n")
     out.extend(conclusions(d, payouts, summ))
+    tops = top_strategies(summ)
+    if tops:
+        out.append("## 今後の予想に当てはめる買い方\n")
+        out.append("前半・後半のうち悪い方の回収率が高い順（＝どちらの期間でも崩れなかった順）に選んでいます。"
+                   "予想レポートでは、条件に当てはまるレースでこの買い方の買い目を表示します。\n")
+        out.append(md_table(pd.DataFrame([{"買い方": t["formation"], "選び方": t["ranker"], "条件": t["condition"],
+                                            "レース数": t["races"], "回収率": t["roi"], "前半の回収率": t["roi_first"],
+                                            "後半の回収率": t["roi_second"], "95%下限": t["ci_low"],
+                                            "95%上限": t["ci_high"]} for t in tops])))
+    (REPORTS / "strategy_top.json").parent.mkdir(parents=True, exist_ok=True)
+    (REPORTS / "strategy_top.json").write_text(json.dumps(tops, ensure_ascii=False, indent=1))
     text = "\n".join(out)
     REPORTS.mkdir(parents=True, exist_ok=True)
     (REPORTS / "strategy.md").write_text(text)

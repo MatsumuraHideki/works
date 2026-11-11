@@ -10,6 +10,7 @@ Outputs:
 from __future__ import annotations
 
 import argparse
+import json
 import pickle
 import sys
 import time
@@ -239,7 +240,16 @@ def write_report(res: dict, raw: Path = features.RAW, log=print) -> str:
         _, _, payouts = features.load_raw(raw)
         out.append("## 4. 全券種を期待値で選んだ場合（重賞、確定オッズ全通り）\n")
         for thr in (1.05, 1.15, 1.3):
-            summ, _ = exotic_backtest(oos, odds_df, payouts, art["lam2"], art["lam3"], min_ev=thr)
+            summ, tlog = exotic_backtest(oos, odds_df, payouts, art["lam2"], art["lam3"], min_ev=thr)
+            if thr == 1.15 and len(tlog):
+                by_race = tlog.groupby("race_id").agg(n=("ret_flat", "size"), r=("ret_flat", "sum"))
+                from .strategy import boot_ci
+                lo, hi = boot_ci(by_race["n"].to_numpy(dtype=float), by_race["r"].to_numpy())
+                REPORTS.mkdir(parents=True, exist_ok=True)
+                (REPORTS / "ev_backtest.json").write_text(json.dumps({
+                    "min_ev": thr, "races": int(tlog["race_id"].nunique()), "tickets": int(len(tlog)),
+                    "hit": float(tlog["hit"].mean()), "roi": float(tlog["ret_flat"].mean()),
+                    "ci_low": lo, "ci_high": hi}))
             n_races = oos[oos["race_id"].isin(set(odds_df["race_id"]))]["race_id"].nunique()
             out.append(f"### 期待値 {thr:.2f} 以上の買い目（対象 {n_races} レース）\n")
             out.append(_md(summ))

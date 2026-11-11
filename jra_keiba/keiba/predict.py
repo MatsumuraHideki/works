@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import betting, features, model, pipeline
+from . import betting, features, model, pipeline, strategy
 from .scrape import today_jst
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -72,6 +72,8 @@ def card_odds(card: dict, rows: pd.DataFrame) -> tuple[dict[str, dict], pd.Serie
 
 def mark(values: pd.Series) -> pd.Series:
     """Within-race marks for an aspect score: ◎ best, ○ top quarter, △ above median."""
+    if values.nunique() <= 1:          # no information for this aspect (e.g. pedigree not collected yet)
+        return pd.Series("－", index=values.index)
     r = values.rank(ascending=False, method="min")
     n = len(values)
     return pd.Series(np.where(r == 1, "◎", np.where(r <= max(2, n * 0.25), "○",
@@ -112,7 +114,14 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
                          key=lambda b: b.ev, reverse=True)[:5]
             if top:
                 top_by_type[bt] = top
-    return {"card": card, "rows": rows.sort_values("p", ascending=False), "kind": kind,
+    # tickets of the strategies that held up best in the backtest, applied to this race
+    g = rows.assign(p_final=rows["p"], win_odds=rows["odds"])
+    inv = 1.0 / g["win_odds"]
+    g["p_market"] = inv / inv.sum() if g["win_odds"].notna().all() else np.nan
+    path = ROOT / "reports" / "strategy_top.json"
+    stored = json.loads(path.read_text()) if path.exists() else []
+    validated = strategy.apply_strategies(stored, g, card["race"]["race_id"]) if kind != "yoso" else []
+    return {"card": card, "rows": rows.sort_values("p", ascending=False), "kind": kind, "validated": validated,
             "use_market": use_market, "drawn": drawn, "bets": bets, "top_by_type": top_by_type}
 
 
@@ -151,7 +160,15 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
                "観点別の印は、その観点がこの馬の評価をどれだけ押し上げているかのレース内順位（◎最上位 ○上位 △中位 －下位）。\n")
 
     if kind == "real" and res["drawn"]:
-        out.append(f"### 推奨買い目（資金 {bankroll:,} 円、期待値 {min_ev:.2f} 以上、1/4ケリー配分）\n")
+        out.append(f"### 期待値で選んだ買い目（資金 {bankroll:,} 円、期待値 {min_ev:.2f} 以上、1/4ケリー配分）\n")
+        evp = ROOT / "reports" / "ev_backtest.json"
+        ev = json.loads(evp.read_text()) if evp.exists() else None
+        if ev:
+            out.append(f"この選び方の過去検証: 重賞 {ev['races']} レースで {ev['tickets']:,} 点、的中率 {_pct(ev['hit'])}、"
+                       f"回収率 {_pct(ev['roi'])}（偶然の幅 {_pct(ev['ci_low'])}〜{_pct(ev['ci_high'])}）。\n")
+        else:
+            out.append("**この選び方はまだ過去データで検証できていません**（全券種の確定オッズを取得中）。"
+                       "表の期待値はモデルの計算上の値で、実績の裏付けはありません。参考として見てください。\n")
         if res["bets"]:
             out.append("| 券種 | 買い目 | 的中確率 | オッズ | 期待値 | 購入額 |")
             out.append("|---|---|---|---|---|---|")
@@ -168,6 +185,21 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
             for b in top[:3]:
                 out.append(f"| {bt} | {b.label()} | {_pct(b.prob)} | {b.odds:.1f} | {b.ev:.2f} |")
         out.append("")
+    if res.get("validated"):
+        out.append("### 過去の検証で成績が良かった買い方を当てはめた買い目\n")
+        out.append("| 買い方 | 選び方 | 条件 | 買い目 | 検証回収率 | 前半/後半 | 偶然の幅 | レース数 |")
+        out.append("|---|---|---|---|---|---|---|---|")
+        for v in res["validated"]:
+            sep = "→" if v["bet_type"] in ("馬単", "三連単") else "-"
+            tix = "、".join(sep.join(map(str, t)) for t in v["tickets"][:10])
+            tix += f" ほか{len(v['tickets']) - 10}点" if len(v["tickets"]) > 10 else ""
+            out.append(f"| {v['formation']} | {v['ranker']} | {v['condition']} | {tix} | {_pct(v['roi'])} | "
+                       f"{_pct(v['roi_first'])} / {_pct(v['roi_second'])} | {_pct(v['ci_low'])}〜{_pct(v['ci_high'])} | "
+                       f"{v['races']:,} |")
+        out.append("\n検証回収率は過去の実績で、今後を保証するものではありません。"
+                   "偶然の幅の下限が 100% を下回るものは、プラスと言い切れない買い方です。\n")
+    if kind == "real" and res["drawn"]:
+        pass
     elif kind == "yoso":
         good = rows[rows["ev"] >= min_ev]
         names = "、".join(f"{x['horse_name']}({x['ev']:.2f})" for _, x in good.iterrows()) or "なし"
@@ -188,6 +220,7 @@ def to_json(res: dict) -> dict:
                      "p_fundamental": round(float(x["p_fund"]), 4),
                      "win_odds": None if pd.isna(x["odds"]) else float(x["odds"]),
                      "ev": None if pd.isna(x["ev"]) else round(float(x["ev"]), 3)} for _, x in rows.iterrows()],
+        "validated_strategies": res.get("validated", []),
         "bets": [{"type": b.bet_type, "combo": list(b.combo), "prob": round(b.prob, 5), "odds": b.odds,
                   "ev": round(b.ev, 3), "stake": b.stake} for b in res["bets"]],
     }
