@@ -56,7 +56,7 @@ def months_desc(start: str, end: str) -> list[str]:
 
 def load_state() -> dict:
     p = RAW / "state.json"
-    return json.loads(p.read_text()) if p.exists() else {"complete_months": [], "odds_done": [], "ped_races_done": []}
+    return json.loads(p.read_text()) if p.exists() else {"complete_months": [], "odds_unavailable": [], "ped_races_done": []}
 
 
 def save_state(state: dict) -> None:
@@ -205,13 +205,16 @@ def cmd_results(args) -> int:
 
 
 def cmd_odds(args) -> int:
-    """Final odds of every ticket (all bet types) for graded races, for EV backtests."""
+    """Final odds of every ticket for graded (optionally all open-class) races, for EV backtests.
+
+    Resumable per bet type: a race is only asked for the types it does not have yet.
+    """
     f = Fetcher(min_interval=args.interval)
     deadline = time.monotonic() + args.max_minutes * 60
     grades = set(args.grades.split(","))
-    types = tuple(int(t) for t in args.types.split(","))
+    want = tuple(int(t) for t in args.types.split(",") if int(t) != 2)   # type 1 carries 複勝 too
     state = load_state()
-    done = set(state.get("odds_done", []))
+    unavailable = set(state.get("odds_unavailable", []))
     last_push = time.monotonic()
     rc = 0
     for ym in months_desc(args.start, args.end):
@@ -222,47 +225,51 @@ def cmd_odds(args) -> int:
         if args.op_class:                      # every open-class race (OP, Listed and graded)
             sel |= races["class"].eq("OP")
         sel &= races["surface"].isin(["芝", "ダ"])
-        target = [r for r in races.loc[sel, "race_id"] if r not in done]
-        if not target:
+        old = read_month("odds", ym)
+        have = old.groupby("race_id")["bet_type"].agg(set).to_dict() if len(old) else {}
+        todo = []
+        for rid in races.loc[sel, "race_id"]:
+            missing = [t for t in want if nk.ODDS_TYPE[t] not in have.get(rid, set())]
+            if missing and rid not in unavailable:
+                todo.append((rid, missing))
+        if not todo:
             continue
         rows = []
         try:
-            for rid in target:
+            for rid, missing in todo:
                 if time.monotonic() > deadline:
                     break
-                ok = True
-                for t in types:
-                    if t == 2:
-                        continue  # the type 1 response already carries 複勝
+                got = 0
+                for t in missing:
                     body = fetch_text(f, nk.url_odds(rid, t), referer=nk.url_shutuba(rid))
-                    types = (1, 2) if t == 1 else (t,)
-                    for tt in types:
+                    for tt in ((1, 2) if t == 1 else (t,)):
                         o = nk.parse_odds(body, tt)
                         if o["status"] != "result" or not o["odds"]:
-                            ok = ok and tt == 2
                             continue
+                        got += 1
                         for combo, (lo, hi) in o["odds"].items():
                             rows.append((rid, nk.ODDS_TYPE[tt], "-".join(map(str, combo)), lo, hi))
-                    if not ok:
+                    if not got:               # the first type came back empty: odds are not served
+                        unavailable.add(rid)
                         break
-                done.add(rid)  # also marks races whose odds are no longer served
-                print(f"odds {rid} ok={ok} requests={f.n_requests}", flush=True)
+                print(f"odds {rid} types={missing} tables={got} requests={f.n_requests}", flush=True)
         except Blocked as exc:
             print(f"BLOCKED: {exc}", flush=True)
             rc = 2
         if rows:
-            old = read_month("odds", ym)
             new = pd.DataFrame(rows, columns=["race_id", "bet_type", "combo", "odds", "odds_max"])
-            write_month("odds", ym, pd.concat([old, new], ignore_index=True))
-        state["odds_done"] = sorted(done)
+            write_month("odds", ym, pd.concat([old, new], ignore_index=True)
+                        .drop_duplicates(["race_id", "bet_type", "combo"]))
+        state["odds_unavailable"] = sorted(unavailable)
+        state.pop("odds_done", None)
         save_state(state)
         if args.push and time.monotonic() - last_push > args.push_every * 60:
-            git_push(f"Add final odds for graded races {ym}")
+            git_push(f"Add final odds {ym}")
             last_push = time.monotonic()
         if rc or time.monotonic() > deadline:
             break
     if args.push:
-        git_push("Add final odds for graded races")
+        git_push("Add final odds")
     return rc
 
 
