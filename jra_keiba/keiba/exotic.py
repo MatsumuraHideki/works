@@ -28,6 +28,7 @@ from . import betting
 ROOT = Path(__file__).resolve().parent.parent
 CAL_PATH = ROOT / "reports" / "exotic_calibration.json"
 TYPES = ["単勝", "複勝", "馬連", "ワイド", "馬単", "三連複", "三連単"]
+CORE = ["馬連", "ワイド", "三連複"]          # pools collected for every open-class race
 
 
 def blend(p: np.ndarray, q: np.ndarray, a: float, b: float) -> np.ndarray:
@@ -97,10 +98,12 @@ def fit_all(races: dict[str, dict], ids: list[str]) -> dict[str, list[float]]:
     return {bt: list(fit_type([races[r][bt] for r in ids if bt in races[r]])) for bt in TYPES}
 
 
-def evaluate(races: dict[str, dict], thresholds=(0.9, 1.0, 1.05, 1.15)) -> tuple[pd.DataFrame, dict]:
+def evaluate(races: dict[str, dict], thresholds=(0.9, 1.0, 1.05, 1.15)) -> tuple[pd.DataFrame, dict, pd.DataFrame]:
     """Two-fold out-of-sample test: calibrate on one half of the races (by date), bet the other.
 
-    Returns (summary rows per bet type and EV threshold, calibration fitted on all races).
+    Returns (summary rows per bet type and EV threshold, calibration fitted on all races,
+    per-race records). The "全買い目" rows are the no-selection baseline (every ticket
+    with at least 0.5% model probability).
     """
     ids = sorted(races, key=lambda r: races[r]["date"])
     half = len(ids) // 2
@@ -117,6 +120,9 @@ def evaluate(races: dict[str, dict], thresholds=(0.9, 1.0, 1.05, 1.15)) -> tuple
                 pc = blend(t["p"], t["q"], a, b)
                 ev = pc * t["odds"]
                 ev_raw = t["p"] * t["odds"]
+                base = t["p"] >= 0.005
+                rec.append((rid, bt, "全買い目", 0.0, int(base.sum()), float(t["ret"][base].sum()),
+                            int((t["ret"][base] > 0).sum())))
                 for thr in thresholds:
                     for name, e, pp in (("補正後", ev, pc), ("補正なし", ev_raw, t["p"])):
                         sel = (e >= thr) & (pp >= 0.005)
@@ -125,16 +131,35 @@ def evaluate(races: dict[str, dict], thresholds=(0.9, 1.0, 1.05, 1.15)) -> tuple
                                         int((t["ret"][sel] > 0).sum())))
     df = pd.DataFrame(rec, columns=["race_id", "bet_type", "kind", "thr", "n", "ret", "hits"])
     rows = []
+
+    def row(kind, thr, bt, g):
+        by_race = g.groupby("race_id").agg(n=("n", "sum"), r=("ret", "sum"))
+        lo, hi = boot_ci(by_race["n"].to_numpy(dtype=float), by_race["r"].to_numpy())
+        return {"方式": kind, "期待値の基準": "-" if kind == "全買い目" else f"{thr:.2f}以上", "券種": bt,
+                "対象レース": g["race_id"].nunique(), "購入点数": int(g["n"].sum()),
+                "的中率": g["hits"].sum() / g["n"].sum(), "回収率": g["ret"].sum() / g["n"].sum(),
+                "95%下限": lo, "95%上限": hi}
+
     if len(df):
         for (kind, thr, bt), g in df.groupby(["kind", "thr", "bet_type"], sort=False):
-            rows.append({"確率": kind, "期待値の基準": f"{thr:.2f}以上", "券種": bt, "対象レース": g["race_id"].nunique(),
-                         "購入点数": int(g["n"].sum()), "的中率": g["hits"].sum() / g["n"].sum(),
-                         "回収率": g["ret"].sum() / g["n"].sum()})
+            rows.append(row(kind, thr, bt, g))
         for (kind, thr), g in df.groupby(["kind", "thr"], sort=False):
-            rows.append({"確率": kind, "期待値の基準": f"{thr:.2f}以上", "券種": "合計", "対象レース": g["race_id"].nunique(),
-                         "購入点数": int(g["n"].sum()), "的中率": g["hits"].sum() / g["n"].sum(),
-                         "回収率": g["ret"].sum() / g["n"].sum()})
-    return pd.DataFrame(rows), fit_all(races, ids)
+            rows.append(row(kind, thr, "全券種", g))
+            core = g[g["bet_type"].isin(CORE)]
+            if len(core):
+                rows.append(row(kind, thr, "馬連+ワイド+三連複", core))
+    return pd.DataFrame(rows), fit_all(races, ids), df
+
+
+def boot_ci(stake: np.ndarray, ret: np.ndarray, n_boot: int = 1000, seed: int = 0) -> tuple[float, float]:
+    n = len(stake)
+    if n < 20 or stake.sum() == 0:
+        return (float("nan"), float("nan"))
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, n, size=(n_boot, n))
+    s, r = stake[idx].sum(axis=1), ret[idx].sum(axis=1)
+    roi = r / np.where(s > 0, s, np.nan)
+    return float(np.nanpercentile(roi, 2.5)), float(np.nanpercentile(roi, 97.5))
 
 
 def save_calibration(cal: dict, n_races: int) -> None:

@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import betting, features, model, pipeline, strategy
+from . import betting, exotic, features, model, pipeline, strategy
 from .scrape import today_jst
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -107,7 +107,13 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
         probs = betting.bet_probabilities(rows["p"].to_numpy(), [int(x) for x in rows["number"]],
                                           art["lam2"], art["lam3"])
         cand = betting.evaluate_bets(probs, tables)
-        bets = betting.size_bets(betting.select_bets(cand, min_ev=min_ev), bankroll=bankroll)
+        # Same rule as the backtest (reports/backtest.md section 4): every 馬連 / ワイド / 三連複
+        # ticket whose model expected value reaches the threshold, 100 yen each. Buying only
+        # the few highest-EV tickets tested much worse than buying the whole set.
+        bets = sorted((b for b in cand if b.bet_type in exotic.CORE and b.ev >= min_ev and b.prob >= 0.005),
+                      key=lambda b: (exotic.CORE.index(b.bet_type), -b.ev))
+        for b in bets:
+            b.stake = 100
         for bt in betting.BET_TYPES:
             top = sorted((b for b in cand if b.bet_type == bt and b.prob >= 0.005),
                          key=lambda b: b.ev, reverse=True)[:5]
@@ -159,24 +165,27 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
                "観点別の印は、その観点がこの馬の評価をどれだけ押し上げているかのレース内順位（◎最上位 ○上位 △中位 －下位）。\n")
 
     if kind == "real" and res["drawn"]:
-        out.append(f"### 期待値で選んだ買い目（資金 {bankroll:,} 円、期待値 {min_ev:.2f} 以上、1/4ケリー配分）\n")
+        out.append(f"### 期待値で選んだ買い目（馬連・ワイド・三連複、期待値 {min_ev:.2f} 以上を各 100 円）\n")
         evp = ROOT / "reports" / "ev_backtest.json"
         ev = json.loads(evp.read_text()) if evp.exists() else None
         if ev:
-            out.append(f"この選び方の過去検証: 重賞 {ev['races']} レースで {ev['tickets']:,} 点、的中率 {_pct(ev['hit'])}、"
-                       f"回収率 {_pct(ev['roi'])}（偶然の幅 {_pct(ev['ci_low'])}〜{_pct(ev['ci_high'])}）。\n")
+            base = f"。選ばずに買った場合は {_pct(ev['baseline_roi'])}" if ev.get("baseline_roi") else ""
+            out.append(f"過去検証（同じルール、{ev['races']} レース・{ev['tickets']:,} 点）: 的中率 {_pct(ev['hit'])}、"
+                       f"回収率 {_pct(ev['roi'])}（偶然の幅 {_pct(ev['ci_low'])}〜{_pct(ev['ci_high'])}）{base}。"
+                       "偶然の幅の下限が 100% を超えるまでは、プラスと言い切れない買い方です。"
+                       "期待値が特に高い数点だけに絞ると成績が悪化したため、該当する買い目を全部買う前提です。\n")
         else:
-            out.append("**この選び方はまだ過去データで検証できていません**（全券種の確定オッズを取得中）。"
-                       "表の期待値はモデルの計算上の値で、実績の裏付けはありません。参考として見てください。\n")
+            out.append("**この選び方はまだ過去データで検証できていません。**参考として見てください。\n")
         if res["bets"]:
-            out.append("| 券種 | 買い目 | 的中確率 | オッズ | 期待値 | 購入額 |")
-            out.append("|---|---|---|---|---|---|")
-            for b in res["bets"]:
-                out.append(f"| {b.bet_type} | {b.label()} | {_pct(b.prob)} | {b.odds:.1f} | {b.ev:.2f} | {b.stake:,}円 |")
+            for bt in exotic.CORE:
+                sel = [b for b in res["bets"] if b.bet_type == bt]
+                if sel:
+                    out.append(f"- **{bt}**（{len(sel)} 点）: " + "、".join(f"{b.label()}({b.odds:.0f}倍)" for b in sel[:40])
+                               + (f" ほか{len(sel) - 40}点" if len(sel) > 40 else ""))
             stake, ret = betting.portfolio_ev(res["bets"])
-            out.append(f"\n合計 {stake:,} 円、期待払戻 {ret:,.0f} 円（期待回収率 {ret / stake * 100:.0f}%）\n")
+            out.append(f"\n合計 {len(res['bets'])} 点 {stake:,} 円。\n")
         else:
-            out.append("期待値の基準を満たす買い目なし。このレースは**見送り**。\n")
+            out.append("基準を満たす買い目なし。\n")
         out.append("### 券種別の期待値上位\n")
         out.append("| 券種 | 買い目 | 的中確率 | オッズ | 期待値 |")
         out.append("|---|---|---|---|---|")
@@ -230,7 +239,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--race-ids", default="")
     ap.add_argument("--bankroll", type=int, default=100_000)
-    ap.add_argument("--min-ev", type=float, default=1.15)
+    ap.add_argument("--min-ev", type=float, default=1.0)
     ap.add_argument("--retrain", action="store_true")
     args = ap.parse_args(argv)
     ids = [x for x in args.race_ids.split(",") if x]

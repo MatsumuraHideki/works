@@ -185,7 +185,7 @@ def _md(df: pd.DataFrame, pct: tuple[str, ...] = ()) -> str:
         return "(該当なし)\n"
     d = df.copy()
     for c in d.columns:
-        if c in pct or "率" in c:
+        if c in pct or "率" in c or "下限" in c or "上限" in c:
             d[c] = [f"{v * 100:.1f}%" if pd.notna(v) else "" for v in d[c]]
         elif d[c].dtype.kind == "f":
             d[c] = [f"{v:.3f}" if abs(v) < 10 else f"{v:.1f}" for v in d[c]]
@@ -240,22 +240,40 @@ def write_report(res: dict, raw: Path = features.RAW, log=print) -> str:
 
     odds_df = features.load_odds(raw)
     if len(odds_df):
+        from . import exotic, strategy
         _, _, payouts = features.load_raw(raw)
-        out.append("## 4. 全券種を期待値で選んだ場合（重賞、確定オッズ全通り）\n")
-        for thr in (1.05, 1.15, 1.3):
-            summ, tlog = exotic_backtest(oos, odds_df, payouts, art["lam2"], art["lam3"], min_ev=thr)
-            if thr == 1.15 and len(tlog):
-                by_race = tlog.groupby("race_id").agg(n=("ret_flat", "size"), r=("ret_flat", "sum"))
-                from .strategy import boot_ci
-                lo, hi = boot_ci(by_race["n"].to_numpy(dtype=float), by_race["r"].to_numpy())
-                REPORTS.mkdir(parents=True, exist_ok=True)
+        tables = odds_tables(odds_df)
+        pay = strategy.payout_maps(payouts[payouts["race_id"].isin(tables)])
+        ex = exotic.build(oos, tables, pay, art["lam2"], art["lam3"])
+        summ, cal, _ = exotic.evaluate(ex)
+        exotic.save_calibration(cal, len(ex))
+        out.append("## 4. 複数頭の券種を期待値で選んだ場合（全通りの確定オッズがあるレース）\n")
+        out.append(f"対象 {len(ex)} レース。モデルの勝率から各買い目の的中確率を計算し、期待値 = 確率 × オッズ が"
+                   "基準以上の買い目をすべて 100 円ずつ買った場合です。\n\n"
+                   "- **全買い目**: 選ばずに買った場合（比較の基準）\n"
+                   "- **補正なし**: モデルの確率をそのまま使用\n"
+                   "- **補正後**: モデルの確率を、その券種自体のオッズが示す確率と混ぜてから使用"
+                   "（混ぜ方は対象レースの半分で決め、残り半分で検証）\n")
+        if len(summ):
+            tot = summ[summ["券種"].isin(["全券種", "馬連+ワイド+三連複"])].sort_values(["券種", "方式", "期待値の基準"])
+            out.append("### 合計\n")
+            out.append(_md(tot.drop(columns=["対象レース"])))
+            out.append("### 券種別（期待値 1.00 以上）\n")
+            one = summ[(summ["期待値の基準"].isin(["1.00以上", "-"])) & ~summ["券種"].isin(["全券種", "馬連+ワイド+三連複"])]
+            out.append(_md(one.sort_values(["券種", "方式"]).drop(columns=["対象レース"])))
+            out.append("### 補正の重み（a: モデル、b: その券種のオッズ）\n")
+            out.append(_md(pd.DataFrame([{"券種": k, "a（モデル）": v[0], "b（オッズ）": v[1]} for k, v in cal.items()])))
+            out.append("a が 0 より大きい券種は、その券種のオッズに織り込まれていない情報をモデルが持っていることを示します。\n")
+            # the rule the live predictions use: raw model EV >= 1.0 on the three core pools
+            pick = summ[(summ["方式"] == "補正なし") & (summ["期待値の基準"] == "1.00以上") & (summ["券種"] == "馬連+ワイド+三連複")]
+            base = summ[(summ["方式"] == "全買い目") & (summ["券種"] == "馬連+ワイド+三連複")]
+            if len(pick):
+                r = pick.iloc[0]
                 (REPORTS / "ev_backtest.json").write_text(json.dumps({
-                    "min_ev": thr, "races": int(tlog["race_id"].nunique()), "tickets": int(len(tlog)),
-                    "hit": float(tlog["hit"].mean()), "roi": float(tlog["ret_flat"].mean()),
-                    "ci_low": lo, "ci_high": hi}))
-            n_races = oos[oos["race_id"].isin(set(odds_df["race_id"]))]["race_id"].nunique()
-            out.append(f"### 期待値 {thr:.2f} 以上の買い目（対象 {n_races} レース）\n")
-            out.append(_md(summ))
+                    "min_ev": 1.0, "types": exotic.CORE, "races": int(len(ex)), "tickets": int(r["購入点数"]),
+                    "hit": float(r["的中率"]), "roi": float(r["回収率"]), "ci_low": float(r["95%下限"]),
+                    "ci_high": float(r["95%上限"]),
+                    "baseline_roi": float(base.iloc[0]["回収率"]) if len(base) else None}, ensure_ascii=False))
     out.append("## 注意\n")
     out.append("- 検証は確定オッズで行っています。実際に買う時点のオッズは確定オッズと異なり、"
                "直前に人気が動くと期待値は変わります。")
