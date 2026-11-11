@@ -1,0 +1,210 @@
+{
+ "race": {
+  "race_id": "202605050311",
+  "name": "武蔵野S",
+  "grade": "G3",
+  "race_no": 11,
+  "place": "東京",
+  "date": "2026-11-14",
+  "start_time": "15:30",
+  "surface": "ダ",
+  "distance": 1600,
+  "direction": "左",
+  "inout": null,
+  "weather": null,
+  "going": null,
+  "kai": 5,
+  "day": 3,
+  "cond": "サラ系3歳以上 オープン (国際)(指) 別定",
+  "class": "OP",
+  "course_raw": "15:30発走 / ダ1600m 左",
+  "n_runners": 20
+ },
+ "odds_kind": "yoso",
+ "odds_time": "2026-11-12 08:45:38",
+ "fetched_at": "2026-11-12T08:49:19+09:00",
+ "runners": [
+  {
+   "number": null,
+   "horse": "ドンインザムード",
+   "horse_id": "2022106942",
+   "p": 0.227,
+   "p_fundamental": 0.1759,
+   "win_odds": 3.6,
+   "ev": 0.817
+  },
+  {
+   "number": null,
+   "horse": "ドンエレクトス",
+   "horse_id": "2023101269",
+   "p": 0.1608,
+   "p_fundamental": 0.1045,
+   "win_odds": 4.9,
+   "ev": 0.788
+  },
+  {
+   "number": null,
+   "horse": "ヘニーガイスト",
+   "horse_id": "2022104865",
+   "p": 0.1193,
+   "p_fundamental": 0.1643,
+   "win_odds": 6.7,
+   "ev": 0.799
+  },
+  {
+   "number": null,
+   "horse": "エンペラーワケア",
+   "horse_id": "2020101547",
+   "p": 0.0787,
+   "p_fundamental": 0.0923,
+   "win_odds": 10.9,
+   "ev": 0.857
+  },
+  {
+   "number": null,
+   "horse": "ジェイパームス",
+   "horse_id": "2020103331",
+   "p": 0.0675,
+   "p_fundamental": 0.0582,
+   "win_odds": 12.5,
+   "ev": 0.844
+  },
+  {
+   "number": null,
+   "horse": "ルヴァレドクール",
+   "horse_id": "2022100994",
+   "p": 0.0641,
+   "p_fundamental": 0.065,
+   "win_odds": 11.6,
+   "ev": 0.743
+  },
+  {
+   "number": null,
+   "horse": "ライノ",
+   "horse_id": "2022105022",
+   "p": 0.05,
+   "p_fundamental": 0.035,
+   "win_odds": 16.5,
+   "ev": 0.825
+  },
+  {
+   "number": null,
+   "horse": "ジャスティンアース",
+   "horse_id": "2021103282",
+   "p": 0.0458,
+   "p_fundamental": 0.0814,
+   "win_odds": 16.9,
+   "ev": 0.773
+  },
+  {
+   "number": null,
+   "horse": "オメガギネス",
+   "horse_id": "2020102904",
+   "p": 0.0298,
+   "p_fundamental": 0.0301,
+   "win_odds": 27.8,
+   "ev": 0.828
+  },
+  {
+   "number": null,
+   "horse": "ロックターミガン",
+   "horse_id": "2023106816",
+   "p": 0.0268,
+   "p_fundamental": 0.0188,
+   "win_odds": 33.1,
+   "ev": 0.887
+  },
+  {
+   "number": null,
+   "horse": "ダノンフィーゴ",
+   "horse_id": "2022100623",
+   "p": 0.0261,
+   "p_fundamental": 0.0507,
+   "win_odds": 29.9,
+   "ev": 0.781
+  },
+  {
+   "number": null,
+   "horse": "クールブロン",
+   "horse_id": "2020102724",
+   "p": 0.0204,
+   "p_fundamental": 0.022,
+   "win_odds": 36.0,
+   "ev": 0.736
+  },
+  {
+   "number": null,
+   "horse": "アピーリングルック",
+   "horse_id": "2021104914",
+   "p": 0.0187,
+   "p_fundamental": 0.0222,
+   "win_odds": 41.2,
+   "ev": 0.772
+  },
+  {
+   "number": null,
+   "horse": "ゴッドブルービー",
+   "horse_id": "2020106063",
+   "p": 0.0136,
+   "p_fundamental": 0.0137,
+   "win_odds": 54.5,
+   "ev": 0.739
+  },
+  {
+   "number": null,
+   "horse": "トリリオンボーイ",
+   "horse_id": "2022102493",
+   "p": 0.0136,
+   "p_fundamental": 0.0109,
+   "win_odds": 55.4,
+   "ev": 0.751
+  },
+  {
+   "number": null,
+   "horse": "バトルクライ",
+   "horse_id": "2019103879",
+   "p": 0.0133,
+   "p_fundamental": 0.0156,
+   "win_odds": 56.5,
+   "ev": 0.754
+  },
+  {
+   "number": null,
+   "horse": "シュラザック",
+   "horse_id": "2022102117",
+   "p": 0.0121,
+   "p_fundamental": 0.0167,
+   "win_odds": 58.4,
+   "ev": 0.705
+  },
+  {
+   "number": null,
+   "horse": "ワイワイレジェンド",
+   "horse_id": "2021103812",
+   "p": 0.0075,
+   "p_fundamental": 0.0123,
+   "win_odds": 99.6,
+   "ev": 0.75
+  },
+  {
+   "number": null,
+   "horse": "レアンダー",
+   "horse_id": "2021100836",
+   "p": 0.0028,
+   "p_fundamental": 0.007,
+   "win_odds": 227.3,
+   "ev": 0.641
+  },
+  {
+   "number": null,
+   "horse": "ハセドン",
+   "horse_id": "2019103593",
+   "p": 0.0021,
+   "p_fundamental": 0.0034,
+   "win_odds": 281.3,
+   "ev": 0.601
+  }
+ ],
+ "validated_strategies": [],
+ "bets": []
+}

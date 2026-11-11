@@ -1,0 +1,147 @@
+{
+ "race": {
+  "race_id": "202608050311",
+  "name": "デイリー杯2歳S",
+  "grade": "G2",
+  "race_no": 11,
+  "place": "京都",
+  "date": "2026-11-14",
+  "start_time": "15:45",
+  "surface": "芝",
+  "distance": 1600,
+  "direction": "右",
+  "inout": "外",
+  "weather": null,
+  "going": null,
+  "kai": 5,
+  "day": 3,
+  "cond": "サラ系2歳 オープン (国際)(指) 馬齢",
+  "class": "OP",
+  "course_raw": "15:45発走 / 芝1600m 右 外 B",
+  "n_runners": 13
+ },
+ "odds_kind": "yoso",
+ "odds_time": "2026-11-12 08:45:56",
+ "fetched_at": "2026-11-12T08:49:26+09:00",
+ "runners": [
+  {
+   "number": null,
+   "horse": "ブラッドバローズ",
+   "horse_id": "2024101722",
+   "p": 0.2659,
+   "p_fundamental": 0.1813,
+   "win_odds": 3.0,
+   "ev": 0.798
+  },
+  {
+   "number": null,
+   "horse": "キューティボンド",
+   "horse_id": "2024106316",
+   "p": 0.2199,
+   "p_fundamental": 0.2228,
+   "win_odds": 3.8,
+   "ev": 0.836
+  },
+  {
+   "number": null,
+   "horse": "スマートピナクル",
+   "horse_id": "2024102251",
+   "p": 0.1576,
+   "p_fundamental": 0.0761,
+   "win_odds": 5.0,
+   "ev": 0.788
+  },
+  {
+   "number": null,
+   "horse": "シェフザーデ",
+   "horse_id": "2024103911",
+   "p": 0.0685,
+   "p_fundamental": 0.0615,
+   "win_odds": 11.1,
+   "ev": 0.76
+  },
+  {
+   "number": null,
+   "horse": "トップチェッカー",
+   "horse_id": "2024100521",
+   "p": 0.0606,
+   "p_fundamental": 0.1258,
+   "win_odds": 12.3,
+   "ev": 0.745
+  },
+  {
+   "number": null,
+   "horse": "ブレイクアウェイ",
+   "horse_id": "2024105872",
+   "p": 0.0562,
+   "p_fundamental": 0.0876,
+   "win_odds": 13.2,
+   "ev": 0.742
+  },
+  {
+   "number": null,
+   "horse": "インカルナータ",
+   "horse_id": "2024106282",
+   "p": 0.0418,
+   "p_fundamental": 0.0218,
+   "win_odds": 20.0,
+   "ev": 0.835
+  },
+  {
+   "number": null,
+   "horse": "リュウトウコヤク",
+   "horse_id": "2024107248",
+   "p": 0.0293,
+   "p_fundamental": 0.0351,
+   "win_odds": 28.8,
+   "ev": 0.845
+  },
+  {
+   "number": null,
+   "horse": "ルースソラール",
+   "horse_id": "2024107063",
+   "p": 0.0287,
+   "p_fundamental": 0.0485,
+   "win_odds": 26.0,
+   "ev": 0.746
+  },
+  {
+   "number": null,
+   "horse": "レオンティウス",
+   "horse_id": "2024104668",
+   "p": 0.0247,
+   "p_fundamental": 0.0277,
+   "win_odds": 32.5,
+   "ev": 0.804
+  },
+  {
+   "number": null,
+   "horse": "スーサンコルティナ",
+   "horse_id": "2024102040",
+   "p": 0.0189,
+   "p_fundamental": 0.0306,
+   "win_odds": 38.7,
+   "ev": 0.73
+  },
+  {
+   "number": null,
+   "horse": "ヒアカムズザサン",
+   "horse_id": "2024106020",
+   "p": 0.0174,
+   "p_fundamental": 0.0347,
+   "win_odds": 46.6,
+   "ev": 0.809
+  },
+  {
+   "number": null,
+   "horse": "コルサロ",
+   "horse_id": "2024104709",
+   "p": 0.0106,
+   "p_fundamental": 0.0466,
+   "win_odds": 70.4,
+   "ev": 0.747
+  }
+ ],
+ "validated_strategies": [],
+ "bets": []
+}

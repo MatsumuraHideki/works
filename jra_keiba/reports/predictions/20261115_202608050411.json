@@ -1,0 +1,237 @@
+{
+ "race": {
+  "race_id": "202608050411",
+  "name": "エリザベス女王杯",
+  "grade": "G1",
+  "race_no": 11,
+  "place": "京都",
+  "date": "2026-11-15",
+  "start_time": "15:40",
+  "surface": "芝",
+  "distance": 2200,
+  "direction": "右",
+  "inout": "外",
+  "weather": null,
+  "going": null,
+  "kai": 5,
+  "day": 4,
+  "cond": "サラ系3歳以上 オープン (国際) 牝(指) 定量",
+  "class": "OP",
+  "course_raw": "15:40発走 / 芝2200m 右 外 B",
+  "n_runners": 23
+ },
+ "odds_kind": "yoso",
+ "odds_time": "2026-11-12 08:46:33",
+ "fetched_at": "2026-11-12T08:49:36+09:00",
+ "runners": [
+  {
+   "number": null,
+   "horse": "カムニャック",
+   "horse_id": "2022105402",
+   "p": 0.2686,
+   "p_fundamental": 0.3007,
+   "win_odds": 3.3,
+   "ev": 0.886
+  },
+  {
+   "number": null,
+   "horse": "ラフターラインズ",
+   "horse_id": "2023107154",
+   "p": 0.0997,
+   "p_fundamental": 0.0486,
+   "win_odds": 7.7,
+   "ev": 0.768
+  },
+  {
+   "number": null,
+   "horse": "アクアヴァーナル",
+   "horse_id": "2021105433",
+   "p": 0.0954,
+   "p_fundamental": 0.0403,
+   "win_odds": 7.6,
+   "ev": 0.725
+  },
+  {
+   "number": null,
+   "horse": "ジョスラン",
+   "horse_id": "2022104767",
+   "p": 0.082,
+   "p_fundamental": 0.1135,
+   "win_odds": 10.1,
+   "ev": 0.828
+  },
+  {
+   "number": null,
+   "horse": "ジュウリョクピエロ",
+   "horse_id": "2023102979",
+   "p": 0.0761,
+   "p_fundamental": 0.0434,
+   "win_odds": 9.9,
+   "ev": 0.753
+  },
+  {
+   "number": null,
+   "horse": "クイーンズウォーク",
+   "horse_id": "2021105414",
+   "p": 0.0663,
+   "p_fundamental": 0.072,
+   "win_odds": 12.1,
+   "ev": 0.802
+  },
+  {
+   "number": null,
+   "horse": "ラヴァンダ",
+   "horse_id": "2021107098",
+   "p": 0.0433,
+   "p_fundamental": 0.0566,
+   "win_odds": 18.2,
+   "ev": 0.788
+  },
+  {
+   "number": null,
+   "horse": "マリアイリダータ",
+   "horse_id": "2022105064",
+   "p": 0.0425,
+   "p_fundamental": 0.0399,
+   "win_odds": 18.3,
+   "ev": 0.778
+  },
+  {
+   "number": null,
+   "horse": "チェルヴィニア",
+   "horse_id": "2021105643",
+   "p": 0.0356,
+   "p_fundamental": 0.0263,
+   "win_odds": 23.5,
+   "ev": 0.836
+  },
+  {
+   "number": null,
+   "horse": "シャドウメテオ",
+   "horse_id": "2022105454",
+   "p": 0.0348,
+   "p_fundamental": 0.0327,
+   "win_odds": 20.7,
+   "ev": 0.72
+  },
+  {
+   "number": null,
+   "horse": "セキトバイースト",
+   "horse_id": "2021103975",
+   "p": 0.0244,
+   "p_fundamental": 0.0213,
+   "win_odds": 33.5,
+   "ev": 0.817
+  },
+  {
+   "number": null,
+   "horse": "コガネノソラ",
+   "horse_id": "2021106823",
+   "p": 0.0179,
+   "p_fundamental": 0.0247,
+   "win_odds": 40.7,
+   "ev": 0.731
+  },
+  {
+   "number": null,
+   "horse": "レイクラシック",
+   "horse_id": "2023103906",
+   "p": 0.0174,
+   "p_fundamental": 0.0123,
+   "win_odds": 45.7,
+   "ev": 0.797
+  },
+  {
+   "number": null,
+   "horse": "エストゥペンダ",
+   "horse_id": "2022101192",
+   "p": 0.015,
+   "p_fundamental": 0.0185,
+   "win_odds": 47.8,
+   "ev": 0.718
+  },
+  {
+   "number": null,
+   "horse": "ケリフレッドアスク",
+   "horse_id": "2022102296",
+   "p": 0.0131,
+   "p_fundamental": 0.015,
+   "win_odds": 57.9,
+   "ev": 0.756
+  },
+  {
+   "number": null,
+   "horse": "ヴーレヴー",
+   "horse_id": "2022104617",
+   "p": 0.013,
+   "p_fundamental": 0.0436,
+   "win_odds": 60.2,
+   "ev": 0.781
+  },
+  {
+   "number": null,
+   "horse": "カテリーナ",
+   "horse_id": "2021101485",
+   "p": 0.0107,
+   "p_fundamental": 0.0103,
+   "win_odds": 69.1,
+   "ev": 0.742
+  },
+  {
+   "number": null,
+   "horse": "レーゼドラマ",
+   "horse_id": "2022105346",
+   "p": 0.0106,
+   "p_fundamental": 0.0113,
+   "win_odds": 73.1,
+   "ev": 0.773
+  },
+  {
+   "number": null,
+   "horse": "エセルフリーダ",
+   "horse_id": "2021105138",
+   "p": 0.0097,
+   "p_fundamental": 0.0148,
+   "win_odds": 78.8,
+   "ev": 0.766
+  },
+  {
+   "number": null,
+   "horse": "ニシノティアモ",
+   "horse_id": "2021100244",
+   "p": 0.0096,
+   "p_fundamental": 0.0238,
+   "win_odds": 83.4,
+   "ev": 0.8
+  },
+  {
+   "number": null,
+   "horse": "ステレンボッシュ",
+   "horse_id": "2021105743",
+   "p": 0.0082,
+   "p_fundamental": 0.0157,
+   "win_odds": 87.7,
+   "ev": 0.718
+  },
+  {
+   "number": null,
+   "horse": "サフィラ",
+   "horse_id": "2021105541",
+   "p": 0.0047,
+   "p_fundamental": 0.0074,
+   "win_odds": 132.6,
+   "ev": 0.621
+  },
+  {
+   "number": null,
+   "horse": "アマイ",
+   "horse_id": "2020100809",
+   "p": 0.0015,
+   "p_fundamental": 0.0072,
+   "win_odds": 412.3,
+   "ev": 0.605
+  }
+ ],
+ "validated_strategies": [],
+ "bets": []
+}
