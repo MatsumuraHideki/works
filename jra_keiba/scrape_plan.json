@@ -1,66 +1,130 @@
 {
- "note": "Chunks run one after another. Results / odds / pedigree chunks each resume where the previous one stopped.",
+ "note": "Chunks run one after another. Results / odds / pedigree chunks each resume where the previous one stopped, so repeating a chunk simply continues further back in time.",
  "chunks": [
   {
-   "cmd": "odds",
-   "from": "2024-12",
-   "to": "2023-01",
-   "max_minutes": 240
-  },
-  {
-   "cmd": "odds",
-   "from": "2026-11",
-   "to": "2023-01",
-   "max_minutes": 330,
-   "args": "--op-class --types 1,4,5,7"
-  },
-  {
    "cmd": "results",
    "from": "2026-11",
-   "to": "2019-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "pedigree",
-   "from": "2026-11",
-   "to": "2021-01",
+   "to": "2010-01",
    "max_minutes": 330
   },
   {
    "cmd": "results",
    "from": "2026-11",
-   "to": "2019-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "pedigree",
-   "from": "2026-11",
-   "to": "2019-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "results",
-   "from": "2026-11",
-   "to": "2019-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "pedigree",
-   "from": "2026-11",
-   "to": "2019-01",
+   "to": "2010-01",
    "max_minutes": 330
   },
   {
    "cmd": "odds",
    "from": "2022-12",
-   "to": "2021-10",
-   "max_minutes": 330,
+   "to": "2010-01",
+   "max_minutes": 240,
+   "args": "--op-class --types 1,4,5,7"
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "odds",
+   "from": "2022-12",
+   "to": "2010-01",
+   "max_minutes": 240,
+   "args": "--op-class --types 1,4,5,7"
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "odds",
+   "from": "2022-12",
+   "to": "2010-01",
+   "max_minutes": 240,
+   "args": "--op-class --types 1,4,5,7"
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "odds",
+   "from": "2022-12",
+   "to": "2010-01",
+   "max_minutes": 240,
+   "args": "--op-class --types 1,4,5,7"
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "odds",
+   "from": "2022-12",
+   "to": "2010-01",
+   "max_minutes": 240,
+   "args": "--op-class --types 1,4,5,7"
+  },
+  {
+   "cmd": "results",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "odds",
+   "from": "2022-12",
+   "to": "2010-01",
+   "max_minutes": 240,
    "args": "--op-class --types 1,4,5,7"
   },
   {
    "cmd": "pedigree",
    "from": "2026-11",
-   "to": "2019-01",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "pedigree",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 330
+  },
+  {
+   "cmd": "pedigree",
+   "from": "2026-11",
+   "to": "2010-01",
    "max_minutes": 330
   }
  ]

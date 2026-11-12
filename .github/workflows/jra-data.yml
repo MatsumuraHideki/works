@@ -92,3 +92,73 @@ jobs:
       index: 9
       from: ${{ inputs.from || '' }}
       to: ${{ inputs.to || '' }}
+  c10:
+    needs: c9
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 10
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c11:
+    needs: c10
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 11
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c12:
+    needs: c11
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 12
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c13:
+    needs: c12
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 13
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c14:
+    needs: c13
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 14
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c15:
+    needs: c14
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 15
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c16:
+    needs: c15
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 16
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c17:
+    needs: c16
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 17
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c18:
+    needs: c17
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 18
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c19:
+    needs: c18
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 19
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
