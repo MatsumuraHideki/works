@@ -1,0 +1,566 @@
+<title>ボードゲーム朝夕刊</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<!--
+  編集メモ（定期実行用）
+  - 号ごとに差し替えるのは、本文中の EDITION:START〜EDITION:END と
+    BACKNUMBER:START〜BACKNUMBER:END の2つのマーカーの間だけ。style と script、ページ名、追跡リスト、フッターは変えない。
+  - 号の保存: 差し替える前の号は、EDITION:START〜EDITION:END の間の中身をそのまま
+    editions/<号ID>.html として一緒に公開する（doctype などは付けない断片）。号IDは masthead の data-ed-id
+    （発行時刻 YYYY-MM-DD-HHMM、日本時間）。バックナンバーの「本文を読む」は #ed-<号ID> へのリンクで、
+    script がそのファイルを読み込んで表示する。
+  - 面: <section class="desk" id="favorites|bgg|heavy|crowdfunding|mystery|japan|column" data-nav="目次の名前" data-tone="fav|bgw|hv|cf|mm|jp|ex">
+    色はボードゲームの手番色（青・橙・赤・黄・黒・緑・紫）。BGGウォッチ（bgg）は data-nav="BGGウォッチ"。マーダーミステリー面（mystery）はシナリオの中身・犯人・トリックに一切触れない。目次と記事数は script が自動で作る。コラムがない号は column の section ごと省く。
+  - 記事: <article class="item"> … div.meta(.tag/.src/time) → h3 → (ul.specs) → p → (dl.fund) → (p.fit) → (p.note) → ul.links
+    ・ul.specs（重ゲー・新作向け）: <li><b>1–4</b>人</li><li><b>90–150</b>分</li>
+      <li>重さ <span class="wt-meter" style="--w:3.64"></span><b>3.64</b></li>（--w はBGGのWeight 1〜5。確認できない場合は <li>重さ <b>未掲載</b></li>）
+      マーダーミステリーは重さを書かず <li><b>5</b>人</li><li><b>3</b>時間</li><li>GM <b>不要</b></li> のようにする。
+    ・dl.fund（クラファン向け）: <div><dt>集まった額</dt><dd>€1,234,567</dd></div> を並べる（支援者・終了・基本プレッジ・日本発送など）。
+      状況は meta に <span class="st st-live">実施中</span> / st-soon「開始予定」 / st-end「終了」 を入れる。
+    ・p.fit（好みとの相性）: <p class="fit"><span class="mk">相性◎</span>バラージ好きに：…</p>（◎・○・△の3段階）
+    ・注意喚起（発送遅延、価格改定、締切直前など）は .tag に tag-alert を足す。
+  - 締切カレンダー: クラファン面の先頭に div.tbl > table。列は3つ（キャンペーン／終了（日本時間）／状況）で、場所は
+    <th>キャンペーン名<small>Gamefound</small></th> のように th の中に small で書く（スマホで横にはみ出さないよう4列以上にしない）。
+  - 短信: div.briefs > h3「短信」 + ul > li（1行ニュースとリンク、time）。
+  - BGGウォッチ（bgg面）: 先頭に div.tbl.hot > table（caption「BGGホットネス 上位10（確認時刻）」、列は 順位／ゲーム／前号比 の3つ）。
+    行: <tr data-bgg="ゲームID" class="is-pick"><td class="rk">1</td><th><a href="https://boardgamegeek.com/boardgame/ゲームID" target="_blank" rel="noopener">ゲーム名</a>
+        <small>2026・重さ <span class="wt-meter" style="--w:3.20"></span>3.20</small></th><td><span class="chg up">↑3</span></td></tr>
+    前号比は前号の表の data-bgg と比べて ↑n（chg up）／↓n（chg down）／→（chg）／NEW（chg new）。前号に表がなければ全行 → にせず「—」。
+    class="is-pick" は重さ3.5以上か、お気に入りの関連作の行だけに付ける。重さが取れない行は small に発売年だけ書く。
+    表のあとに、BGG公式ブログの新着とお気に入りのNews掲示板の新しいスレッドを、記事（article.item）か短信で載せる。
+-->
+<style>
+/* Layout: one reading column (max 42rem). Masthead → checks → desks (favorites / BGG watch / heavy / crowdfunding / murder mystery / japan / column) → back numbers.
+   Desk colors borrow the classic player colors: blue, orange, red, yellow, black, green, purple. */
+:root{
+  --bg:#f1f4f3;
+  --surface:#ffffff;
+  --ink:#18211f;
+  --muted:#5c6966;
+  --line:#d6dedb;
+  --track:#e3e9e7;
+  --fav:#2a55b5; --fav-soft:#e4ebf9;
+  --bgw:#b4520c; --bgw-soft:#fbe9dc;
+  --hv:#b2332c;  --hv-soft:#f8e5e3;
+  --cf:#9a6200;  --cf-soft:#f7ecd4;
+  --mm:#3b3e57;  --mm-soft:#e6e7ef;
+  --jp:#1d7445;  --jp-soft:#dff1e6;
+  --ex:#6a44ab;  --ex-soft:#ece5f7;
+  --alert:#b2332c; --alert-soft:#f8e5e3;
+  --font-display:"Dela Gothic One","Hiragino Sans","Noto Sans JP",sans-serif;
+  --font-body:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101615; --surface:#172020; --ink:#e3eae8; --muted:#97a6a2; --line:#283432; --track:#22302d;
+    --fav:#8aa9ff; --fav-soft:#1b2744;
+    --bgw:#ffa261; --bgw-soft:#3a2312;
+    --hv:#ff8d84;  --hv-soft:#3a1d1b;
+    --cf:#eab558;  --cf-soft:#33270e;
+    --mm:#b8bde0;  --mm-soft:#252839;
+    --jp:#5fd18f;  --jp-soft:#123224;
+    --ex:#bba1f2;  --ex-soft:#271f40;
+    --alert:#ff8d84; --alert-soft:#3a1d1b;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101615; --surface:#172020; --ink:#e3eae8; --muted:#97a6a2; --line:#283432; --track:#22302d;
+  --fav:#8aa9ff; --fav-soft:#1b2744;
+  --bgw:#ffa261; --bgw-soft:#3a2312;
+  --hv:#ff8d84;  --hv-soft:#3a1d1b;
+  --cf:#eab558;  --cf-soft:#33270e;
+  --mm:#b8bde0;  --mm-soft:#252839;
+  --jp:#5fd18f;  --jp-soft:#123224;
+  --ex:#bba1f2;  --ex-soft:#271f40;
+  --alert:#ff8d84; --alert-soft:#3a1d1b;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:var(--font-body); font-size:16px; line-height:1.8;
+  -webkit-text-size-adjust:100%;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{
+  max-width:42rem; margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:28px 56px;
+  display:flex; flex-direction:column; gap:36px;
+}
+a{color:inherit}
+a:focus-visible, summary:focus-visible{outline:2px solid var(--fav); outline-offset:2px; border-radius:4px}
+h1,h2,h3{text-wrap:balance; word-break:auto-phrase; line-height:1.45; margin:0}
+p{margin:0}
+
+/* masthead */
+.head{display:flex; flex-direction:column; gap:12px}
+.brand{display:flex; align-items:baseline; justify-content:space-between; gap:6px 12px; flex-wrap:wrap}
+.brand h1{font-family:var(--font-display); font-weight:400; font-size:1.75rem; letter-spacing:.04em; line-height:1.3}
+.brand .schedule{font-family:var(--font-mono); font-size:.75rem; color:var(--muted)}
+.watch{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.watch .lbl{font-size:.72rem; font-weight:700; letter-spacing:.12em; color:var(--muted); margin-right:2px}
+.watch li:not(.lbl){font-size:.8rem; padding:1px 9px; border-radius:999px; border:1px solid var(--line); background:var(--surface)}
+
+.masthead{display:flex; flex-direction:column; gap:14px}
+.edition{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:.95rem}
+.ed-label{
+  font-weight:700; padding:2px 10px; border-radius:999px;
+  background:var(--ink); color:var(--bg); font-size:.85rem; letter-spacing:.06em;
+}
+.edition time{font-family:var(--font-mono); color:var(--muted); font-size:.85rem}
+.lede{font-size:1.08rem; line-height:1.85}
+.checks{
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:14px 16px; display:flex; flex-direction:column; gap:6px;
+}
+.checks h2{font-size:.8rem; letter-spacing:.12em; color:var(--muted); font-weight:700}
+.checks ul{margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:4px}
+.checks li{font-size:.95rem; line-height:1.7}
+
+/* table of contents */
+.toc{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
+  background:var(--bg); margin-block:-12px; padding-block:10px;
+  display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
+  border-bottom:1px solid var(--line);
+}
+.toc::-webkit-scrollbar{display:none}
+.toc a{
+  flex:0 0 auto; text-decoration:none; font-size:.85rem; font-weight:700;
+  padding:5px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface);
+  display:inline-flex; align-items:center; gap:6px;
+}
+.toc a::before{content:""; width:.62em; height:.62em; border-radius:2px; background:var(--cube, var(--ink))}
+.toc a .n{font-family:var(--font-mono); font-weight:500; font-size:.75rem; color:var(--muted)}
+.toc a[data-tone="fav"]{--cube:var(--fav)}
+.toc a[data-tone="bgw"]{--cube:var(--bgw)}
+.toc a[data-tone="hv"]{--cube:var(--hv)}
+.toc a[data-tone="cf"]{--cube:var(--cf)}
+.toc a[data-tone="mm"]{--cube:var(--mm)}
+.toc a[data-tone="jp"]{--cube:var(--jp)}
+.toc a[data-tone="ex"]{--cube:var(--ex)}
+
+/* desks: each opens with a small wooden-cube marker in its player color */
+.desk{display:flex; flex-direction:column; scroll-margin-top:64px}
+.desk > h2{
+  font-size:1.2rem; padding-bottom:10px; margin-bottom:4px;
+  border-bottom:3px solid var(--tone, var(--ink));
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px;
+}
+.desk > h2::before{
+  content:""; align-self:center; width:.8em; height:.8em; border-radius:3px;
+  background:var(--tone, var(--ink));
+  box-shadow:inset -3px -3px 0 color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.desk > h2 small{font-size:.75rem; font-weight:400; color:var(--muted)}
+.desk[data-tone="fav"]{--tone:var(--fav); --tone-soft:var(--fav-soft)}
+.desk[data-tone="bgw"]{--tone:var(--bgw); --tone-soft:var(--bgw-soft)}
+.desk[data-tone="hv"]{--tone:var(--hv); --tone-soft:var(--hv-soft)}
+.desk[data-tone="cf"]{--tone:var(--cf); --tone-soft:var(--cf-soft)}
+.desk[data-tone="mm"]{--tone:var(--mm); --tone-soft:var(--mm-soft)}
+.desk[data-tone="jp"]{--tone:var(--jp); --tone-soft:var(--jp-soft)}
+.desk[data-tone="ex"]{--tone:var(--ex); --tone-soft:var(--ex-soft)}
+
+/* articles */
+.item{padding-block:20px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:8px; min-width:0}
+.item:last-of-type{border-bottom:none}
+.meta{display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:.78rem; color:var(--muted)}
+.tag{font-weight:700; color:var(--tone); background:var(--tone-soft); padding:1px 8px; border-radius:4px; letter-spacing:.02em}
+.tag.tag-alert{color:var(--alert); background:var(--alert-soft)}
+.meta .src{font-weight:700; color:var(--ink)}
+.meta time{font-family:var(--font-mono)}
+.st{font-weight:700; padding:0 8px; border-radius:999px; border:1.5px solid currentColor; font-size:.74rem}
+.st-live{color:var(--jp)}
+.st-soon{color:var(--fav)}
+.st-end{color:var(--muted)}
+.item h3{font-size:1.08rem; font-weight:700}
+.item p{font-size:1rem}
+.note{font-size:.92rem !important; color:var(--muted); padding-left:12px; border-left:2px solid var(--line)}
+
+/* game specs: players / time / BGG weight (1–5) */
+.specs{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px 8px; font-size:.8rem; color:var(--muted)}
+.specs li{display:inline-flex; align-items:center; gap:6px; padding:1px 9px; border:1px solid var(--line); border-radius:6px; background:var(--surface)}
+.specs b{font-family:var(--font-mono); font-weight:500; color:var(--ink)}
+.wt-meter{
+  position:relative; display:inline-block; width:60px; height:7px; border-radius:2px;
+  background:linear-gradient(90deg, var(--tone) calc(var(--w) / 5 * 100%), var(--track) 0);
+}
+.wt-meter::after{
+  content:""; position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg, transparent 0 calc(20% - 2px), var(--surface) calc(20% - 2px) 20%);
+}
+
+/* crowdfunding figures */
+.fund{
+  margin:2px 0; padding:12px 14px; border-radius:10px; background:var(--tone-soft);
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(8rem, 1fr)); gap:8px 14px;
+}
+.fund div{display:flex; flex-direction:column; min-width:0}
+.fund dt{font-size:.72rem; color:var(--muted); letter-spacing:.04em}
+.fund dd{margin:0; font-family:var(--font-mono); font-size:.95rem; font-weight:500; overflow-wrap:anywhere}
+
+/* fit with the reader's favorites */
+.fit{display:flex; gap:8px; align-items:baseline; font-size:.94rem !important}
+.fit .mk{flex:0 0 auto; font-weight:700; font-size:.76rem; color:var(--tone); border:1.5px solid currentColor; border-radius:4px; padding:0 6px; line-height:1.6}
+
+.links{list-style:none; margin:2px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px 16px}
+.links a{
+  font-size:.86rem; color:var(--tone); text-decoration:none; font-weight:700;
+  border-bottom:1px solid color-mix(in srgb, var(--tone) 35%, transparent);
+}
+.links a::after{content:" ↗"; font-weight:400}
+.links a:hover{border-bottom-color:var(--tone)}
+
+/* deadline calendar and other tables */
+.tbl{overflow-x:auto; margin-block:12px 4px}
+.tbl table{border-collapse:collapse; width:100%; font-size:.84rem; line-height:1.6}
+.tbl th, .tbl td{padding:8px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+.tbl thead th{font-weight:700; color:var(--tone); border-bottom:2px solid var(--tone); white-space:nowrap}
+.tbl tbody th{font-weight:700}
+.tbl th small{display:block; font-weight:400; font-size:.74rem; color:var(--muted)}
+.tbl td.num{font-family:var(--font-mono); white-space:nowrap}
+.tbl tbody tr:last-child th, .tbl tbody tr:last-child td{border-bottom:none}
+.tbl caption{caption-side:top; text-align:left; font-size:.8rem; font-weight:700; letter-spacing:.08em; color:var(--muted); padding-bottom:6px}
+
+/* BGG hotness ranking */
+.hot td.rk{font-family:var(--font-mono); font-weight:500; text-align:right; width:2.4em; color:var(--muted)}
+.hot th a{color:var(--ink); text-decoration-color:var(--line); text-underline-offset:3px}
+.hot th small{font-family:var(--font-mono); display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.hot th small .wt-meter{width:44px; height:6px}
+.hot tr.is-pick{background:color-mix(in srgb, var(--tone-soft) 70%, transparent)}
+.hot tr.is-pick td.rk{color:var(--tone)}
+.chg{font-family:var(--font-mono); font-size:.8rem; white-space:nowrap; color:var(--muted)}
+.chg.up{color:var(--jp)}
+.chg.down{color:var(--hv)}
+.chg.new{color:var(--tone); font-weight:700}
+
+/* briefs */
+.briefs{padding-block:16px 4px; display:flex; flex-direction:column; gap:8px}
+.briefs h3{font-size:.8rem; letter-spacing:.12em; color:var(--muted)}
+.briefs ul{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px}
+.briefs li{font-size:.92rem; line-height:1.65; padding-left:14px; position:relative}
+.briefs li::before{content:""; position:absolute; left:0; top:.68em; width:6px; height:6px; border-radius:1px; background:var(--tone)}
+.briefs a{color:var(--ink); text-decoration-color:var(--line); text-underline-offset:3px}
+.briefs time{font-family:var(--font-mono); font-size:.78rem; color:var(--muted); margin-left:4px}
+
+/* edition container + archive view */
+.edition-body{display:flex; flex-direction:column; gap:36px; min-width:0}
+.archive-bar{
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 12px;
+  margin-bottom:-18px; padding:10px 14px; border-radius:10px;
+  background:var(--fav-soft); font-size:.9rem; font-weight:700;
+}
+.archive-bar[hidden]{display:none}
+.archive-bar a{color:var(--fav); text-decoration:none; border-bottom:1px solid currentColor; font-size:.86rem; white-space:nowrap}
+.edition-body.is-archive .ed-label{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--ink)}
+
+/* back numbers */
+.backnumber details{border-bottom:1px solid var(--line); padding-block:10px}
+.backnumber summary{cursor:pointer; font-weight:700; font-size:.92rem; list-style:none; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px}
+.backnumber summary::-webkit-details-marker{display:none}
+.backnumber summary::before{content:"▸"; color:var(--muted); font-size:.8rem; transition:transform .15s}
+.backnumber details[open] > summary::before{transform:rotate(90deg)}
+.backnumber summary time{font-family:var(--font-mono); font-weight:400; color:var(--muted); font-size:.8rem}
+.bn-open{margin-left:auto; font-size:.84rem; color:var(--fav); text-decoration:none; padding:2px 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--fav) 45%, var(--line)); background:var(--surface); white-space:nowrap}
+.bn-open:hover{background:var(--fav-soft)}
+.backnumber details.is-viewing{background:var(--fav-soft); margin-inline:-10px; padding-inline:10px; border-radius:8px}
+.backnumber ul{margin:8px 0 0; padding-left:1.2em; display:flex; flex-direction:column; gap:4px}
+.backnumber li{font-size:.9rem; line-height:1.6}
+.backnumber .empty{font-size:.92rem; color:var(--muted); padding-block:12px}
+.bn-help{font-size:.82rem; color:var(--muted); padding-top:10px}
+
+footer{font-size:.8rem; color:var(--muted); line-height:1.75; border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:8px}
+footer b{color:var(--ink)}
+
+@media (max-width:420px){
+  .brand h1{font-size:1.45rem}
+  .lede{font-size:1rem}
+}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} .backnumber summary::before{transition:none} }
+@media (prefers-reduced-motion: no-preference){ html{scroll-behavior:smooth} }
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <div class="brand">
+      <h1>ボードゲーム朝夕刊</h1>
+      <span class="schedule">毎日 2・7・12・17・22時ごろ発行</span>
+    </div>
+    <ul class="watch" aria-label="追跡中のお気に入り">
+      <li class="lbl">追跡中</li>
+      <li>サイス</li><li>テラフォーミング・マーズ</li><li>SETI</li><li>オーディンの祝祭</li>
+      <li>ネメシス</li><li>バラージ</li><li>クラウドエイジ</li><li>DUNE</li>
+      <li>マーダーミステリー</li>
+    </ul>
+  </div>
+
+  <div class="archive-bar" id="archiveBar" hidden>
+    <span id="archiveLabel">過去の号を表示中</span>
+    <a href="#latest">最新号に戻る</a>
+  </div>
+
+  <main id="edition" class="edition-body">
+<!-- EDITION:START -->
+  <header class="masthead" data-ed-id="2026-11-12-0655">
+    <div class="edition">
+      <span class="ed-label">朝刊</span>
+      <time datetime="2026-11-12T06:55+09:00">2026年11月12日（木） 6:55</time>
+    </div>
+    <p class="lede">『Marco Polo Deluxe Master Set』は開始から一晩で€22万・1,383人に伸び、目標の5.5倍になりました。今日は17時ごろに『Aces &amp; Armor: Spitfire』、23時ごろに『Cubyria』が終わります。米ICv2は11日付で、プレイ時間3〜4時間の『Cult of the Lamb: The Board Game』の一般販売を報じました。お気に入り8作品に新しい動きはありません。</p>
+    <div class="checks">
+      <h2>今号のチェック</h2>
+      <ul>
+        <li>今日11月12日（木）23時ごろ：『Cubyria』（Kickstarter、£66〜）が終了見込み。「残り16時間」（12日6:52確認）</li>
+        <li>あす11月13日（金）11〜13時ごろ：『Max Miller's Tasting History』と『Through the Mountains, Through the Desert Deluxe』（どちらもKickstarter）が続けて終了見込み</li>
+        <li>11月14日（土）朝7時ごろ：『Too Little Time』（Gamefound、$149〜）が終了見込み。「残り48時間」</li>
+      </ul>
+    </div>
+  </header>
+
+  <nav class="toc" id="toc" aria-label="目次"></nav>
+
+  <section class="desk" id="favorites" data-nav="お気に入り追跡" data-tone="fav">
+    <h2>お気に入り追跡 <small>拡張・再版・日本語版</small></h2>
+    <article class="item">
+      <div class="meta"><span class="tag">今号は大きな動きなし</span><time>11/12</time></div>
+      <h3>お気に入り8作品は新着なし。DUNE「Conspiracy」は販売店の表示が3通りに</h3>
+      <p>サイス、テラフォーミング・マーズ、SETI、オーディンの祝祭、ネメシス、バラージ、クラウドエイジ、DUNEを確認しましたが、拡張・再版・デジタル版・日本語版の新しい発表は見つかりませんでした。スタンドマイヤー公式ブログの最新記事は、11月9日付のイベント参加報告のままです。</p>
+      <p>DUNE「Conspiracy」の発売日は、米販売店の表示がさらに分かれています。Atomic Empireは11月15日、Game Nerdzは11月30日、Cardhausは12月31日（いずれも検索結果に表示された記載）。出版社が公表しているのは「2026年第4四半期」までで、確定日はまだ出ていません。</p>
+      <p class="note">Dire Wolfのニュースページには今回も接続できませんでした。BGGの公式XML APIは401（認証なし）で、ホットネスは確認できていません。</p>
+      <ul class="links"><li><a href="https://stonemaiergames.com/newsletter/blog/" target="_blank" rel="noopener">Stonemaier Games ブログ</a></li><li><a href="https://www.atomicempire.com/Item/408914" target="_blank" rel="noopener">Atomic Empire（Conspiracy）</a></li><li><a href="https://www.gamenerdz.com/dune-imperium-conspiracy-expansion-preorder" target="_blank" rel="noopener">Game Nerdz（Conspiracy）</a></li></ul>
+    </article>
+  </section>
+
+  <section class="desk" id="heavy" data-nav="重ゲー新作" data-tone="hv">
+    <h2>重ゲー新作 <small>新作・発売予定</small></h2>
+    <article class="item">
+      <div class="meta"><span class="tag">発売予定</span><span class="src">ICv2</span><time>11/11</time></div>
+      <h3>『Cult of the Lamb: The Board Game』、一般販売へ。1〜4人で3〜4時間の長丁場</h3>
+      <ul class="specs"><li><b>1–4</b>人</li><li><b>180–240</b>分</li><li>重さ <b>未確認</b></li></ul>
+      <p>米業界誌ICv2が11日付で、Paper Fort Gamesが『Cult of the Lamb: The Board Game』を一般流通に乗せると報じました。子羊が教団を率いる同名ビデオゲームのボードゲーム版で、対象は10歳以上です。夏にKickstarterで資金を集めた作品で、一般販売の時期は2027年6月と報じられています（複数のニュースサイトの記載。出版社の公式発表は未確認）。</p>
+      <p class="fit"><span class="mk">相性△</span>ネメシス好きに：原作つきでテーマが濃く、3〜4時間かかる大型作という点は近いです。ただしルールの重さや、エンジンビルドの要素がどれだけあるかは確認できていません。</p>
+      <p class="note">ICv2の記事本文には接続できず、人数・時間・対象年齢は検索結果に表示された同記事の記載です。価格は公式の発表を確認できていません。重さはBGGに接続できず未確認です。</p>
+      <ul class="links"><li><a href="https://icv2.com/articles/news/view/63859/paper-fort-games-will-release-the-cult-lamb-the-board-game" target="_blank" rel="noopener">ICv2（記事）</a></li></ul>
+    </article>
+    <div class="briefs">
+      <h3>短信</h3>
+      <ul>
+        <li>ドイツのBrettspiel-News.deとbrettspielbox.deは、11日付が値引き情報・レビュー・ボードゲームカフェの話題で、重量級の新作発表はありませんでした。12日付の記事はまだ出ていません。<a href="https://www.brettspiel-news.de/" target="_blank" rel="noopener">Brettspiel-News.de</a></li>
+        <li>BoardGameWire、Tabletop Gaming News、Board&amp;Dice公式には接続できず、今号では確認できていません。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="desk" id="crowdfunding" data-nav="クラファン" data-tone="cf">
+    <h2>クラウドファンディング <small>Gamefound・Kickstarter・BackerKit</small></h2>
+    <div class="tbl"><table>
+      <caption>締切カレンダー（日本時間・11/12 6:52の時点。金額と残り時間はTabletop Analyticsの表示、終了時刻はそこからの換算）</caption>
+      <thead><tr><th>キャンペーン</th><th>終了（日本時間）</th><th>状況</th></tr></thead>
+      <tbody>
+        <tr><th>Satisfactory: The Board Game<small>Gamefound</small></th><td class="num">終了</td><td>€3,359,733・13,197人（終了後も表示が増加）</td></tr>
+        <tr><th>Aces &amp; Armor: Spitfire<small>Kickstarter</small></th><td class="num">11/12 17時ごろ</td><td>€207,772・1,310人。残り10時間</td></tr>
+        <tr><th>Cubyria: Architects of a Lost City<small>Kickstarter</small></th><td class="num">11/12 23時ごろ</td><td>£146,877・1,321人。残り16時間</td></tr>
+        <tr><th>Max Miller's Tasting History: The Board Game<small>Kickstarter</small></th><td class="num">11/13 11時ごろ</td><td>$551,658・3,884人。残り28時間</td></tr>
+        <tr><th>Through the Mountains, Through the Desert Deluxe<small>Kickstarter</small></th><td class="num">11/13 13時ごろ</td><td>$436,029・3,493人。残り30時間</td></tr>
+        <tr><th>Too Little Time<small>Gamefound</small></th><td class="num">11/14 7時ごろ</td><td>$1,813,362・5,242人。残り48時間</td></tr>
+        <tr><th>Origins of Light: A Final Fantasy Board Game<small>Kickstarter</small></th><td class="num">11/18</td><td>$1,316,605・4,187人。残り6日</td></tr>
+        <tr><th>Wallguards of the East Empire<small>Kickstarter</small></th><td class="num">11/19ごろ</td><td>NZ$448,102・2,161人。残り7日</td></tr>
+        <tr><th>Atlanteum<small>Kickstarter</small></th><td class="num">11/19ごろ</td><td>$131,668・1,920人。残り7日</td></tr>
+        <tr><th>Space Universalis<small>Gamefound</small></th><td class="num">11/19ごろ</td><td>€193,809・1,332人（目標€45,000）。残り8日</td></tr>
+        <tr><th>18Korea Big Box<small>Kickstarter</small></th><td class="num">11/24ごろ</td><td>今回も集計ページでは見つからず。11日夕刊の時点で$37,514・297人、目標$50,000には未達</td></tr>
+        <tr><th>Marco Polo Deluxe Master Set<small>Gamefound</small></th><td class="num">11/26</td><td>€220,024・1,383人（目標€40,000）。残り14日</td></tr>
+        <tr><th>The Thing: The Boardgame &amp; The Cardgame<small>Gamefound</small></th><td class="num">12/1ごろ</td><td>€290,803・2,115人。残り19日</td></tr>
+        <tr><th>Feed the Kraken: Black Box &amp; Sea of Shadows<small>Gamefound</small></th><td class="num">12/1ごろ</td><td>€171,655・1,124人。残り19日</td></tr>
+        <tr><th>Siege Perilous<small>掲載ページの情報</small></th><td class="num">12/2</td><td>実施中とされる（今回の集計ページには見当たらず）</td></tr>
+        <tr><th>Zoo Tycoon: The Board Game – Dinosaur Digs<small>Kickstarter</small></th><td class="num">12/3ごろ</td><td>CHF205,432・1,506人。残り22日</td></tr>
+        <tr><th>Nemesis: Legacy<small>Gamefound</small></th><td class="num">延長中</td><td>レイトプレッジ。新しい情報なし</td></tr>
+        <tr><th>The Witcher: No Man's Land<small>Gamefound</small></th><td class="num">—</td><td>11/17 開始予定（報道）</td></tr>
+        <tr><th>Vestige（Orange Nebula）<small>Gamefound</small></th><td class="num">—</td><td>11/19 開始予定</td></tr>
+        <tr><th>The Witcher: Legacy<small>Gamefound</small></th><td class="num">—</td><td>11/25 開始予定</td></tr>
+      </tbody>
+    </table></div>
+    <article class="item">
+      <div class="meta"><span class="tag">続報</span><span class="src">Tabletop Analytics</span><time>11/12</time><span class="st st-live">実施中</span></div>
+      <h3>『Marco Polo Deluxe Master Set』、一晩で€22万・1,383人に。5時間で+€7.5万</h3>
+      <p>深夜刊（1:53）の€145,508・909人から、約5時間で+€74,516・+474人と伸びました。目標€40,000の550%です。支援1人あたりの平均は€159で、全部入り（€169と報じられている段）を選ぶ人が多い状況は変わっていません。終了は11月26日の見込みで、まだ2週間あります。</p>
+      <dl class="fund">
+        <div><dt>集まった額</dt><dd>€220,024（目標の550%）</dd></div>
+        <div><dt>支援者</dt><dd>1,383人</dd></div>
+        <div><dt>終了</dt><dd>11/26（残り14日。時刻は未確認）</dd></div>
+        <div><dt>基本プレッジ</dt><dd>€99（報道。公式は未確認）</dd></div>
+        <div><dt>日本発送</dt><dd>未確認</dd></div>
+      </dl>
+      <p class="note">数字はTabletop Analytics調べ（12日6:52確認）。送料・発送先・納期は今回も公式で確かめられていません。Gamefoundのページはボット対策で開けず、Board&amp;Dice公式サイトと価格を載せている案内サイトにも接続できませんでした。相性は深夜刊のとおり○（オーディンの祝祭・バラージ好き向け）です。</p>
+      <ul class="links"><li><a href="https://gamefound.com/en/projects/board-and-dice/marco-polo-deluxe-master-set" target="_blank" rel="noopener">Gamefound（キャンペーン）</a></li><li><a href="https://www.tabletopanalytics.com/" target="_blank" rel="noopener">Tabletop Analytics</a></li></ul>
+    </article>
+    <article class="item">
+      <div class="meta"><span class="tag tag-alert">締切間近</span><span class="src">Tabletop Analytics</span><time>11/12</time><span class="st st-live">実施中</span></div>
+      <h3>今日終わる2本は終盤の伸びが小さめ。あす昼は2本、あさって朝に『Too Little Time』</h3>
+      <p>深夜刊からの伸びは、『Aces &amp; Armor: Spitfire』が+€5,126・+39人、『Cubyria』が+£2,936・+26人でした。あす13日の昼前後に終わる『Max Miller's Tasting History』は$551,658、『Through the Mountains, Through the Desert Deluxe』は$436,029。14日朝に終わる『Too Little Time』は$181万を超えています。</p>
+      <dl class="fund">
+        <div><dt>Aces &amp; Armor</dt><dd>€207,772・1,310人</dd></div>
+        <div><dt>終了</dt><dd>11/12 17時ごろ（残り10時間）</dd></div>
+        <div><dt>Cubyria</dt><dd>£146,877・1,321人</dd></div>
+        <div><dt>終了</dt><dd>11/12 23時ごろ（残り16時間）</dd></div>
+        <div><dt>Too Little Time</dt><dd>$1,813,362・5,242人</dd></div>
+        <div><dt>終了</dt><dd>11/14 7時ごろ（残り48時間）</dd></div>
+      </dl>
+      <p class="note">終了時刻は残り時間からの換算で、1時間ほどずれることがあります。3本とも重ユーロではなく、相性は既報のとおり△です。</p>
+      <ul class="links"><li><a href="https://www.tabletopanalytics.com/endingsoon" target="_blank" rel="noopener">Tabletop Analytics</a></li></ul>
+    </article>
+    <article class="item">
+      <div class="meta"><span class="tag">実施中</span><span class="src">Tabletop Analytics</span><time>11/12</time><span class="st st-live">実施中</span></div>
+      <h3>宇宙が舞台の『Space Universalis』、Gamefoundで€19万・残り8日</h3>
+      <ul class="specs"><li><b>1–6</b>人</li><li><b>60–240</b>分</li><li>重さ <b>未確認</b></li></ul>
+      <p>スペインのLudic Dragon Gamesによる宇宙ものの大型作で、今号から締切カレンダーに加えました。ソロと協力でも遊べ、シナリオの種類と人数によって1〜4時間と幅があります（紹介サイトの記載）。20の種族と10のクラスがあると出版社のブログは案内しています。</p>
+      <dl class="fund">
+        <div><dt>集まった額</dt><dd>€193,809（目標€45,000の430%）</dd></div>
+        <div><dt>支援者</dt><dd>1,332人</dd></div>
+        <div><dt>終了</dt><dd>11/19ごろ（残り8日）</dd></div>
+        <div><dt>基本プレッジ</dt><dd>未確認</dd></div>
+        <div><dt>日本発送</dt><dd>未確認</dd></div>
+      </dl>
+      <p class="fit"><span class="mk">相性△</span>SETI・ネメシス好きに：SFのテーマと、シナリオで進める冒険寄りの作りです。資源管理のユーロというより、キャラクターを育てて脅威に立ち向かうタイプと見られます。</p>
+      <p class="note">数字はTabletop Analytics調べ（12日6:52確認）。Gamefoundのページは開けないため、価格と発送先は未確認です。重さはBGGに接続できず未確認です。</p>
+      <ul class="links"><li><a href="https://gamefound.com/en/projects/ludic-dragon-games/space-universalis" target="_blank" rel="noopener">Gamefound（キャンペーン）</a></li><li><a href="https://ludicdragon.com/en/blog/space-universalis/space-universalis-is-coming" target="_blank" rel="noopener">Ludic Dragon（ブログ）</a></li></ul>
+    </article>
+    <div class="briefs">
+      <h3>短信</h3>
+      <ul>
+        <li>『Satisfactory: The Board Game』は「Ended」の表示のまま€3,359,733・13,197人（深夜刊時点は€3,333,379・13,096人）。公式の確定値は未確認です。<a href="https://www.tabletopanalytics.com/" target="_blank" rel="noopener">Tabletop Analytics</a></li>
+        <li>直近1日で支援者が多く増えたボードゲームは、『Marco Polo』（+1,383人）、『The Thing』（+426人）、『Wallguards of the East Empire』（+250人）、『Through the Mountains』（+246人）、『Feed the Kraken』（+240人）でした（「Today's Backers」、12日6:52確認）。</li>
+        <li>夜のあいだに新しく始まった重ゲー・大型案件は、集計ページでは見つかりませんでした。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="desk" id="mystery" data-nav="マダミス" data-tone="mm">
+    <h2>マーダーミステリー <small>パッケージ・アプリ・公演（ネタバレなし）</small></h2>
+    <article class="item">
+      <div class="meta"><span class="tag">今号は大きな動きなし</span><time>11/12</time></div>
+      <h3>新しい発表はなし。Murder.JPの新着は11月7日付のまま</h3>
+      <p>Murder.JPの新着は11月7日付が最新で、PR TIMESの検索でも11月の新作発表は見つかりませんでした。週末15日（日）は、既報の「STGR MYSTERY SHOW 2026」とオンライン即売会「マダミストリート」があります。</p>
+      <ul class="links"><li><a href="https://www.murder.jp/" target="_blank" rel="noopener">Murder.JP</a></li><li><a href="https://yuyuyulog.net/new-murder-mysteries/" target="_blank" rel="noopener">パッケージ版の発売日まとめ（ゆゆゆログ）</a></li></ul>
+    </article>
+  </section>
+
+  <section class="desk" id="japan" data-nav="国内・日本語版" data-tone="jp">
+    <h2>国内・日本語版 <small>発売・予約・イベント</small></h2>
+    <article class="item">
+      <div class="meta"><span class="tag">今号は大きな動きなし</span><span class="src">Table Games in the World</span><time>11/12</time></div>
+      <h3>早朝のため国内の新しい発表はなし。あす13日は日本語版の発売が重なる日</h3>
+      <p>Table Games in the Worldの最新記事は、11日付の『禁足地』（すごろくや、12月4日発売）のままです。今日12日は既報のポケモン『お前、もしかしてロケット団？』の発売日、あす13日（金）は『パックマン クレイズメイズメーカー』『APEX Legends: The Board Game』日本語版など、発売が重なる日です。国内の動きは昼刊でまとめます。</p>
+      <ul class="links"><li><a href="https://tgiw.info/" target="_blank" rel="noopener">Table Games in the World</a></li></ul>
+    </article>
+  </section>
+<!-- EDITION:END -->
+  </main>
+
+  <section class="desk backnumber" id="backnumber" data-nav="バックナンバー" data-tone="fav">
+    <h2>バックナンバー <small>過去の号をこのページで読めます</small></h2>
+<!-- BACKNUMBER:START -->
+<details data-ed="2026-11-12-0200"><summary>深夜刊 <time>11/12（木） 2:00</time> <a class="bn-open" href="#ed-2026-11-12-0200">本文を読む</a></summary><ul><li><a href="https://gamefound.com/en/projects/board-and-dice/marco-polo-deluxe-master-set" target="_blank" rel="noopener">『Marco Polo Deluxe Master Set』がGamefoundで開始、約€14.6万・909人</a></li><li><a href="https://www.tabletopanalytics.com/endingsoon" target="_blank" rel="noopener">今日終わる2本：『Aces &amp; Armor』は夕方、『Cubyria』は深夜</a></li><li><a href="https://stonemaiergames.com/newsletter/blog/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://www.murder.jp/" target="_blank" rel="noopener">マダミス：15日にオンライン即売会「マダミストリート」も</a></li></ul></details>
+<details data-ed="2026-11-11-2155"><summary>夜刊 <time>11/11（水） 21:55</time> <a class="bn-open" href="#ed-2026-11-11-2155">本文を読む</a></summary><ul><li><a href="https://www.brettspiel-news.de/index.php/de/magazin-fuer-brettspieler-start/16444-hochgelobt-aber-nicht-gez-ndet-welche-top-spiele-bei-reddit-durchfallen" target="_blank" rel="noopener">「名作だけど合わなかった」の声、サイスとテラフォーミング・マーズにも</a></li><li><a href="https://www.brettspiel-news.de/index.php/de/nachrichten-uebersicht/neuerscheinungen/16436-bga-update-paladine-im-westfrankenreich-rivals-l-sst-die-arena-schrumpfen" target="_blank" rel="noopener">『西フランク王国の聖騎士』、Board Game Arenaに登場</a></li><li><a href="https://www.tabletopanalytics.com/endingsoon" target="_blank" rel="noopener">12日に『Cubyria』と『Aces &amp; Armor: Spitfire』が終了</a></li><li><a href="https://x.com/mystery_show__" target="_blank" rel="noopener">マダミス・国内は新着なし。15日に「STGR MYSTERY SHOW 2026」</a></li></ul></details>
+<details data-ed="2026-11-11-1650"><summary>夕刊 <time>11/11（水） 16:50</time> <a class="bn-open" href="#ed-2026-11-11-1650">本文を読む</a></summary><ul><li><a href="https://www.brettspiel-news.de/index.php/de/nachrichten-uebersicht/ankuendigungen/16432-container-der-wirtschaftsklassiker-kommt-als-neuauflage-zur-ck" target="_blank" rel="noopener">経済ゲームの古典『Container』、Allplayから新版</a></li><li><a href="https://www.brettspiel-news.de/index.php/de/nachrichten-uebersicht/crowdfunding/16430-through-the-mountains-knizias-yak-karawanen-ziehen-mit-kunstharz-und-metall-auf-kickstarter" target="_blank" rel="noopener">クニツィアの『Through the Mountains, Through the Desert Deluxe』、13日昼ごろ終了</a></li><li><a href="https://kicktraq.com/projects/18korea/18korea-big-box/" target="_blank" rel="noopener">鉄道経営の『18Korea Big Box』、目標の7割強で残り13日</a></li><li><a href="https://www.atomicempire.com/Item/408914" target="_blank" rel="noopener">DUNE「Conspiracy」、米販売店は「11月15日発売」と掲載</a></li></ul></details>
+<details data-ed="2026-11-11-1155"><summary>昼刊 <time>11/11（水） 11:55</time> <a class="bn-open" href="#ed-2026-11-11-1155">本文を読む</a></summary><ul><li><a href="https://tgiw.info/2026/11/kinsokuchi.html" target="_blank" rel="noopener">『禁足地』、すごろくやから12月4日発売</a></li><li><a href="https://tgiw.info/2026/11/ltr-two-towers-trick-takingj.html" target="_blank" rel="noopener">『指輪物語 二つの塔：トリックテイキングゲーム』日本語版、11月30日に4,400円で</a></li><li><a href="https://www.tabletopanalytics.com/endingsoon" target="_blank" rel="noopener">今週終わる4本、終了時刻の目安が判明</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-11-0655"><summary>朝刊 <time>11/11（水） 6:55</time> <a class="bn-open" href="#ed-2026-11-11-0655">本文を読む</a></summary><ul><li><a href="https://www.tabletopanalytics.com/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、約€322万・12,677人で終了</a></li><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-45-26/" target="_blank" rel="noopener">11月10日開始の3本、いずれも初日で目標を突破</a></li><li><a href="https://brettspielbox.de/brettspielbox-brettspiel-news-46-2026/" target="_blank" rel="noopener">『Clash of Cultures』新拡張、4つのモジュールと5つの文明を追加</a></li><li><a href="https://tgiw.info/2026/11/bella-vistaj.html" target="_blank" rel="noopener">『ベラヴィスタ』日本語版、12月4日にすごろくやから</a></li><li><a href="https://tgiw.info/2026/11/kanoj.html" target="_blank" rel="noopener">『狩野』日本語版は6,600円、1〜4人・約35分</a></li></ul></details>
+<details data-ed="2026-11-11-0150"><summary>深夜刊 <time>11/11（水） 1:50</time> <a class="bn-open" href="#ed-2026-11-11-0150">本文を読む</a></summary><ul><li><a href="https://www.brettspiel-news.de/index.php/de/nachrichten-uebersicht/crowdfunding/16428-satisfactory-the-board-game-knackt-2-6-millionen-euro-was-hinter-der-videospiel-vorlage-steckt" target="_blank" rel="noopener">『Satisfactory: The Board Game』、最終額は未確認</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">国内・マダミスは新着なし</a></li></ul></details>
+<details data-ed="2026-11-10-2150"><summary>夜刊 <time>11/10（火） 21:50</time> <a class="bn-open" href="#ed-2026-11-10-2150">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まであと約2時間</a></li><li><a href="https://godisageek.com/2026/11/thing-board-game-gamefound-card-game" target="_blank" rel="noopener">『The Thing』、カードゲームを加えてGamefoundで再販</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-10-1650"><summary>夕刊 <time>11/10（火） 16:50</time> <a class="bn-open" href="#ed-2026-11-10-1650">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まであと約7時間</a></li><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-45-26/" target="_blank" rel="noopener">『Feed the Kraken』新デラックス版、Gamefoundで11月10日開始予定</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">11月13日は日本語版の発売が集中</a></li></ul></details>
+<details data-ed="2026-11-10-1150"><summary>昼刊 <time>11/10（火） 11:50</time> <a class="bn-open" href="#ed-2026-11-10-1150">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約12時間</a></li><li><a href="https://www.boardgamequest.com/crowdfunding-campaigns-of-the-week-11-9-26/" target="_blank" rel="noopener">『Cubyria』『Too Little Time』など、今週の終了予定</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">11月13日は日本語版の発売が集中</a></li></ul></details>
+<details data-ed="2026-11-10-0650"><summary>朝刊 <time>11/10（火） 6:50</time> <a class="bn-open" href="#ed-2026-11-10-0650">本文を読む</a></summary><ul><li><a href="https://godisageek.com/2026/10/against-storm-board-game-gamefound/" target="_blank" rel="noopener">『Against the Storm』ボードゲーム版、2027年5月にGamefoundへ</a></li><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約17時間</a></li><li><a href="https://www.toy-people.com/jp/?p=115502" target="_blank" rel="noopener">ポケモン『お前、もしかしてロケット団？』、11月12日発売</a></li></ul></details>
+<details data-ed="2026-11-10-0150"><summary>深夜刊 <time>11/10（火） 1:50</time> <a class="bn-open" href="#ed-2026-11-10-0150">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約22時間</a></li><li><a href="https://advertising.boardgamegeek.com/?p=82168" target="_blank" rel="noopener">Mighty Boards『Rebirth II』、11月10日にKickstarterか</a></li><li><a href="https://x.com/mystery_show__" target="_blank" rel="noopener">「STGR MYSTERY SHOW 2026」、11月15日</a></li></ul></details>
+<details data-ed="2026-11-09-2150"><summary>夜刊 <time>11/9（月） 21:50</time> <a class="bn-open" href="#ed-2026-11-09-2150">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約26時間</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://x.com/mystery_show__" target="_blank" rel="noopener">「STGR MYSTERY SHOW 2026」、11月15日に有楽町よみうりホールで</a></li></ul></details>
+<details data-ed="2026-11-09-1650"><summary>夕刊 <time>11/9（月） 16:50</time> <a class="bn-open" href="#ed-2026-11-09-1650">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約31時間</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://yuyuyulog.net/new-murder-mysteries/" target="_blank" rel="noopener">グループSNE『NO AIR LEFT』、12月発売予定</a></li></ul></details>
+<details data-ed="2026-11-09-1150"><summary>昼刊 <time>11/9（月） 11:50</time> <a class="bn-open" href="#ed-2026-11-09-1150">本文を読む</a></summary><ul><li><a href="https://www.wargamer.com/braided-skies/board-game-announced" target="_blank" rel="noopener">『Braided Skies』、スタンドマイヤーの次作は雲を渡る重めのユーロ</a></li><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約1日と少し</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">11月13日は日本語版の発売が集中</a></li></ul></details>
+<details data-ed="2026-11-09-0650"><summary>朝刊 <time>11/9（月） 6:50</time> <a class="bn-open" href="#ed-2026-11-09-0650">本文を読む</a></summary><ul><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-45-26/" target="_blank" rel="noopener">『Marco Polo Deluxe Master Set』、11月12日にGamefoundで開始</a></li><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了は11月11日0時</a></li><li><a href="https://game.watch.impress.co.jp/docs/news/2153297.html" target="_blank" rel="noopener">『FF VII 神羅ビルを登れ』、スクエニe-STOREで販売開始</a></li></ul></details>
+<details data-ed="2026-11-09-0155"><summary>深夜刊 <time>11/9（月） 1:55</time> <a class="bn-open" href="#ed-2026-11-09-0155">本文を読む</a></summary><ul><li><a href="https://godisageek.com/2026/10/satisfactory-board-game-gamefound/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了は11月10日ごろ</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://www.murder.jp/" target="_blank" rel="noopener">マダミス・国内は新着なし</a></li></ul></details>
+<details data-ed="2026-11-08-2155"><summary>夜刊 <time>11/8（日） 21:55</time> <a class="bn-open" href="#ed-2026-11-08-2155">本文を読む</a></summary><ul><li><a href="https://godisageek.com/2026/10/satisfactory-board-game-gamefound/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了は11月10日ごろ</a></li><li><a href="https://www.gamespark.jp/article/2026/09/24/172723.html" target="_blank" rel="noopener">『真・女神転生 THE BOARD GAME』、発送は11月中の予定</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-08-1655"><summary>夕刊 <time>11/8（日） 16:55</time> <a class="bn-open" href="#ed-2026-11-08-1655">本文を読む</a></summary><ul><li><a href="https://godisageek.com/2026/10/satisfactory-board-game-gamefound/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了は11月10日ごろ</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">11月の発売予定：『SETI』『パッチワーク』再販ほか</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-08-1150"><summary>昼刊 <time>11/8（日） 11:50</time> <a class="bn-open" href="#ed-2026-11-08-1150">本文を読む</a></summary><ul><li><a href="https://x.com/mystery_show__" target="_blank" rel="noopener">「STGR MYSTERY SHOW 2026」、11月15日に有楽町よみうりホールで開催</a></li><li><a href="https://tgiw.info/" target="_blank" rel="noopener">『パックマン クレイズメイズメーカー』『APEX Legends: The Board Game』日本語版、11月13日発売</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-08-0650"><summary>朝刊 <time>11/8（日） 6:50</time> <a class="bn-open" href="#ed-2026-11-08-0650">本文を読む</a></summary><ul><li><a href="https://tgiw.info/" target="_blank" rel="noopener">『オークス・アップ！』日本語版、2〜5人・約30分で5,720円</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし。DUNE「Conspiracy」の発売日は未確認</a></li><li><a href="https://www.murder.jp/" target="_blank" rel="noopener">Murder.JP新着は2周年オフ会（2027年2月7日）</a></li></ul></details>
+<details data-ed="2026-11-08-0155"><summary>深夜刊 <time>11/8（日） 1:55</time> <a class="bn-open" href="#ed-2026-11-08-0155">本文を読む</a></summary><ul><li><a href="https://tgiw.info/" target="_blank" rel="noopener">『オークス・アップ！』日本語版、12月18日に発売</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし。DUNE「Conspiracy」の開発日誌は続行</a></li><li><a href="https://www.boardgamequest.com/crowdfunding-campaigns-of-the-week-11-2-26/" target="_blank" rel="noopener">重ゲー・クラファンは大きな動きなし</a></li></ul></details>
+<details data-ed="2026-11-07-2155"><summary>夜刊 <time>11/7（土） 21:55</time> <a class="bn-open" href="#ed-2026-11-07-2155">本文を読む</a></summary><ul><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-44-26" target="_blank" rel="noopener">『Satisfactory: The Board Game』、基本版€70、デラックス€135、コレクターズ€280と報道</a></li><li><a href="https://everythingboardgames.com/upcoming-board-game-kickstarters" target="_blank" rel="noopener">『Siege Perilous』、アーサー王のブリテン島を旅する大型ユーロ、12/2まで</a></li><li><a href="https://news.denfaminicogamer.jp/news/2610283p" target="_blank" rel="noopener">『テーブルゲームワールド CCFOLIA』Switch 2版、11/10配信</a></li></ul></details>
+<details data-ed="2026-11-07-1650"><summary>夕刊 <time>11/7（土） 16:50</time> <a class="bn-open" href="#ed-2026-11-07-1650">本文を読む</a></summary><ul><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-44-26/" target="_blank" rel="noopener">『ネメシス：レガシー』、レイトプレッジが€12M超と報道</a></li><li><a href="https://badcomet.co/blogs/news/introducing-atlanteum" target="_blank" rel="noopener">『Atlanteum』、Kickstarterで開始。ロンデルとワーカープレイスメント</a></li><li><a href="https://wuerfelreich.de/satisfactory-brettspiel-gamefound/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、Gamefoundで€2M超</a></li><li><a href="https://www.gamer.ne.jp/news/202610170005/" target="_blank" rel="noopener">『作者不詳』日本語版公演、11月から専門店で順次開始</a></li><li><a href="https://cmonjapan.shop/en" target="_blank" rel="noopener">CMONJAPANの新作、11月30日発売</a></li></ul></details>
+<details data-ed="2026-11-07-1155"><summary>昼刊 <time>11/7（土） 11:55</time> <a class="bn-open" href="#ed-2026-11-07-1155">本文を読む</a></summary><ul><li><a href="https://kicktraq.com/projects/kessent/origins-of-light-a-final-fantasy-board-game/" target="_blank" rel="noopener">『Origins of Light』、Kickstarterは11月18日まで</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">『ワイアームスパン拡張：ドラゴン・アカデミー』再販、11月予約に</a></li><li><a href="http://www.groupsne.co.jp/products/bg/index.html" target="_blank" rel="noopener">『あなたに捧げる殺人』、発売日は2説のまま</a></li><li><a href="https://godisageek.com/2026/10/nemesis-legacy-gamefound-campaign/" target="_blank" rel="noopener">お気に入り8作品は新着なし。『ネメシス：レガシー』は€5.7M超（10月時点）</a></li></ul></details>
+<details data-ed="2026-11-07-0650"><summary>朝刊 <time>11/7（土） 6:50</time> <a class="bn-open" href="#ed-2026-11-07-0650">本文を読む</a></summary><ul><li><a href="https://www.backerkit.com/projects/brotherwise/war-for-roshar" target="_blank" rel="noopener">『Stormlight: War for Roshar』、Kickstarterページの表示は$3.61M・14,981人</a></li><li><a href="http://www.groupsne.co.jp/products/bg/index.html" target="_blank" rel="noopener">『あなたに捧げる殺人』、発売日が11/13と11/20で食い違い</a></li><li><a href="https://brettspielbox.de/brettspiel-neuheiten-herbst-2026-czech-games-edition-cge/" target="_blank" rel="noopener">CGEの秋の新作は『Kingdom Come: Deliverance – The Board Game』</a></li><li><a href="https://gamefound.com/en/projects/feuerland/the-danes---a-feast-for-odin-game" target="_blank" rel="noopener">『The Danes』、最終額は未確認</a></li></ul></details>
+<!-- BACKNUMBER:END -->
+    <p class="bn-help">「本文を読む」で、その号をこのページに表示します。最新の約5日分（25号）を残します。</p>
+  </section>
+
+  <footer>
+    <p><b>情報源</b>　出版社の公式サイト・公式ブログ、Kickstarter・Gamefound・BackerKit・CAMPFIRE・Makuakeのキャンペーンページ、BoardGameGeek、ゲームマーケット公式、国内出版社（アークライト、ホビージャパン、ケンビルほか）とマーダーミステリーの制作元・店舗・配信アプリの公式発表。話題探しにはBGG News、BoardGameWire、Board Game Quest、Table Games in the Worldなども使い、日付・価格・金額はできるだけ公式ページで確かめています。</p>
+    <p>「重さ」はBoardGameGeekのWeight（1〜5、ユーザー投票の平均）。重さ・評価・ホットネスはBoardGameGeekのXML APIのデータです（データ提供: BoardGameGeek）。マーダーミステリーの記事はシナリオの中身に触れません。クラファンの金額と支援者数は確認した時点の値で、終了日時は日本時間です。毎日2・7・12・17・22時ごろ（日本時間）に新しい号を出します。</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var main = document.getElementById('edition');
+  var bar = document.getElementById('archiveBar');
+  var barLabel = document.getElementById('archiveLabel');
+  var latestHTML = main ? main.innerHTML : '';
+  var current = null;
+
+  // 目次：data-nav を持つ面から自動生成し、記事数を添える
+  function buildToc(){
+    var toc = document.getElementById('toc');
+    if (!toc) return;
+    toc.textContent = '';
+    document.querySelectorAll('section.desk[data-nav]').forEach(function(sec){
+      var a = document.createElement('a');
+      a.href = '#' + sec.id;
+      a.dataset.tone = sec.dataset.tone || '';
+      a.textContent = sec.dataset.nav;
+      var n = sec.querySelectorAll('article.item h3').length;
+      if (n > 0) { var s = document.createElement('span'); s.className = 'n'; s.textContent = n; a.appendChild(s); }
+      toc.appendChild(a);
+    });
+  }
+  function markViewing(id){
+    document.querySelectorAll('.backnumber details').forEach(function(d){
+      d.classList.toggle('is-viewing', !!id && d.dataset.ed === id);
+    });
+  }
+  function toTop(){ try { window.scrollTo({top: 0, behavior: 'instant'}); } catch (e) { window.scrollTo(0, 0); } }
+
+  function showLatest(){
+    main.innerHTML = latestHTML;
+    main.classList.remove('is-archive');
+    current = null; bar.hidden = true; markViewing(null);
+    buildToc(); toTop();
+  }
+  function showArchive(id){
+    bar.hidden = false; barLabel.textContent = '読み込み中…'; toTop();
+    fetch('editions/' + id + '.html', {cache: 'no-cache'})
+      .then(function(r){ if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then(function(html){
+        main.innerHTML = html;
+        main.classList.add('is-archive');
+        current = id; markViewing(id);
+        var lab = main.querySelector('.ed-label'), tm = main.querySelector('.edition time');
+        barLabel.textContent = '過去の号を表示中：' + (lab ? lab.textContent : '') + (tm ? '　' + tm.textContent : '');
+        buildToc(); toTop();
+      })
+      .catch(function(){
+        barLabel.textContent = 'この号の本文を読み込めませんでした。';
+      });
+  }
+  function route(){
+    var m = location.hash.match(/^#ed-([0-9A-Za-z-]+)$/);
+    if (m) { if (m[1] !== current) showArchive(m[1]); }
+    else if ((location.hash === '' || location.hash === '#latest') && current) { showLatest(); }
+  }
+
+  buildToc();
+  window.addEventListener('hashchange', route);
+  route();
+})();
+</script>
