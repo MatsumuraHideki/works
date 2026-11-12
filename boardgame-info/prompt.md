@@ -11,7 +11,7 @@
 - 朝刊: 欧州の夕方〜米国の朝の発表と、夜のうちに終わった・始まったクラファンのまとめ。
 - 昼刊: 国内の発表（日本語版の発売・予約、国内出版社、ゲームマーケット、国内クラファン、マーダーミステリーの新作・公演）。
 - 夕刊: 欧州の出版社の発表（ドイツ・チェコ・ポーランド・イタリアなど）と、Gamefoundの新規開始。
-- 夜刊: その日のまとめと、お気に入りの深掘り（評判、拡張、再版、デジタル版）や重ゲーのレビュー・評価の動き、マーダーミステリーの週末・年末の公演情報。
+- 夜刊: その日のまとめ（BGGホットネスの1日の変化も）と、お気に入りの深掘り（評判、拡張、再版、デジタル版）や重ゲーのレビュー・評価の動き、マーダーミステリーの週末・年末の公演情報。
 土日や深夜で新着が少ない号は無理に水増しせず、短い号でよい。クラファンの締切カレンダーは毎号、最新の数字に更新する。
 
 ## 2. 現在の紙面を読み、前号を保存用ファイルにする
@@ -23,9 +23,15 @@
 ## 3. 取材
 WebSearch（新しい情報なので extended モードを積極的に使う）と WebFetch で調べる。面ごと・ゲームごとに分けて検索する。BoardGameGeek・Gamefound・Kickstarter・BackerKit のウェブページはボット対策（Cloudflare）で 403 になるので開かない。代わりに次を使う。
 - クラファンの金額・支援者数・終了日: Tabletop Analytics（https://www.tabletopanalytics.com/ 、Kickstarter・Gamefound・BackerKit の実施中の案件を集計。接続できる）を WebFetch か curl で読み、「Tabletop Analytics調べ（確認時刻）」と書く。
-- BGGのデータ: 公式のXML API を使う。BGGに登録した利用条件に合わせ、使うのは次の3つだけ: https://boardgamegeek.com/xmlapi2/search?query=<英語名>&type=boardgame（ゲームIDを調べる）、https://boardgamegeek.com/xmlapi2/thing?id=<ID,ID,...>&stats=1（IDはカンマ区切りでまとめて1回で問い合わせる。averageweight が重さ、average が評価、minplayers・maxplayers・playingtime・yearpublished）、https://boardgamegeek.com/xmlapi2/hot?type=boardgame（ホットネス）。1回の発行で問い合わせは合計20回まで、間は5秒以上あける（複数の問い合わせは1つのPythonスクリプトにまとめ、time.sleep(5) を挟む）。前号までに載せた重さは紙面から読み取って使い回し、同じゲームを何度も問い合わせない。認証トークンが実行環境に保存されていれば、通信時に自動で付く。401 が返ったらトークン未設定なので、重さは「未確認」とし、検索結果で補う。BGGのデータを使った号は、フッターではなく該当記事の note に「データ: BoardGameGeek」と書く。
+- BGGのデータ: 公式のXML API と公式ブログのRSSを使う。BGGに登録した利用条件に合わせ、使うのは次だけ。認証トークンは実行環境に保存済みで、boardgamegeek.com への通信に自動で付く（自分でヘッダーを付けない）。
+  ・ホットネス: https://boardgamegeek.com/xmlapi2/hot?type=boardgame （毎号1回）
+  ・ゲームの詳細: https://boardgamegeek.com/xmlapi2/thing?id=<ID,ID,...>&stats=1 （IDはカンマ区切りで最大20件をまとめて1回。averageweight が重さ、average が評価、minplayers・maxplayers・playingtime・yearpublished）
+  ・ゲームIDの検索: https://boardgamegeek.com/xmlapi2/search?query=<英語名>&type=boardgame （必要なときだけ）
+  ・お気に入りのNews掲示板: https://boardgamegeek.com/xmlapi2/forum?id=<掲示板ID> 。スレッド一覧の lastpostdate が前号の発行時刻より新しいものが新着。スレッドのURLは https://boardgamegeek.com/thread/<スレッドID> 。掲示板ID（ゲームID）: サイス 1565742（169786）、テラフォーミング・マーズ 1560421（167791）、SETI 4621163（418059）、オーディンの祝祭 1740099（177736）、ネメシス 1559925（167355）、バラージ 2579444（251247）、クラウドエイジ 3389981（316858）、デューン：インペリウム 3384315（316554）、デューン：インペリウム アップライジング 4410833（397598）、Dune: War for Arrakis 3966313（367150）。
+  ・BGG公式ブログ（デザイナー日誌、新作紹介など）: https://boardgamegeek.com/rss/blog/1 （RSS。毎号1回）
+  APIへの問い合わせは1回の発行で合計20回まで、間は5秒以上あける（すべて1つのPythonスクリプトにまとめ、time.sleep(5) を挟む）。前号までに載せた重さは紙面から読み取って使い回し、同じゲームを何度も問い合わせない。401 が返ったらトークンが無効なので、重さは「未確認」とし、短信にその旨を書く。BGGのデータの出典はフッターに書いてあるので、記事ごとに書かなくてよい。
 - それ以外で開けないページは、検索結果やまとめ記事で補い、数字には「〇〇（サイト名）によると」と出典と時点を添える。
-- お気に入り追跡: 上の8作品の拡張・再版・新版・デジタル版・大会・日本語版。各出版社の公式サイトとニュース（Stonemaier Games、FryxGames／Stronghold Games、Czech Games Edition、Feuerland Spiele／Z-Man Games、Awaken Realms、Cranio Creations、dlp games／Capstone Games、Dire Wolf、CMON、Gale Force Nine）と、BGGのXML API。
+- お気に入り追跡: 上の8作品の拡張・再版・新版・デジタル版・大会・日本語版。各出版社の公式サイトとニュース（Stonemaier Games、FryxGames／Stronghold Games、Czech Games Edition、Feuerland Spiele／Z-Man Games、Awaken Realms、Cranio Creations、dlp games／Capstone Games、Dire Wolf、CMON、Gale Force Nine）と、BGGのNews掲示板の新着。デザイナーや出版社自身の書き込み（投稿者が公式の人か、スレッド名で判断）は重要な一次情報として扱う。
 - 重ゲー新作: BGGのWeightが3.5以上を目安に、新作・発売予定・話題作。重量級を多く出す出版社（Capstone Games、Board&Dice、Eagle-Gryphon Games、Feuerland、Lookout、Hans im Glück、Cranio Creations、Delicious Games、Mindclash Games、Czech Games Edition、Ludonova など）や、ヴィタル・ラセルダ、シモーネ・ルチアーニ、アレクサンダー・プフィスター、ウヴェ・ローゼンベルク、シュテファン・フェルト、トマーシュ・ホレクらの新作。人数・時間・重さ（BGGに値がある場合だけ）と、好きなゲームとの相性を書く。
 - クラウドファンディング: Kickstarter（Tabletop Games）、Gamefound、BackerKit で実施中・開始予定・終わったばかりの、重ゲー・大型の戦略ゲーム・お気に入りの関連作（拡張、新版、再販）。まとめ記事（Board Game Quest の Crowdfunding Campaigns of the Week、brettspielbox.de の Brettspiel Crowdfunding News、Tabletop Analytics など）で探し、数字は Tabletop Analytics で確かめる。国内は CAMPFIRE、Makuake、GREEN FUNDING のボードゲーム。集まった額・支援者数（確認した時刻）、終了日時（日本時間に換算）、基本プレッジの価格、日本への発送可否を書く。
 - マーダーミステリー: パッケージ版の新作・再販（ホビージャパン、グループSNE、アークライト、幻冬舎、ジーピーなど）、配信アプリ・オンライン（ウズ（UZU）など）の新作シナリオ、店舗公演の新作・大型イベント・コラボ、ゲームマーケットでの新作、マダミスのクラファン。人数・時間・価格・対象年齢・GM要否・遊べる場所を書く。シナリオの中身、犯人、トリック、キャラクターの秘密には一切触れない（あらすじも公式が公開している導入部分まで）。情報源の例: Murder.JP（https://www.murder.jp/）、マダミス.jp（https://mdms.jp/）、Table Games in the Worldのマダミスタグ（https://tgiw.info/tag/murdermystery）、グループSNEの新刊案内（https://www.groupsne.co.jp/news/book.html）、ウズ公式（https://www.uzu-app.com/ja）、PR TIMESの「マーダーミステリー」「マダミス」の新着。
@@ -38,9 +44,10 @@ EDITION:START と EDITION:END の間だけを新しい号に差し替える（�
 - 号の表示: masthead を <header class="masthead" data-ed-id="今号ID"> とする。今号IDは今号の発行時刻（日本時間）の YYYY-MM-DD-HHMM。ed-label を号名、time に日付と発行時刻（例: <time datetime="2026-11-06T07:00+09:00">2026年11月6日（金） 7:00</time>）。
 - lede: 今号の要点を2〜3文。
 - 今号のチェック: ひでさんがすぐ動けることを1〜3個（クラファンの締切、日本語版の予約開始、早期割引の期限など、記事に根拠があるものだけ）。
-- 面の順番: お気に入り追跡（id="favorites"、data-tone="fav"）→ 重ゲー新作（id="heavy"、data-tone="hv"）→ クラウドファンディング（id="crowdfunding"、data-tone="cf"）→ マーダーミステリー（id="mystery"、data-tone="mm"）→ 国内・日本語版（id="japan"、data-tone="jp"）→ コラム（id="column"、data-tone="ex"）。目次の nav（id="toc"）は masthead の直後に空のまま置く。各面は記事1〜5本＋必要なら「短信」。新着がない面は「今号は大きな動きなし」と1記事で正直に書く（お気に入り追跡では、確認したゲーム名を挙げる）。
+- 面の順番: お気に入り追跡（id="favorites"、data-tone="fav"）→ BGGウォッチ（id="bgg"、data-nav="BGGウォッチ"、data-tone="bgw"）→ 重ゲー新作（id="heavy"、data-tone="hv"）→ クラウドファンディング（id="crowdfunding"、data-tone="cf"）→ マーダーミステリー（id="mystery"、data-tone="mm"）→ 国内・日本語版（id="japan"、data-tone="jp"）→ コラム（id="column"、data-tone="ex"）。目次の nav（id="toc"）は masthead の直後に空のまま置く。各面は記事1〜5本＋必要なら「短信」。新着がない面は「今号は大きな動きなし」と1記事で正直に書く（お気に入り追跡では、確認したゲーム名を挙げる）。
 - 記事: meta（tag・発信元・日付）→ 見出し → 重ゲー・新作なら ul.specs（人数・時間・重さ。マーダーミステリーは人数・時間・GMの要否を ul.specs に書き、重さは書かない）→ 要約1〜3文（自分の言葉で言い換える。原文の長い引用はしない）→ クラファンなら dl.fund → 好きなゲームとの相性 p.fit（◎・○・△）→ 必要なら note → 公式ページへのリンク。発送遅延・価格改定・締切直前などは tag に tag-alert を付ける。
 - クラウドファンディング面の先頭に「締切カレンダー」の表（div.tbl > table。列はキャンペーン／終了（日本時間）／状況の3つで、場所は th の中に <small> で書く）を置き、実施中・開始予定の注目キャンペーンを終了が近い順に並べる。
+- BGGウォッチ: 毎号載せる。先頭にホットネス上位10の表（編集メモの div.tbl.hot の書き方どおり。前号の表の data-bgg と比べて順位の上下を付け、重さ3.5以上かお気に入り関連の行に is-pick）。表のあとに、ホットネスで気になる動き（初登場の重ゲー、急上昇など）を1〜2本の記事にし、BGG公式ブログの新着とお気に入りのNews掲示板の新着を記事か短信で載せる（重ゲー・お気に入り・マダミスに関係するものを優先し、関係の薄いものは省く）。ホットネスに出たゲームが重ゲー新作の面の候補にもなる。
 - コラム: 号の記事に関係するテーマを短く（例: 重さ（Weight）の見方、エンジンビルドやワーカープレイスメントの考え方、クラファンのプレッジの選び方と送料・関税、好きなゲームから次の1本を選ぶなら）。ネタがない号は section ごと省く。
 - 文章は平易な日本語で、スマホで読みやすく。HTMLでは & を &amp; と書く。ゲーム名は日本語版があれば日本語名（英語原題）とする。
 

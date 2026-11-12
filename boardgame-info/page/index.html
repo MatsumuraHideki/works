@@ -11,8 +11,8 @@
     editions/<号ID>.html として一緒に公開する（doctype などは付けない断片）。号IDは masthead の data-ed-id
     （発行時刻 YYYY-MM-DD-HHMM、日本時間）。バックナンバーの「本文を読む」は #ed-<号ID> へのリンクで、
     script がそのファイルを読み込んで表示する。
-  - 面: <section class="desk" id="favorites|heavy|crowdfunding|mystery|japan|column" data-nav="目次の名前" data-tone="fav|hv|cf|mm|jp|ex">
-    色はボードゲームの手番色（青・赤・黄・黒・緑・紫）。マーダーミステリー面（mystery）はシナリオの中身・犯人・トリックに一切触れない。目次と記事数は script が自動で作る。コラムがない号は column の section ごと省く。
+  - 面: <section class="desk" id="favorites|bgg|heavy|crowdfunding|mystery|japan|column" data-nav="目次の名前" data-tone="fav|bgw|hv|cf|mm|jp|ex">
+    色はボードゲームの手番色（青・橙・赤・黄・黒・緑・紫）。BGGウォッチ（bgg）は data-nav="BGGウォッチ"。マーダーミステリー面（mystery）はシナリオの中身・犯人・トリックに一切触れない。目次と記事数は script が自動で作る。コラムがない号は column の section ごと省く。
   - 記事: <article class="item"> … div.meta(.tag/.src/time) → h3 → (ul.specs) → p → (dl.fund) → (p.fit) → (p.note) → ul.links
     ・ul.specs（重ゲー・新作向け）: <li><b>1–4</b>人</li><li><b>90–150</b>分</li>
       <li>重さ <span class="wt-meter" style="--w:3.64"></span><b>3.64</b></li>（--w はBGGのWeight 1〜5。確認できない場合は <li>重さ <b>未掲載</b></li>）
@@ -24,10 +24,16 @@
   - 締切カレンダー: クラファン面の先頭に div.tbl > table。列は3つ（キャンペーン／終了（日本時間）／状況）で、場所は
     <th>キャンペーン名<small>Gamefound</small></th> のように th の中に small で書く（スマホで横にはみ出さないよう4列以上にしない）。
   - 短信: div.briefs > h3「短信」 + ul > li（1行ニュースとリンク、time）。
+  - BGGウォッチ（bgg面）: 先頭に div.tbl.hot > table（caption「BGGホットネス 上位10（確認時刻）」、列は 順位／ゲーム／前号比 の3つ）。
+    行: <tr data-bgg="ゲームID" class="is-pick"><td class="rk">1</td><th><a href="https://boardgamegeek.com/boardgame/ゲームID" target="_blank" rel="noopener">ゲーム名</a>
+        <small>2026・重さ <span class="wt-meter" style="--w:3.20"></span>3.20</small></th><td><span class="chg up">↑3</span></td></tr>
+    前号比は前号の表の data-bgg と比べて ↑n（chg up）／↓n（chg down）／→（chg）／NEW（chg new）。前号に表がなければ全行 → にせず「—」。
+    class="is-pick" は重さ3.5以上か、お気に入りの関連作の行だけに付ける。重さが取れない行は small に発売年だけ書く。
+    表のあとに、BGG公式ブログの新着とお気に入りのNews掲示板の新しいスレッドを、記事（article.item）か短信で載せる。
 -->
 <style>
-/* Layout: one reading column (max 42rem). Masthead → checks → desks (favorites / heavy / crowdfunding / murder mystery / japan / column) → back numbers.
-   Desk colors borrow the classic player colors: blue, red, yellow, black, green, purple. */
+/* Layout: one reading column (max 42rem). Masthead → checks → desks (favorites / BGG watch / heavy / crowdfunding / murder mystery / japan / column) → back numbers.
+   Desk colors borrow the classic player colors: blue, orange, red, yellow, black, green, purple. */
 :root{
   --bg:#f1f4f3;
   --surface:#ffffff;
@@ -36,6 +42,7 @@
   --line:#d6dedb;
   --track:#e3e9e7;
   --fav:#2a55b5; --fav-soft:#e4ebf9;
+  --bgw:#b4520c; --bgw-soft:#fbe9dc;
   --hv:#b2332c;  --hv-soft:#f8e5e3;
   --cf:#9a6200;  --cf-soft:#f7ecd4;
   --mm:#3b3e57;  --mm-soft:#e6e7ef;
@@ -50,6 +57,7 @@
   :root:not([data-theme="light"]){
     --bg:#101615; --surface:#172020; --ink:#e3eae8; --muted:#97a6a2; --line:#283432; --track:#22302d;
     --fav:#8aa9ff; --fav-soft:#1b2744;
+    --bgw:#ffa261; --bgw-soft:#3a2312;
     --hv:#ff8d84;  --hv-soft:#3a1d1b;
     --cf:#eab558;  --cf-soft:#33270e;
     --mm:#b8bde0;  --mm-soft:#252839;
@@ -62,6 +70,7 @@
 :root[data-theme="dark"]{
   --bg:#101615; --surface:#172020; --ink:#e3eae8; --muted:#97a6a2; --line:#283432; --track:#22302d;
   --fav:#8aa9ff; --fav-soft:#1b2744;
+  --bgw:#ffa261; --bgw-soft:#3a2312;
   --hv:#ff8d84;  --hv-soft:#3a1d1b;
   --cf:#eab558;  --cf-soft:#33270e;
   --mm:#b8bde0;  --mm-soft:#252839;
@@ -131,6 +140,7 @@ p{margin:0}
 .toc a::before{content:""; width:.62em; height:.62em; border-radius:2px; background:var(--cube, var(--ink))}
 .toc a .n{font-family:var(--font-mono); font-weight:500; font-size:.75rem; color:var(--muted)}
 .toc a[data-tone="fav"]{--cube:var(--fav)}
+.toc a[data-tone="bgw"]{--cube:var(--bgw)}
 .toc a[data-tone="hv"]{--cube:var(--hv)}
 .toc a[data-tone="cf"]{--cube:var(--cf)}
 .toc a[data-tone="mm"]{--cube:var(--mm)}
@@ -151,6 +161,7 @@ p{margin:0}
 }
 .desk > h2 small{font-size:.75rem; font-weight:400; color:var(--muted)}
 .desk[data-tone="fav"]{--tone:var(--fav); --tone-soft:var(--fav-soft)}
+.desk[data-tone="bgw"]{--tone:var(--bgw); --tone-soft:var(--bgw-soft)}
 .desk[data-tone="hv"]{--tone:var(--hv); --tone-soft:var(--hv-soft)}
 .desk[data-tone="cf"]{--tone:var(--cf); --tone-soft:var(--cf-soft)}
 .desk[data-tone="mm"]{--tone:var(--mm); --tone-soft:var(--mm-soft)}
@@ -217,6 +228,18 @@ p{margin:0}
 .tbl td.num{font-family:var(--font-mono); white-space:nowrap}
 .tbl tbody tr:last-child th, .tbl tbody tr:last-child td{border-bottom:none}
 .tbl caption{caption-side:top; text-align:left; font-size:.8rem; font-weight:700; letter-spacing:.08em; color:var(--muted); padding-bottom:6px}
+
+/* BGG hotness ranking */
+.hot td.rk{font-family:var(--font-mono); font-weight:500; text-align:right; width:2.4em; color:var(--muted)}
+.hot th a{color:var(--ink); text-decoration-color:var(--line); text-underline-offset:3px}
+.hot th small{font-family:var(--font-mono); display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.hot th small .wt-meter{width:44px; height:6px}
+.hot tr.is-pick{background:color-mix(in srgb, var(--tone-soft) 70%, transparent)}
+.hot tr.is-pick td.rk{color:var(--tone)}
+.chg{font-family:var(--font-mono); font-size:.8rem; white-space:nowrap; color:var(--muted)}
+.chg.up{color:var(--jp)}
+.chg.down{color:var(--hv)}
+.chg.new{color:var(--tone); font-weight:700}
 
 /* briefs */
 .briefs{padding-block:16px 4px; display:flex; flex-direction:column; gap:8px}
@@ -285,18 +308,18 @@ footer b{color:var(--ink)}
 
   <main id="edition" class="edition-body">
 <!-- EDITION:START -->
-  <header class="masthead" data-ed-id="2026-11-05-2305">
+  <header class="masthead" data-ed-id="2026-11-12-0655">
     <div class="edition">
-      <span class="ed-label">創刊号</span>
-      <time datetime="2026-11-05T23:05+09:00">2026年11月5日（木） 23:05</time>
+      <span class="ed-label">朝刊</span>
+      <time datetime="2026-11-12T06:55+09:00">2026年11月12日（木） 6:55</time>
     </div>
-    <p class="lede">『オーディンの祝祭』の後継作『The Danes』のGamefoundが11月5日に締め切られ、同じGamefoundでは『ネメシス：レガシー』がサイト史上最も成功したキャンペーンになりました。『デューン：インペリウム』には新拡張「Conspiracy」が年内に加わり、国内では『SETI』基本セットが11月上旬に再販されます。マーダーミステリーでは、ホビージャパンの『霹靂の招待状』が11月下旬に一般発売され、ウズ配信作の実写ドラマが12月に始まります。</p>
+    <p class="lede">『Marco Polo Deluxe Master Set』は開始から一晩で€22万・1,383人に伸び、目標の5.5倍になりました。今日は17時ごろに『Aces &amp; Armor: Spitfire』、23時ごろに『Cubyria』が終わります。米ICv2は11日付で、プレイ時間3〜4時間の『Cult of the Lamb: The Board Game』の一般販売を報じました。お気に入り8作品に新しい動きはありません。</p>
     <div class="checks">
       <h2>今号のチェック</h2>
       <ul>
-        <li>『The Danes』（オーディンの祝祭の後継作）のGamefoundは11月5日締め切り。支援するなら終了時刻をキャンペーンページで確かめる</li>
-        <li>マダミス「シネマダミス 第4回」（2027年1月17日、109シネマズ木場）の最速先行抽選は11月6日（金）12時から</li>
-        <li>重量級の日本語版『テサウロス』（テンデイズゲームズ、14,300円）が11月7日（土）に発売</li>
+        <li>今日11月12日（木）23時ごろ：『Cubyria』（Kickstarter、£66〜）が終了見込み。「残り16時間」（12日6:52確認）</li>
+        <li>あす11月13日（金）11〜13時ごろ：『Max Miller's Tasting History』と『Through the Mountains, Through the Desert Deluxe』（どちらもKickstarter）が続けて終了見込み</li>
+        <li>11月14日（土）朝7時ごろ：『Too Little Time』（Gamefound、$149〜）が終了見込み。「残り48時間」</li>
       </ul>
     </div>
   </header>
@@ -304,304 +327,137 @@ footer b{color:var(--ink)}
   <nav class="toc" id="toc" aria-label="目次"></nav>
 
   <section class="desk" id="favorites" data-nav="お気に入り追跡" data-tone="fav">
-    <h2>お気に入り追跡 <small>拡張・再版・新版・日本語版</small></h2>
-
+    <h2>お気に入り追跡 <small>拡張・再版・日本語版</small></h2>
     <article class="item">
-      <div class="meta"><span class="tag">拡張</span><span class="src">Dire Wolf</span><time>2026年第4四半期</time></div>
-      <h3>『デューン：インペリウム』新拡張「Conspiracy（陰謀）」、年内に発売へ　1人対連合の「Overthrow」モードを収録</h3>
-      <p>皇帝となったポールに各勢力が陰謀を仕掛ける、という設定の拡張です。陰謀カードや勅令に加え、1人が皇帝役になって残り2〜3人の連合と戦う「Overthrowモード」が入ります。無印版と『アップライジング』のどちらでも使えます。</p>
-      <p class="fit"><span class="mk">相性◎</span>DUNE好きに：12月公開予定の映画『デューン Part3』に合わせた時期の新拡張です。</p>
-      <p class="note">ICv2とAsmodee（カナダ）の商品ページでは、小売の発売は2026年第4四半期。海外の販売店では予約が始まっていて、発売日の表示は10月31日〜年末と店によってまちまちです。日本語版の発表はまだありません。</p>
-      <ul class="links"><li><a href="https://icv2.com/articles/news/view/63204/dune-imperium-delves-conspiracy" target="_blank" rel="noopener">ICv2</a></li><li><a href="https://shop.asmodee.ca/en/dwd01024" target="_blank" rel="noopener">Asmodee 商品ページ</a></li></ul>
+      <div class="meta"><span class="tag">今号は大きな動きなし</span><time>11/12</time></div>
+      <h3>お気に入り8作品は新着なし。DUNE「Conspiracy」は販売店の表示が3通りに</h3>
+      <p>サイス、テラフォーミング・マーズ、SETI、オーディンの祝祭、ネメシス、バラージ、クラウドエイジ、DUNEを確認しましたが、拡張・再版・デジタル版・日本語版の新しい発表は見つかりませんでした。スタンドマイヤー公式ブログの最新記事は、11月9日付のイベント参加報告のままです。</p>
+      <p>DUNE「Conspiracy」の発売日は、米販売店の表示がさらに分かれています。Atomic Empireは11月15日、Game Nerdzは11月30日、Cardhausは12月31日（いずれも検索結果に表示された記載）。出版社が公表しているのは「2026年第4四半期」までで、確定日はまだ出ていません。</p>
+      <p class="note">Dire Wolfのニュースページには今回も接続できませんでした。BGGの公式XML APIは401（認証なし）で、ホットネスは確認できていません。</p>
+      <ul class="links"><li><a href="https://stonemaiergames.com/newsletter/blog/" target="_blank" rel="noopener">Stonemaier Games ブログ</a></li><li><a href="https://www.atomicempire.com/Item/408914" target="_blank" rel="noopener">Atomic Empire（Conspiracy）</a></li><li><a href="https://www.gamenerdz.com/dune-imperium-conspiracy-expansion-preorder" target="_blank" rel="noopener">Game Nerdz（Conspiracy）</a></li></ul>
     </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">再販</span><span class="src">ホビージャパン／Czech Games Edition</span><time>11月上旬</time></div>
-      <h3>『SETI』基本セットが11月上旬に再販、定価は13,200円に　エッセンではアップグレード部品も</h3>
-      <p>ホビージャパンの発売予定表に、『SETI』基本セットの「11月上旬 再販」が載っています。定価は13,200円（税込）で、2025年9月の再販時の10,450円から上がりました。拡張『宇宙機構』の日本語版（5,500円）は2026年3月に発売済みです。</p>
-      <p>海外では、Czech Games EditionがSPIEL 2026の会場で「SETI: Upgraded Components」を販売しました。アクリル製のエネルギーと金属製のクレジットのトークンなどをまとめた見た目のアップグレードで、遊び方は変わりません。新しい拡張の発表はありません。</p>
-      <p class="fit"><span class="mk">相性◎</span>SETI好きに：遊ぶ仲間に勧めるなら、拡張とそろえやすい今が好機です。</p>
-      <p class="note">通販サイトには11月30日という表記もあり、再販日は店によって違います。予約で品切れになった店もあります。</p>
-      <ul class="links"><li><a href="https://hobbyjapan.games/release/" target="_blank" rel="noopener">ホビージャパン 発売予定</a></li><li><a href="https://www.czechgames.com/events/cge-at-spiel-essen-2026" target="_blank" rel="noopener">CGE SPIEL 2026</a></li></ul>
-    </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">ルール</span><span class="src">Stonemaier Games</span><time>10/28</time></div>
-      <h3>『サイス』、「Duel of Meloch」まで収めた新しいルール大全を制作中　旧ハードカバー版は再版なし</h3>
-      <p>Stonemaier Gamesは公式ページのコメント欄で、2人用の独立作『Duel of Meloch』のルールも含めた新しいルール大全（リング製本）を作っていると答えました。136ページのハードカバー版は7月に販売を終えていて、再版はしないとしています。発売日はまだ発表されていません。</p>
-      <p class="fit"><span class="mk">相性○</span>拡張までそろえたサイス好きに：ルールを引くための1冊です。</p>
-      <p class="note">『Duel of Meloch』は7月15日に公式ストアで発売済みで、サイスの新しい勢力も入っています。日本語版の発表はありません。</p>
-      <ul class="links"><li><a href="https://stonemaiergames.com/games/scythe/scythe-complete-rulebook/" target="_blank" rel="noopener">ルール大全のページ</a></li><li><a href="https://stonemaiergames.com/spilling-the-beans-the-full-2026-stonemaier-games-lineup/" target="_blank" rel="noopener">2026年のラインナップ</a></li></ul>
-    </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">プロモ・キャンペーン版</span><span class="src">FryxGames／Stronghold Games</span><time>2026年秋</time></div>
-      <h3>『テラフォーミング・マーズ』、季節プロモ「Boom Town」を販売　キャンペーン版の第2部はまだ始まらず</h3>
-      <p>FryxGamesの公式ストアに、2026年の季節プロモカード「Boom Town」が載っています。5月にGamefoundで実施したキャンペーン版『The Legacy of Mars』は、支援者の報告では2027年5月に発送の予定です。ミッション5〜7を収める第2部のクラファンは「2026年後半」とされていましたが、まだ始まっていません。</p>
-      <p class="fit"><span class="mk">相性○</span>テラフォーミング・マーズ好きに：第2部の開始はこの紙面で追いかけます。</p>
-      <ul class="links"><li><a href="https://fryxgames.se/product/summer-season-promo-2026-boom-town/" target="_blank" rel="noopener">FryxGames ストア</a></li><li><a href="https://gamefound.com/en/projects/stronghold-games/terraforming-mars-the-legacy-of--mars" target="_blank" rel="noopener">The Legacy of Mars</a></li></ul>
-    </article>
-
-    <div class="briefs">
-      <h3>短信</h3>
-      <ul>
-        <li><a href="#crowdfunding">オーディンの祝祭：後継作『The Danes』のクラファンはクラウドファンディング面に</a></li>
-        <li><a href="#crowdfunding">ネメシス：『ネメシス：レガシー』の記録的なクラファンはクラウドファンディング面に</a></li>
-        <li>バラージ、クラウドエイジ、Dune: War for Arrakisは今号は大きな動きなし<time>11/5 確認</time></li>
-      </ul>
-    </div>
   </section>
 
   <section class="desk" id="heavy" data-nav="重ゲー新作" data-tone="hv">
-    <h2>重ゲー新作 <small>SPIEL 2026の話題作から</small></h2>
-
+    <h2>重ゲー新作 <small>新作・発売予定</small></h2>
     <article class="item">
-      <div class="meta"><span class="tag">SPIEL 2026</span><span class="src">Czech Games Edition</span><time>10/22〜25</time></div>
-      <h3>SETIのホレクが手がける『Kingdom Come: Deliverance – The Board Game』、エッセンで試遊に長い列</h3>
-      <ul class="specs"><li><b>1–4</b>人</li><li><b>120–320</b>分</li><li>重さ <b>未確認</b></li></ul>
-      <p>チェコの人気RPGを原作に、15世紀ボヘミアで農民から成り上がるオープンワールドの冒険です。デッキ構築で技能判定を行い、プレイヤー同士の直接戦闘はありません。デザインはヴラーダ・フヴァチルとトマーシュ・ホレクです。</p>
-      <p class="fit"><span class="mk">相性◎</span>SETI・DUNE好きに：ホレク作のデッキ構築に、長編RPGの物語が乗ります。</p>
-      <p class="note">CGEが予約を受け付けていて、価格は199.99ドル（ontabletop）。出荷は2027年の予定ですが、時期は資料によって第1四半期〜第2四半期と分かれています。まず英語版のみ。</p>
-      <ul class="links"><li><a href="https://www.czechgames.com/campaign/kcd-boardgame" target="_blank" rel="noopener">CGE 公式</a></li><li><a href="https://www.ontabletop.com/board-games/5-big-board-games-spiel-essen-2026/" target="_blank" rel="noopener">ontabletop</a></li></ul>
+      <div class="meta"><span class="tag">発売予定</span><span class="src">ICv2</span><time>11/11</time></div>
+      <h3>『Cult of the Lamb: The Board Game』、一般販売へ。1〜4人で3〜4時間の長丁場</h3>
+      <ul class="specs"><li><b>1–4</b>人</li><li><b>180–240</b>分</li><li>重さ <b>未確認</b></li></ul>
+      <p>米業界誌ICv2が11日付で、Paper Fort Gamesが『Cult of the Lamb: The Board Game』を一般流通に乗せると報じました。子羊が教団を率いる同名ビデオゲームのボードゲーム版で、対象は10歳以上です。夏にKickstarterで資金を集めた作品で、一般販売の時期は2027年6月と報じられています（複数のニュースサイトの記載。出版社の公式発表は未確認）。</p>
+      <p class="fit"><span class="mk">相性△</span>ネメシス好きに：原作つきでテーマが濃く、3〜4時間かかる大型作という点は近いです。ただしルールの重さや、エンジンビルドの要素がどれだけあるかは確認できていません。</p>
+      <p class="note">ICv2の記事本文には接続できず、人数・時間・対象年齢は検索結果に表示された同記事の記載です。価格は公式の発表を確認できていません。重さはBGGに接続できず未確認です。</p>
+      <ul class="links"><li><a href="https://icv2.com/articles/news/view/63859/paper-fort-games-will-release-the-cult-lamb-the-board-game" target="_blank" rel="noopener">ICv2（記事）</a></li></ul>
     </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">SPIEL 2026</span><span class="src">Nanox Games／dlp games</span><time>2026年秋</time></div>
-      <h3>クラウドエイジのプフィスター新作『-60°（Sixty Below）』、南極の隕石を目指す探検レース</h3>
-      <ul class="specs"><li><b>1–4</b>人</li><li><b>120–180</b>分</li><li>重さ <b>未確認</b></li></ul>
-      <p>1971年の架空の世界で、南極に落ちた隕石の落下地点を目指す6ラウンドのゲームです。ワーカープレイスメントとデッキ構築、探索に、天候を見ながら「どこで引き返すか」を決める判断が加わります。アレクサンダー・プフィスターとペーター・プリンツの共作です。</p>
-      <p class="fit"><span class="mk">相性◎</span>クラウドエイジ好きに：同じプフィスターによる探索×デッキ構築の系譜です。</p>
-      <p class="note">ドイツ語版・英語版が2026年秋に発売で、dlp gamesでの価格は84.95ユーロ。SPIELの開幕前にBGGのホットネスで1位になったと報じられました（Würfelreich）。</p>
-      <ul class="links"><li><a href="https://www.dlp-games.de/en/shop/games/60-sixty-below-en_1143_1194" target="_blank" rel="noopener">dlp games</a></li><li><a href="https://wuerfelreich.de/60-grad-sixty-below-alexander-pfister-bgg-hotness/" target="_blank" rel="noopener">Würfelreich</a></li></ul>
-    </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">新作</span><span class="src">Board&amp;Dice</span><time>2026年秋</time></div>
-      <h3>バラージのバッティスタ＆ルチアーニらの『Entropy』、自分の太陽系を育てるロンデル型ユーロ</h3>
-      <ul class="specs"><li><b>1–4</b>人</li><li><b>90–150</b>分</li><li>重さ <b>未確認</b></li></ul>
-      <p>二重の円形ロンデルを回して資源を集め、恒星と惑星からなる自分の太陽系を組み上げます。惑星の生命を細菌から植物、動物へと進化させ、ミッションや目標の達成を競います。デザインはトンマーゾ・バッティスタ、シモーネ・ルチアーニ、ネストーレ・マンゴーネです。</p>
-      <p class="fit"><span class="mk">相性◎</span>バラージ・テラフォーミング・マーズ好きに：バラージの作者陣による惑星づくりです。</p>
-      <p class="note">6月にGamefoundでクラファンを行い、SPIEL 2026にも出展。米国の販売店では入荷が始まっています。重さは3.6前後と紹介されていますが、BGG本体では確かめられていません。レビューでは「4人だと長い」との声もあります（Meeple Mountain）。</p>
-      <ul class="links"><li><a href="https://icv2.com/articles/news/view/61518/board-dice-unveils-entropy" target="_blank" rel="noopener">ICv2</a></li><li><a href="https://www.wargamer.com/board-games/entropy" target="_blank" rel="noopener">Wargamer</a></li></ul>
-    </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">SPIEL 2026</span><span class="src">Delicious Games</span><time>年末に一般発売</time></div>
-      <h3>時間を行き来するワーカープレイスメント『Chronocritters』、エッセンで先行販売</h3>
-      <ul class="specs"><li><b>1–4</b>人</li><li><b>80–150</b>分</li><li>重さ <b>未確認</b></li></ul>
-      <p>西暦2562年、ロボット生物を使って時間を行き来するワーカープレイスメントです。ポータルを通じて別のラウンドのアクションを使えますが、ポータルは時間とともに傷むので手入れが欠かせません。新人のトリスタン・ジェラールトの作品で、ソロモードと開発は『アンダーウォーターシティーズ』のヴラジミール・スヒーが担当しました。</p>
-      <p class="fit"><span class="mk">相性○</span>オーディンの祝祭・バラージ好きに：重いワーカープレイスメントにSFの味付けです。</p>
-      <p class="note">SPIEL初日の10月22日にブース限定で販売。一般流通は2026年末の予定です。</p>
-      <ul class="links"><li><a href="https://www.brettspiel-news.de/index.php/de/nachrichten-uebersicht/ankuendigungen/16061-ein-deb-tant-tr-gt-die-essener-hoffnung-chronocritters-von-delicious-games" target="_blank" rel="noopener">brettspiel-news.de</a></li><li><a href="https://frogames.it/en/products/scheda-chronocritters" target="_blank" rel="noopener">FroGames</a></li></ul>
-    </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">発売予定</span><span class="src">Eagle-Gryphon Games</span><time>2026年第4四半期</time></div>
-      <h3>ラセルダの最重量級『The Great Library』、一般発売は年内の予定</h3>
-      <ul class="specs"><li><b>1–4</b>人</li><li><b>100–180</b>分</li><li>重さ <b>未確認</b></li></ul>
-      <p>紀元前3世紀のアレクサンドリア図書館を舞台に、知識を集めて蔵書を編む重量級ユーロです。時間が主な資源で、先にパスした人へ時間を支払う仕組みがあります。2025年末のKickstarterの支援者向けに先行版の発送が告知され、一般発売は2026年第4四半期の予定です。</p>
-      <p class="fit"><span class="mk">相性○</span>バラージの緻密さが好きなら：さらに一段重い挑戦になります。</p>
-      <p class="note">同じヴィタル・ラセルダの『Speakeasy』も支援者への出荷が始まり、一般販売は第4四半期の初めの予定。次回作『The Resort』は2027年と発表されています。</p>
-      <ul class="links"><li><a href="https://www.eagle-gryphon.com/pages/community-news" target="_blank" rel="noopener">Eagle-Gryphon ニュース</a></li><li><a href="https://www.eagle-gryphon.com/products/speakeasy" target="_blank" rel="noopener">Speakeasy</a></li></ul>
-    </article>
-
     <div class="briefs">
       <h3>短信</h3>
       <ul>
-        <li><a href="https://opinionatedgamers.com/2026/10/23/dale-yu-review-of-timespan/" target="_blank" rel="noopener">『Timespan』（Alion）：石器時代から宇宙時代までを5ラウンドで進む非対称の文明ゲーム。1〜5人、90〜120分で、北米で予約受付中</a><time>10/23</time></li>
-        <li><a href="https://theboardgameschronicle.com/2026/11/01/spiel-2026-essen-my-impressions/" target="_blank" rel="noopener">エッセンの会場では『トワイライト・ストラグル』20周年の殿堂版も注目を集めたとの報告</a><time>11/1</time></li>
+        <li>ドイツのBrettspiel-News.deとbrettspielbox.deは、11日付が値引き情報・レビュー・ボードゲームカフェの話題で、重量級の新作発表はありませんでした。12日付の記事はまだ出ていません。<a href="https://www.brettspiel-news.de/" target="_blank" rel="noopener">Brettspiel-News.de</a></li>
+        <li>BoardGameWire、Tabletop Gaming News、Board&amp;Dice公式には接続できず、今号では確認できていません。</li>
       </ul>
     </div>
   </section>
 
   <section class="desk" id="crowdfunding" data-nav="クラファン" data-tone="cf">
     <h2>クラウドファンディング <small>Gamefound・Kickstarter・BackerKit</small></h2>
-
     <div class="tbl"><table>
-      <caption>締切カレンダー（日本時間・11/5 夜の時点）</caption>
-      <thead><tr><th>キャンペーン</th><th>終了</th><th>状況</th></tr></thead>
+      <caption>締切カレンダー（日本時間・11/12 6:52の時点。金額と残り時間はTabletop Analyticsの表示、終了時刻はそこからの換算）</caption>
+      <thead><tr><th>キャンペーン</th><th>終了（日本時間）</th><th>状況</th></tr></thead>
       <tbody>
-        <tr><th>The Danes（オーディンの祝祭の後継）<small>Gamefound</small></th><td class="num">11/5</td><td>締切当日（時刻未確認）</td></tr>
-        <tr><th>Stormlight: War for Roshar<small>Kickstarter</small></th><td class="num">11/5</td><td>締切当日（時刻未確認）</td></tr>
-        <tr><th>Arkham Horror Remastered<small>Gamefound</small></th><td class="num">11/4〜5</td><td>終了直後か締切当日</td></tr>
-        <tr><th>Nemesis: Legacy<small>Gamefound</small></th><td class="num">延長中</td><td>Endgame（11/3ごろ継続を確認）</td></tr>
-        <tr><th>Too Little Time<small>Gamefound</small></th><td class="num">11/13</td><td>実施中</td></tr>
-        <tr><th>TM: The Legacy of Mars 第2部<small>Gamefound</small></th><td class="num">未定</td><td>2026年後半に開始予定</td></tr>
+        <tr><th>Satisfactory: The Board Game<small>Gamefound</small></th><td class="num">終了</td><td>€3,359,733・13,197人（終了後も表示が増加）</td></tr>
+        <tr><th>Aces &amp; Armor: Spitfire<small>Kickstarter</small></th><td class="num">11/12 17時ごろ</td><td>€207,772・1,310人。残り10時間</td></tr>
+        <tr><th>Cubyria: Architects of a Lost City<small>Kickstarter</small></th><td class="num">11/12 23時ごろ</td><td>£146,877・1,321人。残り16時間</td></tr>
+        <tr><th>Max Miller's Tasting History: The Board Game<small>Kickstarter</small></th><td class="num">11/13 11時ごろ</td><td>$551,658・3,884人。残り28時間</td></tr>
+        <tr><th>Through the Mountains, Through the Desert Deluxe<small>Kickstarter</small></th><td class="num">11/13 13時ごろ</td><td>$436,029・3,493人。残り30時間</td></tr>
+        <tr><th>Too Little Time<small>Gamefound</small></th><td class="num">11/14 7時ごろ</td><td>$1,813,362・5,242人。残り48時間</td></tr>
+        <tr><th>Origins of Light: A Final Fantasy Board Game<small>Kickstarter</small></th><td class="num">11/18</td><td>$1,316,605・4,187人。残り6日</td></tr>
+        <tr><th>Wallguards of the East Empire<small>Kickstarter</small></th><td class="num">11/19ごろ</td><td>NZ$448,102・2,161人。残り7日</td></tr>
+        <tr><th>Atlanteum<small>Kickstarter</small></th><td class="num">11/19ごろ</td><td>$131,668・1,920人。残り7日</td></tr>
+        <tr><th>Space Universalis<small>Gamefound</small></th><td class="num">11/19ごろ</td><td>€193,809・1,332人（目標€45,000）。残り8日</td></tr>
+        <tr><th>18Korea Big Box<small>Kickstarter</small></th><td class="num">11/24ごろ</td><td>今回も集計ページでは見つからず。11日夕刊の時点で$37,514・297人、目標$50,000には未達</td></tr>
+        <tr><th>Marco Polo Deluxe Master Set<small>Gamefound</small></th><td class="num">11/26</td><td>€220,024・1,383人（目標€40,000）。残り14日</td></tr>
+        <tr><th>The Thing: The Boardgame &amp; The Cardgame<small>Gamefound</small></th><td class="num">12/1ごろ</td><td>€290,803・2,115人。残り19日</td></tr>
+        <tr><th>Feed the Kraken: Black Box &amp; Sea of Shadows<small>Gamefound</small></th><td class="num">12/1ごろ</td><td>€171,655・1,124人。残り19日</td></tr>
+        <tr><th>Siege Perilous<small>掲載ページの情報</small></th><td class="num">12/2</td><td>実施中とされる（今回の集計ページには見当たらず）</td></tr>
+        <tr><th>Zoo Tycoon: The Board Game – Dinosaur Digs<small>Kickstarter</small></th><td class="num">12/3ごろ</td><td>CHF205,432・1,506人。残り22日</td></tr>
+        <tr><th>Nemesis: Legacy<small>Gamefound</small></th><td class="num">延長中</td><td>レイトプレッジ。新しい情報なし</td></tr>
+        <tr><th>The Witcher: No Man's Land<small>Gamefound</small></th><td class="num">—</td><td>11/17 開始予定（報道）</td></tr>
+        <tr><th>Vestige（Orange Nebula）<small>Gamefound</small></th><td class="num">—</td><td>11/19 開始予定</td></tr>
+        <tr><th>The Witcher: Legacy<small>Gamefound</small></th><td class="num">—</td><td>11/25 開始予定</td></tr>
       </tbody>
     </table></div>
-
     <article class="item">
-      <div class="meta"><span class="tag tag-alert">締切当日</span><span class="st st-live">実施中</span><span class="src">Feuerland Spiele</span><time>11/5 終了</time></div>
-      <h3>『オーディンの祝祭』の後継作『The Danes』、Gamefoundで約85万ユーロ　11月5日締め切り</h3>
+      <div class="meta"><span class="tag">続報</span><span class="src">Tabletop Analytics</span><time>11/12</time><span class="st st-live">実施中</span></div>
+      <h3>『Marco Polo Deluxe Master Set』、一晩で€22万・1,383人に。5時間で+€7.5万</h3>
+      <p>深夜刊（1:53）の€145,508・909人から、約5時間で+€74,516・+474人と伸びました。目標€40,000の550%です。支援1人あたりの平均は€159で、全部入り（€169と報じられている段）を選ぶ人が多い状況は変わっていません。終了は11月26日の見込みで、まだ2週間あります。</p>
       <dl class="fund">
-        <div><dt>集まった額</dt><dd>€845,662</dd></div>
-        <div><dt>支援者</dt><dd>7,732人</dd></div>
-        <div><dt>目標</dt><dd>€100,000</dd></div>
-        <div><dt>基本プレッジ</dt><dd>€100</dd></div>
+        <div><dt>集まった額</dt><dd>€220,024（目標の550%）</dd></div>
+        <div><dt>支援者</dt><dd>1,383人</dd></div>
+        <div><dt>終了</dt><dd>11/26（残り14日。時刻は未確認）</dd></div>
+        <div><dt>基本プレッジ</dt><dd>€99（報道。公式は未確認）</dd></div>
+        <div><dt>日本発送</dt><dd>未確認</dd></div>
       </dl>
-      <p>ウヴェ・ローゼンベルクとゲルノット・ケプケによる、『オーディンの祝祭』の世界を受け継ぐ単独で遊べる重量級ワーカープレイスメントです。10月15日に始まり、目標の10万ユーロに23分12秒で届きました。プレッジは英語版かドイツ語版を選ぶ1種類で、追加はプロモ建物だけと報じられています。</p>
-      <p class="fit"><span class="mk">相性◎</span>オーディンの祝祭好きに：直系の後継作です。</p>
-      <p class="note">金額と支援者数は集計サイトTabletop Analyticsの、終了の約2日半前の値です。最終額とレイトプレッジの有無は次号以降で追います。発送は2027年の予定ですが、時期は資料によって第1四半期〜10月と分かれています。日本への送料は確認できていません。</p>
-      <ul class="links"><li><a href="https://gamefound.com/en/projects/feuerland/the-danes---a-feast-for-odin-game" target="_blank" rel="noopener">Gamefound</a></li><li><a href="https://gusandco.net/2026/10/17/the-danes-feuerland-gamefound-crowdfunding/" target="_blank" rel="noopener">Gus &amp; Co</a></li><li><a href="https://www.tabletopanalytics.com/" target="_blank" rel="noopener">Tabletop Analytics</a></li></ul>
+      <p class="note">数字はTabletop Analytics調べ（12日6:52確認）。送料・発送先・納期は今回も公式で確かめられていません。Gamefoundのページはボット対策で開けず、Board&amp;Dice公式サイトと価格を載せている案内サイトにも接続できませんでした。相性は深夜刊のとおり○（オーディンの祝祭・バラージ好き向け）です。</p>
+      <ul class="links"><li><a href="https://gamefound.com/en/projects/board-and-dice/marco-polo-deluxe-master-set" target="_blank" rel="noopener">Gamefound（キャンペーン）</a></li><li><a href="https://www.tabletopanalytics.com/" target="_blank" rel="noopener">Tabletop Analytics</a></li></ul>
     </article>
-
     <article class="item">
-      <div class="meta"><span class="tag">記録</span><span class="st st-live">延長中</span><span class="src">Awaken Realms</span><time>10/6〜</time></div>
-      <h3>『ネメシス：レガシー』、Gamefound史上最も成功したキャンペーンに</h3>
+      <div class="meta"><span class="tag tag-alert">締切間近</span><span class="src">Tabletop Analytics</span><time>11/12</time><span class="st st-live">実施中</span></div>
+      <h3>今日終わる2本は終盤の伸びが小さめ。あす昼は2本、あさって朝に『Too Little Time』</h3>
+      <p>深夜刊からの伸びは、『Aces &amp; Armor: Spitfire』が+€5,126・+39人、『Cubyria』が+£2,936・+26人でした。あす13日の昼前後に終わる『Max Miller's Tasting History』は$551,658、『Through the Mountains, Through the Desert Deluxe』は$436,029。14日朝に終わる『Too Little Time』は$181万を超えています。</p>
       <dl class="fund">
-        <div><dt>集まった額（10/16）</dt><dd>€5,723,059</dd></div>
-        <div><dt>支援者（10/16）</dt><dd>16,611人</dd></div>
-        <div><dt>プレッジ</dt><dd>€89 / €129</dd></div>
-        <div><dt>発送予定</dt><dd>2027年11月</dd></div>
+        <div><dt>Aces &amp; Armor</dt><dd>€207,772・1,310人</dd></div>
+        <div><dt>終了</dt><dd>11/12 17時ごろ（残り10時間）</dd></div>
+        <div><dt>Cubyria</dt><dd>£146,877・1,321人</dd></div>
+        <div><dt>終了</dt><dd>11/12 23時ごろ（残り16時間）</dd></div>
+        <div><dt>Too Little Time</dt><dd>$1,813,362・5,242人</dd></div>
+        <div><dt>終了</dt><dd>11/14 7時ごろ（残り48時間）</dd></div>
       </dl>
-      <p>『ネメシス』をキャンペーン型のレガシーにした作品で、メインのキャンペーンは完全協力型です。目標の5万ユーロに1分足らずで届き、Awaken Realmsは公式アップデートで「Gamefound史上最も成功したキャンペーン」と発表しました。予定の終了日（10月27日）のあとも、支援者の動きでタイマーが延びる「Endgame」が続いています。</p>
-      <p class="fit"><span class="mk">相性◎</span>ネメシス好きに：ただし裏切りのある準協力ではなく、完全協力のレガシーです。</p>
-      <p class="note">プレッジはスタンディー版€89、ミニチュア版€129（報道）。最終盤の金額は1,000万ユーロを超えたと報じられていますが、公式の最終額は確認できていません。英語版の発送は2027年11月、ドイツ語版はその半年ほど後の予定です。</p>
-      <ul class="links"><li><a href="https://gamefound.com/en/projects/awaken-realms/nemesis-legacy" target="_blank" rel="noopener">Gamefound</a></li><li><a href="https://godisageek.com/2026/10/nemesis-legacy-gamefound-campaign/" target="_blank" rel="noopener">God is a Geek</a></li></ul>
+      <p class="note">終了時刻は残り時間からの換算で、1時間ほどずれることがあります。3本とも重ユーロではなく、相性は既報のとおり△です。</p>
+      <ul class="links"><li><a href="https://www.tabletopanalytics.com/endingsoon" target="_blank" rel="noopener">Tabletop Analytics</a></li></ul>
     </article>
-
     <article class="item">
-      <div class="meta"><span class="tag tag-alert">締切当日</span><span class="st st-live">実施中</span><span class="src">Brotherwise Games</span><time>11/5 終了</time></div>
-      <h3>『Stormlight: War for Roshar』、Kickstarterで200万ドル超　『ストームライト・アーカイブ』の世界の陣営戦</h3>
+      <div class="meta"><span class="tag">実施中</span><span class="src">Tabletop Analytics</span><time>11/12</time><span class="st st-live">実施中</span></div>
+      <h3>宇宙が舞台の『Space Universalis』、Gamefoundで€19万・残り8日</h3>
+      <ul class="specs"><li><b>1–6</b>人</li><li><b>60–240</b>分</li><li>重さ <b>未確認</b></li></ul>
+      <p>スペインのLudic Dragon Gamesによる宇宙ものの大型作で、今号から締切カレンダーに加えました。ソロと協力でも遊べ、シナリオの種類と人数によって1〜4時間と幅があります（紹介サイトの記載）。20の種族と10のクラスがあると出版社のブログは案内しています。</p>
       <dl class="fund">
-        <div><dt>集まった額</dt><dd>$2.0M〜3.1M</dd></div>
-        <div><dt>支援者</dt><dd>約1.3万〜1.4万人</dd></div>
-        <div><dt>お届け予定</dt><dd>2027年11月</dd></div>
+        <div><dt>集まった額</dt><dd>€193,809（目標€45,000の430%）</dd></div>
+        <div><dt>支援者</dt><dd>1,332人</dd></div>
+        <div><dt>終了</dt><dd>11/19ごろ（残り8日）</dd></div>
+        <div><dt>基本プレッジ</dt><dd>未確認</dd></div>
+        <div><dt>日本発送</dt><dd>未確認</dd></div>
       </dl>
-      <p>ブランドン・サンダースンの小説『ストームライト・アーカイブ』を原作にした陣営戦ゲームで、1対1、3対1、2対2で8ラウンドを戦います。カードとキューブのアクションで軍を動かし、諸国と外交を行います。デザインはジョン・D・クレアです。</p>
-      <p class="fit"><span class="mk">相性○</span>DUNE好きに：War for Arrakisのような非対称の大戦略が好きなら。</p>
-      <p class="note">集計サイトによって金額に開きがあります（BackerKitの追跡ページは約308万ドル、Tabletop Analyticsは約203万ドル）。終了時刻と基本プレッジの価格は確認できていません。</p>
-      <ul class="links"><li><a href="https://www.backerkit.com/projects/brotherwise/war-for-roshar" target="_blank" rel="noopener">BackerKit</a></li><li><a href="https://www.boardgamequest.com/crowdfunding-campaigns-of-the-week-11-2-26/" target="_blank" rel="noopener">Board Game Quest</a></li></ul>
+      <p class="fit"><span class="mk">相性△</span>SETI・ネメシス好きに：SFのテーマと、シナリオで進める冒険寄りの作りです。資源管理のユーロというより、キャラクターを育てて脅威に立ち向かうタイプと見られます。</p>
+      <p class="note">数字はTabletop Analytics調べ（12日6:52確認）。Gamefoundのページは開けないため、価格と発送先は未確認です。重さはBGGに接続できず未確認です。</p>
+      <ul class="links"><li><a href="https://gamefound.com/en/projects/ludic-dragon-games/space-universalis" target="_blank" rel="noopener">Gamefound（キャンペーン）</a></li><li><a href="https://ludicdragon.com/en/blog/space-universalis/space-universalis-is-coming" target="_blank" rel="noopener">Ludic Dragon（ブログ）</a></li></ul>
     </article>
-
     <div class="briefs">
       <h3>短信</h3>
       <ul>
-        <li><a href="https://wuerfelreich.de/crowdfunding-wochenschau-kw45-2026/" target="_blank" rel="noopener">『Too Little Time』（Chip Theory Games）：約153万ドル・4,398人で11/13まで。『Too Many Bones』の世界のボスバトル</a><time>11/2 時点</time></li>
-        <li><a href="https://wuerfelreich.de/crowdfunding-wochenschau-kw45-2026/" target="_blank" rel="noopener">『Arkham Horror Remastered: Vault Series』：FFG初のクラファンで約322万ドル・8,247人</a><time>11/2 時点</time></li>
-        <li><a href="https://godisageek.com/2026/10/satisfactory-board-game-gamefound/" target="_blank" rel="noopener">『Satisfactory: The Board Game』（MOOD）：工場づくりの協力ゲーム。開始翌日に90万ユーロを超えた</a><time>10/14</time></li>
-        <li>国内のクラファン（CAMPFIRE・Makuake）は今号は確認できず。次号以降で調べます</li>
+        <li>『Satisfactory: The Board Game』は「Ended」の表示のまま€3,359,733・13,197人（深夜刊時点は€3,333,379・13,096人）。公式の確定値は未確認です。<a href="https://www.tabletopanalytics.com/" target="_blank" rel="noopener">Tabletop Analytics</a></li>
+        <li>直近1日で支援者が多く増えたボードゲームは、『Marco Polo』（+1,383人）、『The Thing』（+426人）、『Wallguards of the East Empire』（+250人）、『Through the Mountains』（+246人）、『Feed the Kraken』（+240人）でした（「Today's Backers」、12日6:52確認）。</li>
+        <li>夜のあいだに新しく始まった重ゲー・大型案件は、集計ページでは見つかりませんでした。</li>
       </ul>
     </div>
   </section>
 
   <section class="desk" id="mystery" data-nav="マダミス" data-tone="mm">
     <h2>マーダーミステリー <small>パッケージ・アプリ・公演（ネタバレなし）</small></h2>
-
     <article class="item">
-      <div class="meta"><span class="tag">パッケージ</span><span class="src">ホビージャパン</span><time>11月下旬</time></div>
-      <h3>ホビージャパンのマダミス第2弾『霹靂の招待状』、11月下旬に一般発売</h3>
-      <ul class="specs"><li><b>6</b>人</li><li><b>150–180</b>分</li><li>GM <b>不要</b></li><li><b>15</b>歳以上</li></ul>
-      <p>ゲームマーケット2026秋で先行販売された、ホビージャパンのマーダーミステリー第2弾です。デザインはけにー氏で、前作は『6輌の密室』。定価は5,500円（税込）です。</p>
-      <p class="note">会場での販売価格は5,000円という告知もあり、表記が分かれています。一般発売日の正確な日付は次号以降で追います。</p>
-      <ul class="links"><li><a href="https://hj-trpg.com/news/detail.html?id=2328" target="_blank" rel="noopener">HJ-TRPG</a></li><li><a href="https://tgiw.info/2026/11/hekireki.html" target="_blank" rel="noopener">Table Games in the World</a></li></ul>
+      <div class="meta"><span class="tag">今号は大きな動きなし</span><time>11/12</time></div>
+      <h3>新しい発表はなし。Murder.JPの新着は11月7日付のまま</h3>
+      <p>Murder.JPの新着は11月7日付が最新で、PR TIMESの検索でも11月の新作発表は見つかりませんでした。週末15日（日）は、既報の「STGR MYSTERY SHOW 2026」とオンライン即売会「マダミストリート」があります。</p>
+      <ul class="links"><li><a href="https://www.murder.jp/" target="_blank" rel="noopener">Murder.JP</a></li><li><a href="https://yuyuyulog.net/new-murder-mysteries/" target="_blank" rel="noopener">パッケージ版の発売日まとめ（ゆゆゆログ）</a></li></ul>
     </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">ドラマ化</span><span class="src">MBS（ドラマフィル）</span><time>12/3 放送開始</time></div>
-      <h3>ウズ配信のマダミス『ワンフォーオール・オールフォーマーダー』が実写ドラマに</h3>
-      <p>アプリ「ウズ」で配信中の作品が、MBSのドラマフィル枠で実写化されます。12月3日（木）深夜1時29分から放送で、テレビ神奈川やテレ玉などでも放送予定です。主演はTAGRIGHTの西山智樹さんで、連続ドラマは初出演・初主演です。</p>
-      <ul class="links"><li><a href="https://mdpr.jp/drama/detail/4866515" target="_blank" rel="noopener">モデルプレス</a></li><li><a href="https://www.daily.co.jp/gossip/2026/10/28/0020974585.shtml" target="_blank" rel="noopener">デイリースポーツ</a></li></ul>
-    </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">店舗公演</span><span class="src">ミステリーテリング</span><time>11月から</time></div>
-      <h3>中国発の推理重視作『作者不詳』、日本語版の店舗公演が11月から順次スタート</h3>
-      <ul class="specs"><li><b>6</b>人</li><li>約<b>6</b>時間</li></ul>
-      <p>『北原千夜のすべて』などに続く、ミステリーテリングによる日本語化の第3弾です。クインズワルツ東京の全店、ザナティブ、ジョルディーノの全店、人狼HOUSE梅田店、フーダニットで公演予定で、店舗は今後増えるとしています。</p>
-      <ul class="links"><li><a href="https://www.gamer.ne.jp/news/202610170005/" target="_blank" rel="noopener">Gamer</a></li></ul>
-    </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">発売予定</span><span class="src">ブシロードクリエイティブ</span><time>12/25 発売</time></div>
-      <h3>『Ave Mujica マーダーミステリー 五人のソワレ』、12月25日に発売</h3>
-      <ul class="specs"><li><b>5</b>人</li><li><b>150</b>分</li><li><b>15</b>歳以上</li></ul>
-      <p>『BanG Dream!』のバンドAve Mujicaを題材にした書き下ろしのマーダーミステリーです。価格は5,500円（税込）で、公式ストアで買うとキャスト5人のプレイ動画が特典で付きます。</p>
-      <ul class="links"><li><a href="https://www.murder.jp/product/20260522-2100.html" target="_blank" rel="noopener">Murder.JP</a></li><li><a href="https://hobby.dengeki.com/news/3177804" target="_blank" rel="noopener">電撃ホビーウェブ</a></li></ul>
-    </article>
-
-    <div class="tbl"><table>
-      <caption>大型公演・イベントの予定</caption>
-      <thead><tr><th>日付</th><th>公演・イベント</th><th>メモ</th></tr></thead>
-      <tbody>
-        <tr><td class="num">11/15（日）</td><th><a href="https://news.hulu.jp/stgr-mystery-show-2026/" target="_blank" rel="noopener">STGR MYSTERY SHOW 2026</a><small>有楽町よみうりホール</small></th><td>ロールプレイ配信「ストグラ」とマダミスの新作。2部制、チケットはローチケ</td></tr>
-        <tr><td class="num">12/12（土）</td><th><a href="https://chezlien.life/blog/gamemarket2026_vol_1/" target="_blank" rel="noopener">幽界航路 神在クルーズ</a><small>新横浜</small></th><td>ChezLienの30人参加型公演</td></tr>
-        <tr><td class="num">1/10（日）</td><th><a href="https://www.murder.jp/event/20261022-1200.html" target="_blank" rel="noopener">マダミスマーケット大阪2027「事件収集市」</a><small>大阪市中央公会堂</small></th><td>2027年。早期券4,800円</td></tr>
-        <tr><td class="num">1/17（日）</td><th><a href="https://prtimes.jp/main/html/rd/p/000001808.000007785.html" target="_blank" rel="noopener">シネマダミス 第4回</a><small>109シネマズ木場</small></th><td>2027年。声優5人が出演。最速先行抽選は11/6（金）12時から、9,000〜18,000円</td></tr>
-      </tbody>
-    </table></div>
-
-    <div class="briefs">
-      <h3>短信</h3>
-      <ul>
-        <li><a href="https://www.murder.jp/product/20261017-2100.html" target="_blank" rel="noopener">グループSNE／cosaicの10月新作：『崇高なる労働をいただきありがとうございます』（6人・200分）、MMM第27弾『引っ越しバイト』（3〜4人・60分）、韓国発の『永遠に眠る男』（5人・60分）</a><time>10/17・10/23</time></li>
-        <li><a href="https://tgiw.info/2026/10/mmm28.html" target="_blank" rel="noopener">MMM第28弾『あなたに捧げる殺人』（4人・150分、2,970円）は発売日が11/13か11/20で情報が分かれ、公式には延期の告知も。購入前に確認を</a><time>11/2</time></li>
-        <li><a href="https://www.murder.jp/product/20261024-0900.html" target="_blank" rel="noopener">『GMウォーロック』VOL.23（2,200円）にオリジナルのマダミス2本を収録</a><time>10/30</time></li>
-        <li><a href="https://www.uzu-app.com/ja" target="_blank" rel="noopener">ウズに「お気に入りシナリオリスト」機能が追加</a><time>10/15</time></li>
-        <li><a href="https://www.4gamer.net/games/049/G104935/20261012001/" target="_blank" rel="noopener">第4回新作マーダーミステリー大賞の『-NO AIR LEFT-』は、グループSNE／cosaicからパッケージ化の予定（2027年初頭の見込み）</a><time>10/12</time></li>
-        <li><a href="http://www.kicktraq.com/projects/nuitsrouges/nuits-rouges/" target="_blank" rel="noopener">海外ではARを使うマダミス『Nuits Rouges – The Quantum Case』がKickstarterで11/25まで募集中（1〜4人）</a><time>10/29〜</time></li>
-      </ul>
-    </div>
   </section>
 
   <section class="desk" id="japan" data-nav="国内・日本語版" data-tone="jp">
     <h2>国内・日本語版 <small>発売・予約・イベント</small></h2>
-
     <article class="item">
-      <div class="meta"><span class="tag">日本語版</span><span class="src">テンデイズゲームズ</span><time>11/7 発売</time></div>
-      <h3>海底サルベージ経営『テサウロス』日本語版、11月7日発売</h3>
-      <ul class="specs"><li><b>1–4</b>人</li><li><b>45–180</b>分</li><li>重さ <b>未確認</b></li></ul>
-      <p>サルベージ会社を経営し、予算を配分しながら海底を探査するマネジメントゲームです。原版はSuper Meeple。価格は14,300円（税込）で、テンデイズの公式ショップとEngamesで予約を受け付けています。</p>
-      <p class="fit"><span class="mk">相性○</span>重量級ユーロ好きに：今月の日本語版の新作で最も重い部類です。</p>
-      <ul class="links"><li><a href="https://tgiw.info/2026/10/thesaurosj.html" target="_blank" rel="noopener">Table Games in the World</a></li><li><a href="https://www.engames-s.com/product/4196" target="_blank" rel="noopener">Engames</a></li></ul>
-    </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">イベント</span><span class="src">ゲームマーケット</span><time>10/17〜18</time></div>
-      <h3>ゲームマーケット2026秋は過去最多の1,425ブース　アークライトは2027年の「超」重量級の列車ゲームを予告</h3>
-      <p>幕張メッセで開かれたゲームマーケット2026秋は、出展が過去最多の1,425ブースでした。来場は延べ約3.2万人と報じられています（Table Games in the World）。アークライトは新作発表コーナーで、1920年代の列車を舞台にした「超」重量級を含む、2027年発売の2作を予告しました（作品名は未確認）。</p>
-      <p class="fit"><span class="mk">相性◎</span>バラージ・サイス好きに：2027年の「超」重量級は要注目です。</p>
-      <p class="note">次回のゲームマーケット2027秋は2027年10月23〜24日に幕張メッセで開かれる予定で、ドイツのSPIELと同じ週末になります（主催者のX投稿による）。</p>
-      <ul class="links"><li><a href="https://tgiw.info/2026/10/gm2026a-venue.html" target="_blank" rel="noopener">Table Games in the World</a></li><li><a href="https://gamemarket.jp/" target="_blank" rel="noopener">ゲームマーケット公式</a></li></ul>
-    </article>
-
-    <article class="item">
-      <div class="meta"><span class="tag">日本語版</span><span class="src">テンデイズゲームズ</span><time>11/7 発売</time></div>
-      <h3>『テラミスティカ：革新の時代』の拡張「過去と未来」日本語版も11月7日に</h3>
-      <p>ヘルゲ・オスターターク作の非対称勢力ゲーム『テラミスティカ：革新の時代』の拡張で、価格は3,300円（税込）。遊ぶには基本セットが必要です。</p>
-      <p class="fit"><span class="mk">相性○</span>サイスの非対称な勢力が好きなら：勢力の組み合わせがさらに広がります。</p>
-      <ul class="links"><li><a href="https://tgiw.info/2026/11/age-of-innovation-future-pastj.html" target="_blank" rel="noopener">Table Games in the World</a></li></ul>
-    </article>
-
-    <div class="briefs">
-      <h3>短信</h3>
-      <ul>
-        <li><a href="https://tgiw.info/2026/09/iga2026.html" target="_blank" rel="noopener">林尚志『レイルウェイブーム』（アークライト）が国際ゲーマーズ賞2026のマルチプレイヤー部門を受賞。日本人デザイナーで初、ルチアーニとの共作</a><time>9/25</time></li>
-        <li><a href="https://hobbyjapan.games/release/" target="_blank" rel="noopener">ホビージャパン、ゲームマーケットで発表した『クライ・ベイビィ』『狩野』『レジサイド（第二版）』『ボスファイターズQR』『バナナ・ガバナンス』を発売予定に追加</a><time>10/18</time></li>
-        <li>11月の日本語版はほかに、アークライト『マジカル・アスリート』（11/6、4,950円）、デスカーゲームズ『APEX Legends：ボードゲーム』（11/13、22,000円）</li>
-        <li><a href="https://tanagaippai.com/boardgame-event-calendar-2026/" target="_blank" rel="noopener">大阪のボードゲーム会「遊盤会」が11/22にTKP大阪京橋で開催</a><time>11/22</time></li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="desk" id="column" data-nav="コラム" data-tone="ex">
-    <h2>コラム <small>この紙面の「重さ」について</small></h2>
-
-    <article class="item">
-      <div class="meta"><span class="tag">解説</span><span class="src">編集部</span></div>
-      <h3>「重さ」はBGGのユーザー投票の平均　新作の値は動きやすい</h3>
-      <p>この紙面の「重さ」は、BoardGameGeek（BGG）のWeightです。遊んだ人が1（軽い）〜5（重い）の5段階で投票した平均で、ルールの量、考える深さ、プレイ時間をまとめた目安になります。紙面では3.5前後より上を「重ゲー」として追いかけます。</p>
-      <div class="tbl"><table>
-        <thead><tr><th>投票の段階</th><th>BGGの呼び名</th><th>メーター</th></tr></thead>
-        <tbody>
-          <tr><th>1</th><td>Light（軽量級）</td><td><span class="wt-meter" style="--w:1"></span></td></tr>
-          <tr><th>2</th><td>Medium Light（中軽量級）</td><td><span class="wt-meter" style="--w:2"></span></td></tr>
-          <tr><th>3</th><td>Medium（中量級）</td><td><span class="wt-meter" style="--w:3"></span></td></tr>
-          <tr><th>4</th><td>Medium Heavy（中重量級）</td><td><span class="wt-meter" style="--w:4"></span></td></tr>
-          <tr><th>5</th><td>Heavy（重量級）</td><td><span class="wt-meter" style="--w:5"></span></td></tr>
-        </tbody>
-      </table></div>
-      <p>発売直後のゲームは投票が少ないので、値が大きく動きます。今号の新作はBGG本体で値を確かめられなかったため「未確認」としました。確かめられた号から、このメーターで表示します。</p>
+      <div class="meta"><span class="tag">今号は大きな動きなし</span><span class="src">Table Games in the World</span><time>11/12</time></div>
+      <h3>早朝のため国内の新しい発表はなし。あす13日は日本語版の発売が重なる日</h3>
+      <p>Table Games in the Worldの最新記事は、11日付の『禁足地』（すごろくや、12月4日発売）のままです。今日12日は既報のポケモン『お前、もしかしてロケット団？』の発売日、あす13日（金）は『パックマン クレイズメイズメーカー』『APEX Legends: The Board Game』日本語版など、発売が重なる日です。国内の動きは昼刊でまとめます。</p>
+      <ul class="links"><li><a href="https://tgiw.info/" target="_blank" rel="noopener">Table Games in the World</a></li></ul>
     </article>
   </section>
 <!-- EDITION:END -->
@@ -610,14 +466,38 @@ footer b{color:var(--ink)}
   <section class="desk backnumber" id="backnumber" data-nav="バックナンバー" data-tone="fav">
     <h2>バックナンバー <small>過去の号をこのページで読めます</small></h2>
 <!-- BACKNUMBER:START -->
-    <p class="empty">まだありません。次の号から、ここに過去の号がたまっていきます。</p>
+<details data-ed="2026-11-12-0200"><summary>深夜刊 <time>11/12（木） 2:00</time> <a class="bn-open" href="#ed-2026-11-12-0200">本文を読む</a></summary><ul><li><a href="https://gamefound.com/en/projects/board-and-dice/marco-polo-deluxe-master-set" target="_blank" rel="noopener">『Marco Polo Deluxe Master Set』がGamefoundで開始、約€14.6万・909人</a></li><li><a href="https://www.tabletopanalytics.com/endingsoon" target="_blank" rel="noopener">今日終わる2本：『Aces &amp; Armor』は夕方、『Cubyria』は深夜</a></li><li><a href="https://stonemaiergames.com/newsletter/blog/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://www.murder.jp/" target="_blank" rel="noopener">マダミス：15日にオンライン即売会「マダミストリート」も</a></li></ul></details>
+<details data-ed="2026-11-11-2155"><summary>夜刊 <time>11/11（水） 21:55</time> <a class="bn-open" href="#ed-2026-11-11-2155">本文を読む</a></summary><ul><li><a href="https://www.brettspiel-news.de/index.php/de/magazin-fuer-brettspieler-start/16444-hochgelobt-aber-nicht-gez-ndet-welche-top-spiele-bei-reddit-durchfallen" target="_blank" rel="noopener">「名作だけど合わなかった」の声、サイスとテラフォーミング・マーズにも</a></li><li><a href="https://www.brettspiel-news.de/index.php/de/nachrichten-uebersicht/neuerscheinungen/16436-bga-update-paladine-im-westfrankenreich-rivals-l-sst-die-arena-schrumpfen" target="_blank" rel="noopener">『西フランク王国の聖騎士』、Board Game Arenaに登場</a></li><li><a href="https://www.tabletopanalytics.com/endingsoon" target="_blank" rel="noopener">12日に『Cubyria』と『Aces &amp; Armor: Spitfire』が終了</a></li><li><a href="https://x.com/mystery_show__" target="_blank" rel="noopener">マダミス・国内は新着なし。15日に「STGR MYSTERY SHOW 2026」</a></li></ul></details>
+<details data-ed="2026-11-11-1650"><summary>夕刊 <time>11/11（水） 16:50</time> <a class="bn-open" href="#ed-2026-11-11-1650">本文を読む</a></summary><ul><li><a href="https://www.brettspiel-news.de/index.php/de/nachrichten-uebersicht/ankuendigungen/16432-container-der-wirtschaftsklassiker-kommt-als-neuauflage-zur-ck" target="_blank" rel="noopener">経済ゲームの古典『Container』、Allplayから新版</a></li><li><a href="https://www.brettspiel-news.de/index.php/de/nachrichten-uebersicht/crowdfunding/16430-through-the-mountains-knizias-yak-karawanen-ziehen-mit-kunstharz-und-metall-auf-kickstarter" target="_blank" rel="noopener">クニツィアの『Through the Mountains, Through the Desert Deluxe』、13日昼ごろ終了</a></li><li><a href="https://kicktraq.com/projects/18korea/18korea-big-box/" target="_blank" rel="noopener">鉄道経営の『18Korea Big Box』、目標の7割強で残り13日</a></li><li><a href="https://www.atomicempire.com/Item/408914" target="_blank" rel="noopener">DUNE「Conspiracy」、米販売店は「11月15日発売」と掲載</a></li></ul></details>
+<details data-ed="2026-11-11-1155"><summary>昼刊 <time>11/11（水） 11:55</time> <a class="bn-open" href="#ed-2026-11-11-1155">本文を読む</a></summary><ul><li><a href="https://tgiw.info/2026/11/kinsokuchi.html" target="_blank" rel="noopener">『禁足地』、すごろくやから12月4日発売</a></li><li><a href="https://tgiw.info/2026/11/ltr-two-towers-trick-takingj.html" target="_blank" rel="noopener">『指輪物語 二つの塔：トリックテイキングゲーム』日本語版、11月30日に4,400円で</a></li><li><a href="https://www.tabletopanalytics.com/endingsoon" target="_blank" rel="noopener">今週終わる4本、終了時刻の目安が判明</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-11-0655"><summary>朝刊 <time>11/11（水） 6:55</time> <a class="bn-open" href="#ed-2026-11-11-0655">本文を読む</a></summary><ul><li><a href="https://www.tabletopanalytics.com/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、約€322万・12,677人で終了</a></li><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-45-26/" target="_blank" rel="noopener">11月10日開始の3本、いずれも初日で目標を突破</a></li><li><a href="https://brettspielbox.de/brettspielbox-brettspiel-news-46-2026/" target="_blank" rel="noopener">『Clash of Cultures』新拡張、4つのモジュールと5つの文明を追加</a></li><li><a href="https://tgiw.info/2026/11/bella-vistaj.html" target="_blank" rel="noopener">『ベラヴィスタ』日本語版、12月4日にすごろくやから</a></li><li><a href="https://tgiw.info/2026/11/kanoj.html" target="_blank" rel="noopener">『狩野』日本語版は6,600円、1〜4人・約35分</a></li></ul></details>
+<details data-ed="2026-11-11-0150"><summary>深夜刊 <time>11/11（水） 1:50</time> <a class="bn-open" href="#ed-2026-11-11-0150">本文を読む</a></summary><ul><li><a href="https://www.brettspiel-news.de/index.php/de/nachrichten-uebersicht/crowdfunding/16428-satisfactory-the-board-game-knackt-2-6-millionen-euro-was-hinter-der-videospiel-vorlage-steckt" target="_blank" rel="noopener">『Satisfactory: The Board Game』、最終額は未確認</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">国内・マダミスは新着なし</a></li></ul></details>
+<details data-ed="2026-11-10-2150"><summary>夜刊 <time>11/10（火） 21:50</time> <a class="bn-open" href="#ed-2026-11-10-2150">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まであと約2時間</a></li><li><a href="https://godisageek.com/2026/11/thing-board-game-gamefound-card-game" target="_blank" rel="noopener">『The Thing』、カードゲームを加えてGamefoundで再販</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-10-1650"><summary>夕刊 <time>11/10（火） 16:50</time> <a class="bn-open" href="#ed-2026-11-10-1650">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まであと約7時間</a></li><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-45-26/" target="_blank" rel="noopener">『Feed the Kraken』新デラックス版、Gamefoundで11月10日開始予定</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">11月13日は日本語版の発売が集中</a></li></ul></details>
+<details data-ed="2026-11-10-1150"><summary>昼刊 <time>11/10（火） 11:50</time> <a class="bn-open" href="#ed-2026-11-10-1150">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約12時間</a></li><li><a href="https://www.boardgamequest.com/crowdfunding-campaigns-of-the-week-11-9-26/" target="_blank" rel="noopener">『Cubyria』『Too Little Time』など、今週の終了予定</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">11月13日は日本語版の発売が集中</a></li></ul></details>
+<details data-ed="2026-11-10-0650"><summary>朝刊 <time>11/10（火） 6:50</time> <a class="bn-open" href="#ed-2026-11-10-0650">本文を読む</a></summary><ul><li><a href="https://godisageek.com/2026/10/against-storm-board-game-gamefound/" target="_blank" rel="noopener">『Against the Storm』ボードゲーム版、2027年5月にGamefoundへ</a></li><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約17時間</a></li><li><a href="https://www.toy-people.com/jp/?p=115502" target="_blank" rel="noopener">ポケモン『お前、もしかしてロケット団？』、11月12日発売</a></li></ul></details>
+<details data-ed="2026-11-10-0150"><summary>深夜刊 <time>11/10（火） 1:50</time> <a class="bn-open" href="#ed-2026-11-10-0150">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約22時間</a></li><li><a href="https://advertising.boardgamegeek.com/?p=82168" target="_blank" rel="noopener">Mighty Boards『Rebirth II』、11月10日にKickstarterか</a></li><li><a href="https://x.com/mystery_show__" target="_blank" rel="noopener">「STGR MYSTERY SHOW 2026」、11月15日</a></li></ul></details>
+<details data-ed="2026-11-09-2150"><summary>夜刊 <time>11/9（月） 21:50</time> <a class="bn-open" href="#ed-2026-11-09-2150">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約26時間</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://x.com/mystery_show__" target="_blank" rel="noopener">「STGR MYSTERY SHOW 2026」、11月15日に有楽町よみうりホールで</a></li></ul></details>
+<details data-ed="2026-11-09-1650"><summary>夕刊 <time>11/9（月） 16:50</time> <a class="bn-open" href="#ed-2026-11-09-1650">本文を読む</a></summary><ul><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約31時間</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://yuyuyulog.net/new-murder-mysteries/" target="_blank" rel="noopener">グループSNE『NO AIR LEFT』、12月発売予定</a></li></ul></details>
+<details data-ed="2026-11-09-1150"><summary>昼刊 <time>11/9（月） 11:50</time> <a class="bn-open" href="#ed-2026-11-09-1150">本文を読む</a></summary><ul><li><a href="https://www.wargamer.com/braided-skies/board-game-announced" target="_blank" rel="noopener">『Braided Skies』、スタンドマイヤーの次作は雲を渡る重めのユーロ</a></li><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了まで約1日と少し</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">11月13日は日本語版の発売が集中</a></li></ul></details>
+<details data-ed="2026-11-09-0650"><summary>朝刊 <time>11/9（月） 6:50</time> <a class="bn-open" href="#ed-2026-11-09-0650">本文を読む</a></summary><ul><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-45-26/" target="_blank" rel="noopener">『Marco Polo Deluxe Master Set』、11月12日にGamefoundで開始</a></li><li><a href="https://www.gamemeca.com/en/view.php?gid=1781749" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了は11月11日0時</a></li><li><a href="https://game.watch.impress.co.jp/docs/news/2153297.html" target="_blank" rel="noopener">『FF VII 神羅ビルを登れ』、スクエニe-STOREで販売開始</a></li></ul></details>
+<details data-ed="2026-11-09-0155"><summary>深夜刊 <time>11/9（月） 1:55</time> <a class="bn-open" href="#ed-2026-11-09-0155">本文を読む</a></summary><ul><li><a href="https://godisageek.com/2026/10/satisfactory-board-game-gamefound/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了は11月10日ごろ</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li><li><a href="https://www.murder.jp/" target="_blank" rel="noopener">マダミス・国内は新着なし</a></li></ul></details>
+<details data-ed="2026-11-08-2155"><summary>夜刊 <time>11/8（日） 21:55</time> <a class="bn-open" href="#ed-2026-11-08-2155">本文を読む</a></summary><ul><li><a href="https://godisageek.com/2026/10/satisfactory-board-game-gamefound/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了は11月10日ごろ</a></li><li><a href="https://www.gamespark.jp/article/2026/09/24/172723.html" target="_blank" rel="noopener">『真・女神転生 THE BOARD GAME』、発送は11月中の予定</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-08-1655"><summary>夕刊 <time>11/8（日） 16:55</time> <a class="bn-open" href="#ed-2026-11-08-1655">本文を読む</a></summary><ul><li><a href="https://godisageek.com/2026/10/satisfactory-board-game-gamefound/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、終了は11月10日ごろ</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">11月の発売予定：『SETI』『パッチワーク』再販ほか</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-08-1150"><summary>昼刊 <time>11/8（日） 11:50</time> <a class="bn-open" href="#ed-2026-11-08-1150">本文を読む</a></summary><ul><li><a href="https://x.com/mystery_show__" target="_blank" rel="noopener">「STGR MYSTERY SHOW 2026」、11月15日に有楽町よみうりホールで開催</a></li><li><a href="https://tgiw.info/" target="_blank" rel="noopener">『パックマン クレイズメイズメーカー』『APEX Legends: The Board Game』日本語版、11月13日発売</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし</a></li></ul></details>
+<details data-ed="2026-11-08-0650"><summary>朝刊 <time>11/8（日） 6:50</time> <a class="bn-open" href="#ed-2026-11-08-0650">本文を読む</a></summary><ul><li><a href="https://tgiw.info/" target="_blank" rel="noopener">『オークス・アップ！』日本語版、2〜5人・約30分で5,720円</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし。DUNE「Conspiracy」の発売日は未確認</a></li><li><a href="https://www.murder.jp/" target="_blank" rel="noopener">Murder.JP新着は2周年オフ会（2027年2月7日）</a></li></ul></details>
+<details data-ed="2026-11-08-0155"><summary>深夜刊 <time>11/8（日） 1:55</time> <a class="bn-open" href="#ed-2026-11-08-0155">本文を読む</a></summary><ul><li><a href="https://tgiw.info/" target="_blank" rel="noopener">『オークス・アップ！』日本語版、12月18日に発売</a></li><li><a href="https://news.direwolfdigital.com/dune-imperium-conspiracy-is-coming-soon/" target="_blank" rel="noopener">お気に入り8作品は新着なし。DUNE「Conspiracy」の開発日誌は続行</a></li><li><a href="https://www.boardgamequest.com/crowdfunding-campaigns-of-the-week-11-2-26/" target="_blank" rel="noopener">重ゲー・クラファンは大きな動きなし</a></li></ul></details>
+<details data-ed="2026-11-07-2155"><summary>夜刊 <time>11/7（土） 21:55</time> <a class="bn-open" href="#ed-2026-11-07-2155">本文を読む</a></summary><ul><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-44-26" target="_blank" rel="noopener">『Satisfactory: The Board Game』、基本版€70、デラックス€135、コレクターズ€280と報道</a></li><li><a href="https://everythingboardgames.com/upcoming-board-game-kickstarters" target="_blank" rel="noopener">『Siege Perilous』、アーサー王のブリテン島を旅する大型ユーロ、12/2まで</a></li><li><a href="https://news.denfaminicogamer.jp/news/2610283p" target="_blank" rel="noopener">『テーブルゲームワールド CCFOLIA』Switch 2版、11/10配信</a></li></ul></details>
+<details data-ed="2026-11-07-1650"><summary>夕刊 <time>11/7（土） 16:50</time> <a class="bn-open" href="#ed-2026-11-07-1650">本文を読む</a></summary><ul><li><a href="https://brettspielbox.de/brettspiel-crowdfunding-news-44-26/" target="_blank" rel="noopener">『ネメシス：レガシー』、レイトプレッジが€12M超と報道</a></li><li><a href="https://badcomet.co/blogs/news/introducing-atlanteum" target="_blank" rel="noopener">『Atlanteum』、Kickstarterで開始。ロンデルとワーカープレイスメント</a></li><li><a href="https://wuerfelreich.de/satisfactory-brettspiel-gamefound/" target="_blank" rel="noopener">『Satisfactory: The Board Game』、Gamefoundで€2M超</a></li><li><a href="https://www.gamer.ne.jp/news/202610170005/" target="_blank" rel="noopener">『作者不詳』日本語版公演、11月から専門店で順次開始</a></li><li><a href="https://cmonjapan.shop/en" target="_blank" rel="noopener">CMONJAPANの新作、11月30日発売</a></li></ul></details>
+<details data-ed="2026-11-07-1155"><summary>昼刊 <time>11/7（土） 11:55</time> <a class="bn-open" href="#ed-2026-11-07-1155">本文を読む</a></summary><ul><li><a href="https://kicktraq.com/projects/kessent/origins-of-light-a-final-fantasy-board-game/" target="_blank" rel="noopener">『Origins of Light』、Kickstarterは11月18日まで</a></li><li><a href="https://boku-boardgame.net/new-work" target="_blank" rel="noopener">『ワイアームスパン拡張：ドラゴン・アカデミー』再販、11月予約に</a></li><li><a href="http://www.groupsne.co.jp/products/bg/index.html" target="_blank" rel="noopener">『あなたに捧げる殺人』、発売日は2説のまま</a></li><li><a href="https://godisageek.com/2026/10/nemesis-legacy-gamefound-campaign/" target="_blank" rel="noopener">お気に入り8作品は新着なし。『ネメシス：レガシー』は€5.7M超（10月時点）</a></li></ul></details>
+<details data-ed="2026-11-07-0650"><summary>朝刊 <time>11/7（土） 6:50</time> <a class="bn-open" href="#ed-2026-11-07-0650">本文を読む</a></summary><ul><li><a href="https://www.backerkit.com/projects/brotherwise/war-for-roshar" target="_blank" rel="noopener">『Stormlight: War for Roshar』、Kickstarterページの表示は$3.61M・14,981人</a></li><li><a href="http://www.groupsne.co.jp/products/bg/index.html" target="_blank" rel="noopener">『あなたに捧げる殺人』、発売日が11/13と11/20で食い違い</a></li><li><a href="https://brettspielbox.de/brettspiel-neuheiten-herbst-2026-czech-games-edition-cge/" target="_blank" rel="noopener">CGEの秋の新作は『Kingdom Come: Deliverance – The Board Game』</a></li><li><a href="https://gamefound.com/en/projects/feuerland/the-danes---a-feast-for-odin-game" target="_blank" rel="noopener">『The Danes』、最終額は未確認</a></li></ul></details>
 <!-- BACKNUMBER:END -->
     <p class="bn-help">「本文を読む」で、その号をこのページに表示します。最新の約5日分（25号）を残します。</p>
   </section>
 
   <footer>
     <p><b>情報源</b>　出版社の公式サイト・公式ブログ、Kickstarter・Gamefound・BackerKit・CAMPFIRE・Makuakeのキャンペーンページ、BoardGameGeek、ゲームマーケット公式、国内出版社（アークライト、ホビージャパン、ケンビルほか）とマーダーミステリーの制作元・店舗・配信アプリの公式発表。話題探しにはBGG News、BoardGameWire、Board Game Quest、Table Games in the Worldなども使い、日付・価格・金額はできるだけ公式ページで確かめています。</p>
-    <p>「重さ」はBoardGameGeekのWeight（1〜5、ユーザー投票の平均）。マーダーミステリーの記事はシナリオの中身に触れません。クラファンの金額と支援者数は確認した時点の値で、終了日時は日本時間です。毎日2・7・12・17・22時ごろ（日本時間）に新しい号を出します。</p>
+    <p>「重さ」はBoardGameGeekのWeight（1〜5、ユーザー投票の平均）。重さ・評価・ホットネスはBoardGameGeekのXML APIのデータです（データ提供: BoardGameGeek）。マーダーミステリーの記事はシナリオの中身に触れません。クラファンの金額と支援者数は確認した時点の値で、終了日時は日本時間です。毎日2・7・12・17・22時ごろ（日本時間）に新しい号を出します。</p>
   </footer>
 </div>
 
