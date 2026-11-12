@@ -164,6 +164,25 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
                f"「買える下限オッズ」は単勝の期待値が {min_ev:.2f} になるオッズで、これ以上つけば買い。"
                "観点別の印は、その観点がこの馬の評価をどれだけ押し上げているかのレース内順位（◎最上位 ○上位 △中位 －下位）。\n")
 
+    if kind == "real":
+        # 単勝: the threshold whose backtest is in reports/summary.json
+        thr = 0.95
+        picks = rows[(rows["ev"] >= thr) & (rows["p"] >= 0.01)]
+        out.append(f"### 単勝で期待値 {thr:.2f} 以上の馬\n")
+        sp = ROOT / "reports" / "summary.json"
+        hist = next((r for r in json.loads(sp.read_text()) if r["label"] == f"単勝 期待値{thr:.2f}以上"), None) \
+            if sp.exists() else None
+        if hist:
+            out.append(f"過去検証（同じ基準、{hist['races']:,} レース・{hist['tickets']:,} 点）: 的中率 {_pct(hist['hit_rate'])}、"
+                       f"回収率 {_pct(hist['roi'])}（偶然の幅 {_pct(hist['ci_low'])}〜{_pct(hist['ci_high'])}）。"
+                       "確定オッズでの検証なので、買った後にオッズが下がると期待値は下がります。\n")
+        if len(picks):
+            for _, x in picks.iterrows():
+                num = str(int(x["number"])) if pd.notna(x["number"]) else "-"
+                out.append(f"- {num} {x['horse_name']}（勝率 {_pct(x['p'])}、{x['odds']:.1f} 倍、期待値 {x['ev']:.2f}）")
+            out.append("")
+        else:
+            out.append("該当なし。\n")
     if kind == "real" and res["drawn"]:
         out.append(f"### 期待値で選んだ買い目（馬連・ワイド・三連複、期待値 {min_ev:.2f} 以上を各 100 円）\n")
         evp = ROOT / "reports" / "ev_backtest.json"
