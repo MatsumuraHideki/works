@@ -39,7 +39,11 @@ def fold_label(fid: int, fold_months: int) -> str:
     return str(y) if fold_months == 12 else f"{y}-{m + 1:02d}〜"
 
 
-def fit_all(raw: Path = features.RAW, oof_years: int = 6, fold_months: int | None = None, log=print) -> dict:
+def fit_all(raw: Path = features.RAW, oof_years: int | None = None, fold_months: int | None = None,
+            min_train_periods: int = 4, log=print) -> dict:
+    """Walk-forward fit. By default every period that has at least ``min_train_periods``
+    earlier periods of data is predicted out of fold, so longer histories give more test
+    years (and more of the races that have full odds); ``oof_years`` caps that number."""
     t0 = time.time()
     df = features.build_features(raw)
     feats = features.feature_columns()
@@ -54,7 +58,9 @@ def fit_all(raw: Path = features.RAW, oof_years: int = 6, fold_months: int | Non
     hist = model.add_market_features(hist)
     years = sorted(hist["year"].unique())
     log(f"walk-forward periods: {len(years)} x {fold_months} months")
-    test_years = years[1:][-oof_years:]
+    test_years = years[min(min_train_periods, max(1, len(years) - 2)):]
+    if oof_years:
+        test_years = years[1:][-oof_years:]
     rounds = model.tune_rounds(hist, feats, years[-2]) if len(years) >= 3 else dict(model.N_ROUNDS)
     log(f"boosting rounds: {rounds}")
     oof = model.walk_forward(hist, feats, test_years, rounds, log=log)
@@ -290,7 +296,7 @@ def write_report(res: dict, raw: Path = features.RAW, log=print) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--oof-years", type=int, default=6)
+    ap.add_argument("--oof-years", type=int, default=None, help="cap on walk-forward test periods (default: all with enough history)")
     ap.add_argument("--fold-months", type=int, default=None, help="walk-forward block length (default: auto)")
     ap.add_argument("--no-report", action="store_true")
     args = ap.parse_args(argv)
