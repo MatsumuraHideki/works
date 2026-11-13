@@ -70,6 +70,17 @@ def card_odds(card: dict, rows: pd.DataFrame) -> tuple[dict[str, dict], pd.Serie
     return tables, win, "real"
 
 
+def hours_to_post(card: dict) -> float | None:
+    """Hours between the odds snapshot and the scheduled post time (both JST)."""
+    r = card["race"]
+    try:
+        post = dt.datetime.fromisoformat(f"{r['date']}T{r['start_time']}:00")
+        snap = dt.datetime.fromisoformat(str(card.get("odds_time") or card["fetched_at"])[:19].replace(" ", "T"))
+    except (KeyError, TypeError, ValueError):
+        return None
+    return (post - snap).total_seconds() / 3600
+
+
 def mark(values: pd.Series) -> pd.Series:
     """Within-race marks for an aspect score: ◎ best, ○ top quarter, △ above median."""
     if values.nunique() <= 1:          # no information for this aspect (e.g. pedigree not collected yet)
@@ -80,8 +91,12 @@ def mark(values: pd.Series) -> pd.Series:
                      np.where(r <= n * 0.5, "△", "－"))), index=values.index)
 
 
-def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bankroll: int, min_ev: float
-                 ) -> dict:
+WIN_EV = 0.95      # 単勝 threshold whose backtest is reported in reports/summary.json
+TOP_PICK_SHARE = 0.4   # share of a budget put on the model's top pick when its win EV >= 1.0
+
+
+def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bankroll: int, min_ev: float,
+                 budget: int = 0) -> dict:
     feats = art["feats"]
     rows = rows.copy()
     tables, win_odds, kind = card_odds(card, rows)
@@ -102,6 +117,7 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
 
     drawn = rows["number"].notna().all()
     bets: list[betting.Bet] = []
+    slip: list[betting.Bet] = []
     top_by_type: dict[str, list[betting.Bet]] = {}
     if kind == "real" and drawn and len(rows) >= 2:
         probs = betting.bet_probabilities(rows["p"].to_numpy(), [int(x) for x in rows["number"]],
@@ -114,6 +130,24 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
                       key=lambda b: (exotic.CORE.index(b.bet_type), -b.ev))
         for b in bets:
             b.stake = 100
+        if budget:
+            wins = [b for b in cand if b.bet_type == "単勝" and b.ev >= WIN_EV and b.prob >= 0.01]
+            pool = [betting.Bet(b.bet_type, b.combo, b.prob, b.odds, b.ev, b.kelly) for b in wins + bets]
+            # Best-supported rule in the backtest: the model's top pick when its own win EV is
+            # 1.0 or more. When it applies it gets a fixed share of the budget up front.
+            top = rows.loc[rows["p"].idxmax()]
+            anchor = 0
+            if pd.notna(top["ev"]) and top["ev"] >= 1.0:
+                anchor = int(budget * TOP_PICK_SHARE // 100) * 100
+            slip = betting.budget_slip(pool, budget - anchor)
+            if anchor:
+                key = (int(top["number"]),)
+                hit = next((b for b in slip if b.bet_type == "単勝" and b.combo == key), None)
+                if hit is None:
+                    hit = betting.Bet("単勝", key, float(top["p"]), float(top["odds"]), float(top["ev"]), 0.0)
+                    slip.insert(0, hit)
+                hit.stake += anchor
+                slip.sort(key=lambda b: -b.prob)
         for bt in betting.BET_TYPES:
             top = sorted((b for b in cand if b.bet_type == bt and b.prob >= 0.005),
                          key=lambda b: b.ev, reverse=True)[:5]
@@ -126,7 +160,7 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
     path = ROOT / "reports" / "strategy_top.json"
     stored = json.loads(path.read_text()) if path.exists() else []
     validated = strategy.apply_strategies(stored, g, card["race"]["race_id"]) if kind != "yoso" else []
-    return {"card": card, "rows": rows.sort_values("p", ascending=False), "kind": kind, "validated": validated,
+    return {"card": card, "rows": rows.sort_values("p", ascending=False), "kind": kind, "validated": validated, "slip": slip, "budget": budget,
             "use_market": use_market, "drawn": drawn, "bets": bets, "top_by_type": top_by_type}
 
 
@@ -144,6 +178,11 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
                  "yoso": "netkeiba の予想オッズ（発売前。実際のオッズではありません）",
                  "none": "オッズ未発表"}[kind]
     out.append(f"- オッズ: {odds_note}")
+    hrs = hours_to_post(c)
+    if kind == "real" and hrs is not None and hrs > 6:
+        out.append(f"- **発走まで約 {hrs:.0f} 時間あり、まだ票数が少ない段階のオッズです。**"
+                   "この時点のオッズは少額の投票で大きく動き、券種どうしの整合も取れていないため、"
+                   "下の期待値と買い目は当日のオッズで出し直すまで目安にとどめてください。")
     if not res["drawn"]:
         out.append(f"- 枠順確定前（登録 {len(rows)} 頭）。出走馬と枠順が確定すると確率は変わります。")
     out.append(f"- データ取得: {c.get('fetched_at')} / モデル学習範囲: 〜{art['trained_through']}\n")
@@ -166,7 +205,7 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
 
     if kind == "real":
         # 単勝: the threshold whose backtest is in reports/summary.json
-        thr = 0.95
+        thr = WIN_EV
         picks = rows[(rows["ev"] >= thr) & (rows["p"] >= 0.01)]
         out.append(f"### 単勝で期待値 {thr:.2f} 以上の馬\n")
         sp = ROOT / "reports" / "summary.json"
@@ -183,6 +222,24 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
             out.append("")
         else:
             out.append("該当なし。\n")
+    if kind == "real" and res["drawn"] and res.get("budget"):
+        out.append(f"### 予算 {res['budget']:,} 円の買い目\n")
+        if res["slip"]:
+            out.append("単勝は期待値 0.95 以上、馬連・ワイド・三連複は期待値 "
+                       f"{min_ev:.2f} 以上の買い目を、当たりやすい順に 100 円ずつ入れ、余った分を上から足しています。"
+                       "モデルの 1 位の馬が単勝の期待値 1.0 以上のときは、予算の 4 割を先にその単勝に充てます"
+                       "（検証で最も成績が良かった買い方のため）。\n")
+            out.append("| 券種 | 買い目 | 購入額 | オッズ | 的中確率 | 当たった場合の払戻 |")
+            out.append("|---|---|---|---|---|---|")
+            for b in res["slip"]:
+                out.append(f"| {b.bet_type} | {b.label()} | {b.stake:,}円 | {b.odds:.1f} | {_pct(b.prob)} | "
+                           f"{b.stake * b.odds:,.0f}円 |")
+            total = sum(b.stake for b in res["slip"])
+            out.append(f"\n合計 {len(res['slip'])} 点 {total:,} 円。"
+                       "過去の検証では、この選び方の回収率は単勝・馬連・ワイド・三連複とも 93〜96% 前後で、"
+                       "選ばずに買う場合（72〜80%）よりは良いものの、プラスになるとは言えていません。\n")
+        else:
+            out.append("基準を満たす買い目がありません。このレースは見送りです。\n")
     if kind == "real" and res["drawn"]:
         out.append(f"### 期待値で選んだ買い目（馬連・ワイド・三連複、期待値 {min_ev:.2f} 以上を各 100 円）\n")
         evp = ROOT / "reports" / "ev_backtest.json"
@@ -259,6 +316,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--race-ids", default="")
     ap.add_argument("--bankroll", type=int, default=100_000)
     ap.add_argument("--min-ev", type=float, default=1.0)
+    ap.add_argument("--budget", type=int, default=5000, help="yen per race for the budget slip (0 = none)")
     ap.add_argument("--retrain", action="store_true")
     args = ap.parse_args(argv)
     ids = [x for x in args.race_ids.split(",") if x]
@@ -287,7 +345,7 @@ def main(argv: list[str] | None = None) -> int:
         rows = df[df["race_id"] == rid]
         if len(rows) < 2:
             continue
-        res = predict_race(c, rows, art, boosters, args.bankroll, args.min_ev)
+        res = predict_race(c, rows, art, boosters, args.bankroll, args.min_ev, args.budget)
         text = render(res, art, args.bankroll, args.min_ev)
         stem = f"{c['race']['date'].replace('-', '')}_{rid}"
         (OUT / f"{stem}.md").write_text(text)

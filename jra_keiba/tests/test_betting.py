@@ -33,3 +33,14 @@ def test_selection_and_sizing():
     sized = betting.size_bets(picked, bankroll=100_000, kelly_fraction=0.25, max_race_fraction=0.05)
     assert sized[0].stake == 3100                       # kelly 0.125 * 0.25 * 100k = 3125 -> 100-yen units
     assert sized[0].stake % 100 == 0
+
+
+def test_budget_slip_trims_by_probability_and_spends_the_budget():
+    mk = lambda combo, prob, odds: betting.Bet("ワイド", combo, prob, odds, prob * odds, 0.0)
+    bets = [mk((1, 2), 0.10, 12), mk((1, 3), 0.02, 80), mk((2, 3), 0.05, 25)]
+    slip = betting.budget_slip(list(bets), 200)
+    assert [(b.combo, b.stake) for b in slip] == [((1, 2), 100), ((2, 3), 100)]      # likeliest first
+    slip = betting.budget_slip(list(bets), 500)
+    assert [(b.combo, b.stake) for b in slip] == [((1, 2), 200), ((2, 3), 200), ((1, 3), 100)]
+    assert sum(b.stake for b in slip) == 500
+    assert betting.budget_slip([], 500) == []
