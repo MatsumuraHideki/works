@@ -98,11 +98,30 @@ def build(res: dict, raw: Path = features.RAW) -> list[dict]:
     return rows
 
 
+def write_markdown(rows: list[dict]) -> str:
+    """The same table as a page that reads on a phone (reports/summary.md)."""
+    pc = lambda v: "—" if v is None else f"{v * 100:.1f}%"
+    out = ["# 買い方ごとの回収率（高い順）\n",
+           "回収率 = 払戻 ÷ 購入額。100% で損益ゼロ。1 点 100 円、公式の払戻金で計算。"
+           "「偶然の幅」は、たまたまの当たり外れで数字がぶれる範囲（95%）で、"
+           "幅が 100% をまたぐ買い方は得か損かをまだ言い切れません。"
+           "モデルを使う買い方は、各年をそれより前のレースだけで学習したモデルで予測した結果です。\n",
+           "| 順位 | 買い方 | 回収率 | 偶然の幅 | 的中率 | レース数 | 種類 |", "|---|---|---|---|---|---|---|"]
+    for r in rows:
+        out.append(f"| {r['rank']} | {r['label']} | **{pc(r['roi'])}** | {pc(r['ci_low'])}〜{pc(r['ci_high'])} | "
+                   f"{pc(r['hit_rate'])} | {r['races']:,} | {r['group']} |")
+    out.append("\n詳しい内訳は [strategy.md](strategy.md)（買い方別）と [backtest.md](backtest.md)（予測精度）。\n")
+    text = "\n".join(out)
+    (ROOT / "reports" / "summary.md").write_text(text)
+    return text
+
+
 def main() -> int:
     res = pipeline.fit_all(log=lambda *a: None)
     rows = build(res)
     out = ROOT / "reports" / "summary.json"
     out.write_text(json.dumps(rows, ensure_ascii=False, indent=1))
+    write_markdown(rows)
     for r in rows:
         ci = f"{r['ci_low'] * 100:5.1f}〜{r['ci_high'] * 100:5.1f}%" if r["ci_low"] is not None else "     -"
         print(f"{r['rank']:>2} {r['roi'] * 100:6.1f}% ({ci}) {r['group']} | {r['label']} | {r['races']:,} races")
