@@ -52,6 +52,16 @@ jobs:
             DATES=$(jq -r '.dates // ""' predict_trigger.json)
           fi
           python -m keiba.cards --grades "$GRADES" ${DATES:+--dates "$DATES"}
+      - name: Commit cards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jra_keiba/data/cards
+          git commit -q -m "Update race cards and odds" || exit 0
+          for i in 1 2 3 4; do
+            git pull -q --rebase origin "${GITHUB_REF_NAME}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep $((2 ** i))
+          done
       - name: Train (only when data or code changed) and predict
         working-directory: jra_keiba
         env:
