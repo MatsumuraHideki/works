@@ -336,8 +336,12 @@ def main(argv: list[str] | None = None) -> int:
     races, runners, ped = cards_to_frames(cards)
     df = features.build_features(card_races=races, card_runners=runners, pedigree_extra=ped)
     missing = [f for f in art["feats"] if f not in df.columns]
-    if missing:
-        raise SystemExit(f"model/feature mismatch, retrain with --retrain: {missing[:5]}")
+    if missing:   # a restored model from older code: train a fresh one rather than fail
+        print(f"model/feature mismatch ({missing[:5]}), retraining")
+        res = pipeline.fit_all()
+        art = res["art"]
+        pipeline.save_artifacts(art)
+        boosters = pipeline.boosters(art)
     OUT.mkdir(parents=True, exist_ok=True)
     sections = []
     for c in sorted(cards, key=lambda c: (c["race"]["date"], c["race"].get("start_time") or "", c["race"]["race_id"])):
