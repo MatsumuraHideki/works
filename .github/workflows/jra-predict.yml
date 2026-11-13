@@ -43,6 +43,7 @@ jobs:
           path: jra_keiba/data/work/model.pkl
           key: jra-model-${{ hashFiles('jra_keiba/data/raw/**/*.gz', 'jra_keiba/keiba/*.py') }}
       - name: Fetch cards and odds
+        id: fetch
         working-directory: jra_keiba
         env:
           GRADES: ${{ inputs.grades || 'G1,G2,G3' }}
@@ -50,6 +51,7 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then
             GRADES=$(jq -r '.grades // "G1,G2,G3"' predict_trigger.json)
             DATES=$(jq -r '.dates // ""' predict_trigger.json)
+            echo "cards_only=$(jq -r '.cards_only // false' predict_trigger.json)" >> "$GITHUB_OUTPUT"
           fi
           python -m keiba.cards --grades "$GRADES" ${DATES:+--dates "$DATES"}
       - name: Commit cards
@@ -63,11 +65,13 @@ jobs:
             sleep $((2 ** i))
           done
       - name: Train (only when data or code changed) and predict
+        if: steps.fetch.outputs.cards_only != 'true'
         working-directory: jra_keiba
         env:
           BANKROLL: ${{ inputs.bankroll || '100000' }}
         run: python -m keiba.predict --bankroll "$BANKROLL"
       - name: Commit report
+        if: steps.fetch.outputs.cards_only != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
