@@ -55,6 +55,16 @@ def fetch_card(f: Fetcher, race_id: str, listed: dict | None = None) -> dict | N
         if status in ("NG", "yoso", None):
             break  # no real odds yet: other bet types are not served either
     card["odds_status"] = status
+    # The "init" response has been seen ~50 minutes behind the clock on race day. Record what
+    # the "update" action returns for 単勝 so the fresher of the two can be adopted later.
+    try:
+        _, body = f.get_bytes(nk.url_odds(race_id, 1).replace("action=init", "action=update"),
+                              referer=nk.url_shutuba(race_id))
+        probe = nk.parse_odds(decode(body), 1)
+        card["odds_update_probe"] = {"status": probe["status"], "time": probe["time"], "n": len(probe["odds"]),
+                                     "head": decode(body)[:200]}
+    except Exception as exc:  # noqa: BLE001 - a probe must never break the fetch
+        card["odds_update_probe"] = {"error": repr(exc)[:200]}
     card["odds"] = odds
     card["fetched_at"] = dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).isoformat(timespec="seconds")
     return card
