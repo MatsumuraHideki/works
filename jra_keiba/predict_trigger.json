@@ -1,8 +1,8 @@
 {
- "note": "backfill final win odds for the 11/14 races",
+ "note": "Pushing a change to this file runs the jra-predict workflow on this branch. cards_only=true stops after saving the cards and odds; results='id,id' saves only the results, payouts and final win odds of those races (for checking predictions).",
  "grades": "G1,G2,G3",
  "dates": "20261115",
- "requested_at": "2026-11-14T11:18:48Z",
+ "requested_at": "2026-11-14T12:40:00Z",
  "cards_only": true,
- "results": "202605050311,202608050311"
+ "results": ""
 }

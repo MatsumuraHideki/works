@@ -12,7 +12,16 @@
   "a_stake": 0,
   "a_return": 0,
   "a_picks": [],
-  "drift": [],
+  "drift": [
+   {
+    "number": 12,
+    "horse": "ロックターミガン",
+    "odds": 19.3,
+    "final": 14.4,
+    "ev": 1.065,
+    "ev_final": 0.795
+   }
+  ],
   "return": 0,
   "hits": [],
   "top3": [
@@ -36,7 +45,24 @@
   "a_stake": 0,
   "a_return": 0,
   "a_picks": [],
-  "drift": [],
+  "drift": [
+   {
+    "number": 3,
+    "horse": "レオンティウス",
+    "odds": 20.4,
+    "final": 20.6,
+    "ev": 1.122,
+    "ev_final": 1.133
+   },
+   {
+    "number": 7,
+    "horse": "リュウトウコヤク",
+    "odds": 42.4,
+    "final": 51.7,
+    "ev": 1.037,
+    "ev_final": 1.267
+   }
+  ],
   "return": 0,
   "hits": [],
   "top3": [
