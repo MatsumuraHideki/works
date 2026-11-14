@@ -15,15 +15,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import exotic, features, pipeline, strategy
+from . import betting, exotic, features, pipeline, strategy
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def _row(group: str, label: str, how: str, stake: np.ndarray, ret: np.ndarray, hits: int, races: int) -> dict:
+def _row(group: str, label: str, how: str, stake: np.ndarray, ret: np.ndarray, hits: int, races: int,
+         universe: str = "", hit_basis: str = "点") -> dict:
     lo, hi = exotic.boot_ci(stake.astype(float), ret.astype(float))
     n = int(stake.sum())
-    return {"group": group, "label": label, "how": how, "races": int(races), "tickets": n,
+    return {"group": group, "label": label, "how": how, "races": int(races), "tickets": n, "universe": universe,
+            "hit_basis": hit_basis,
             "hit_rate": round(hits / max(n, 1), 4), "roi": round(float(ret.sum() / max(n, 1)), 4),
             "ci_low": None if np.isnan(lo) else round(lo, 4), "ci_high": None if np.isnan(hi) else round(hi, 4)}
 
@@ -34,10 +36,15 @@ def _by_race(d: pd.DataFrame, mask: pd.Series, col: str) -> tuple[np.ndarray, np
     return g["size"].to_numpy(), g["sum"].to_numpy(), int((s[col] > 0).sum()), len(g)
 
 
-def build(res: dict, raw: Path = features.RAW) -> list[dict]:
+GRADED = ("G1", "G2", "G3")
+
+
+def build(res: dict, raw: Path = features.RAW, budget: int = 5000) -> list[dict]:
     art, oos = res["art"], res["oos"]
     races, results, payouts = features.load_raw(raw)
     d = strategy.per_horse_returns(features.build_frame(races, results), payouts)
+    span = f"{d['date'].dt.year.min()}〜{d['date'].dt.year.max()}年の全レース"
+    test = f"{oos['date'].dt.year.min()}〜{oos['date'].dt.year.max()}年の全レース（検証期間）"
     rows = []
     # --- no selection / by popularity (every race in the data)
     for label, how, mask, col in [
@@ -48,54 +55,105 @@ def build(res: dict, raw: Path = features.RAW) -> list[dict]:
         ("単勝 13番人気以下", "人気だけで選ぶ", d["popularity"] >= 13, "ret_win"),
         ("単勝 100倍以上", "人気だけで選ぶ", d["win_odds"] >= 100, "ret_win"),
     ]:
-        rows.append(_row("基準" if "全頭" in label else "人気で選ぶ", label, how, *_by_race(d, mask, col)))
-    # --- 単勝 by model expected value (walk-forward test races)
-    o = oos.assign(ret_win=oos["win"] * oos["win_odds"], ev=oos["p_final"] * oos["win_odds"])
+        rows.append(_row("基準" if "全頭" in label else "人気で選ぶ", label, how, *_by_race(d, mask, col),
+                         universe=span))
+    # --- 単勝 by model expected value (walk-forward test races), settled with the official payout
+    pw = payouts[payouts["bet_type"] == "単勝"].copy()
+    pw["number"] = pd.to_numeric(pw["combo"], errors="coerce")
+    pw = pw.dropna(subset=["number", "payout"]).groupby(["race_id", "number"], as_index=False)["payout"].sum()
+    o = oos.merge(pw, on=["race_id", "number"], how="left")
+    o["ret_win"] = o["payout"].fillna(0.0) / 100.0          # dead heats pay what was actually paid
+    o["ev"] = o["p_final"] * o["win_odds"]
+    pick = (o["p_final"] >= 0.01)
     for thr in (0.85, 0.90, 0.95, 1.00, 1.05, 1.10):
         rows.append(_row("モデルの期待値で選ぶ", f"単勝 期待値{thr:.2f}以上", "モデル+オッズ",
-                         *_by_race(o, (o["ev"] >= thr) & (o["p_final"] >= 0.01), "ret_win")))
+                         *_by_race(o, (o["ev"] >= thr) & pick, "ret_win"), universe=test))
+    is_graded, is_g1 = o["grade"].isin(GRADED), o["grade"].eq("G1")
+    rows.append(_row("モデルの期待値で選ぶ", "単勝 期待値1.00以上（重賞だけ）", "モデル+オッズ",
+                     *_by_race(o, (o["ev"] >= 1.0) & pick & is_graded, "ret_win"), universe="重賞（G1〜G3）"))
+    rows.append(_row("モデルの期待値で選ぶ", "単勝 期待値1.00以上（G1だけ）", "モデル+オッズ",
+                     *_by_race(o, (o["ev"] >= 1.0) & pick & is_g1, "ret_win"), universe="G1"))
     # the model's top pick of a race, backed only when its own win EV reaches the threshold
     top = o.loc[o.groupby("race_id")["p_final"].idxmax()]
     for thr in (1.00, 1.05):
         rows.append(_row("モデルの期待値で選ぶ", f"単勝 モデル1位の馬（その期待値が{thr:.2f}以上のレースだけ）",
-                         "モデル+オッズ", *_by_race(top, top["ev"] >= thr, "ret_win")))
-    # --- multi-horse pools by model expected value (races with full odds)
+                         "モデル+オッズ", *_by_race(top, top["ev"] >= thr, "ret_win"), universe=test))
+    # --- multi-horse pools (open-class races, the only ones with a full odds table)
     odds_df = features.load_odds(raw)
     if len(odds_df):
         tables = pipeline.odds_tables(odds_df)
         pay = strategy.payout_maps(payouts[payouts["race_id"].isin(tables)])
         ex = exotic.build(oos, tables, pay, art["lam2"], art["lam3"])
+        subsets = {"オープン以上": set(ex), "重賞（G1〜G3）": {r for r, t in ex.items() if t["grade"] in GRADED},
+                   "G1": {r for r, t in ex.items() if t["grade"] == "G1"}}
 
-        def pool(types, thr, label, group, how):
+        def pool(types, thr, label, group, how, universe="オープン以上", floor=0.005):
             st, rt, hits = [], [], 0
-            for tabs in ex.values():
+            for rid in subsets[universe]:
+                tabs = ex[rid]
                 n = r = 0.0
                 for bt in types:
                     t = tabs.get(bt)
                     if t is None:
                         continue
-                    sel = (t["p"] >= 0.005) & ((t["p"] * t["odds"] >= thr) if thr else True)
+                    sel = (t["p"] >= floor) & ((t["p"] * t["odds"] >= thr) if thr else True)
                     n += sel.sum(); r += t["ret"][sel].sum(); hits += int((t["ret"][sel] > 0).sum())
                 if n:
                     st.append(n); rt.append(r)
             if st:
-                rows.append(_row(group, label, how, np.array(st), np.array(rt), hits, len(st)))
+                rows.append(_row(group, label, how, np.array(st), np.array(rt), hits, len(st), universe=universe))
 
-        pool(exotic.CORE, None, "馬連・ワイド・三連複を選ばず買う", "基準", "選ばずに全部")
+        pool(exotic.CORE, None, "馬連・ワイド・三連複を全通り買う", "基準", "選ばずに全部", floor=0.0)
+        pool(exotic.CORE, None, "馬連・ワイド・三連複（モデルが的中確率0.5%以上と見た買い目を全部）",
+             "モデルの期待値で選ぶ", "モデル+オッズ")
         for thr in (0.90, 1.00, 1.15):
             pool(exotic.CORE, thr, f"馬連・ワイド・三連複 期待値{thr:.2f}以上", "モデルの期待値で選ぶ", "モデル+オッズ")
+        pool(exotic.CORE, 1.00, "馬連・ワイド・三連複 期待値1.00以上（重賞だけ）", "モデルの期待値で選ぶ", "モデル+オッズ",
+             universe="重賞（G1〜G3）")
+        pool(exotic.CORE, 1.00, "馬連・ワイド・三連複 期待値1.00以上（G1だけ）", "モデルの期待値で選ぶ", "モデル+オッズ",
+             universe="G1")
         for bt in exotic.CORE:
             pool([bt], 1.00, f"{bt} 期待値1.00以上", "モデルの期待値で選ぶ", "モデル+オッズ")
-        pool(["三連単"], None, "三連単を選ばず買う", "避けたい買い方", "選ばずに全部")
-        pool(["三連単"], 1.00, "三連単 期待値1.00以上", "避けたい買い方", "モデル+オッズ")
+
+        # --- the two budget slips exactly as predictions publish them
+        tops = top.set_index("race_id")["number"].astype(int).to_dict()
+        for universe, ids in subsets.items():
+            acc = {"A": ([], [], 0, 0), "B": ([], [], 0, 0)}
+            for rid in ids:
+                tabs = ex[rid]
+                cand, rets = [], {}
+                for bt in ("単勝",) + betting.CORE_TYPES:
+                    t = tabs.get(bt)
+                    if t is None:
+                        continue
+                    for k, p, od, r in zip(t["keys"], t["p"], t["odds"], t["ret"]):
+                        cand.append(betting.Bet(bt, k, float(p), float(od), float(p * od), 0.0))
+                        rets[(bt, k)] = r
+                win_slip, slip = betting.make_slips(cand, tops.get(rid, -1), budget)
+                for name, sl in (("A", win_slip), ("B", slip)):
+                    if not sl:
+                        continue
+                    st, rt, hits, any_hit = acc[name]
+                    got = sum(b.stake * rets.get((b.bet_type, b.combo), 0.0) for b in sl)
+                    st.append(sum(b.stake for b in sl) / 100.0); rt.append(got / 100.0)
+                    acc[name] = (st, rt, hits + int(got > 0), any_hit)
+            for name, text in (("A", "買い目A（単勝だけ）"), ("B", "買い目B（単勝＋馬連・ワイド・三連複）")):
+                st, rt, hits, _ = acc[name]
+                if st:
+                    r = _row("予想レポートの買い目", f"{text} {universe}", "モデル+オッズ", np.array(st), np.array(rt),
+                             0, len(st), universe=universe, hit_basis="レース")
+                    r["hit_rate"] = round(hits / len(st), 4)        # share of races with any winning ticket
+                    r["tickets"] = None
+                    rows.append(r)
     # --- fixed formations that held up best
-    top = ROOT / "reports" / "strategy_top.json"
-    if top.exists():
-        for t in json.loads(top.read_text()):
+    top_path = ROOT / "reports" / "strategy_top.json"
+    if top_path.exists():
+        for t in json.loads(top_path.read_text()):
             if t.get("kind") != "堅実":
                 continue
             rows.append({"group": "決まった形で買う", "label": f"{t['formation']}（{t['condition']}）",
                          "how": t["ranker"], "races": t["races"], "tickets": None, "hit_rate": round(t["hit"], 4),
+                         "hit_basis": "レース", "universe": test,
                          "roi": round(t["roi"], 4), "ci_low": round(t["ci_low"], 4), "ci_high": round(t["ci_high"], 4)})
     for i, r in enumerate(sorted(rows, key=lambda r: -r["roi"])):
         r["rank"] = i + 1
@@ -107,14 +165,19 @@ def write_markdown(rows: list[dict]) -> str:
     """The same table as a page that reads on a phone (reports/summary.md)."""
     pc = lambda v: "—" if v is None else f"{v * 100:.1f}%"
     out = ["# 買い方ごとの回収率（高い順）\n",
-           "回収率 = 払戻 ÷ 購入額。100% で損益ゼロ。1 点 100 円、公式の払戻金で計算。"
+           "回収率 = 払戻 ÷ 購入額。100% で損益ゼロ。公式の払戻金で計算。"
            "「偶然の幅」は、たまたまの当たり外れで数字がぶれる範囲（95%）で、"
            "幅が 100% をまたぐ買い方は得か損かをまだ言い切れません。"
            "モデルを使う買い方は、各年をそれより前のレースだけで学習したモデルで予測した結果です。\n",
-           "| 順位 | 買い方 | 回収率 | 偶然の幅 | 的中率 | レース数 | 種類 |", "|---|---|---|---|---|---|---|"]
+           "**読むときの注意**\n",
+           "- 行によって対象レースが違います（「対象」の列）。馬連・ワイド・三連複は全通りのオッズがあるオープン以上のレースだけです。",
+           "- 期待値の基準はいくつも試したうえで並べています。上位の行は、その分だけ実力より良く見えています。",
+           "- 検証は確定オッズです。実際は買ったあとにオッズが動きます。",
+           "- 的中率は「点」が 1 点あたり、「レース」が 1 点でも当たったレースの割合です。\n",
+           "| 順位 | 買い方 | 回収率 | 偶然の幅 | 的中率 | レース数 | 対象 |", "|---|---|---|---|---|---|---|"]
     for r in rows:
         out.append(f"| {r['rank']} | {r['label']} | **{pc(r['roi'])}** | {pc(r['ci_low'])}〜{pc(r['ci_high'])} | "
-                   f"{pc(r['hit_rate'])} | {r['races']:,} | {r['group']} |")
+                   f"{pc(r['hit_rate'])}（{r.get('hit_basis', '点')}） | {r['races']:,} | {r.get('universe', '')} |")
     out.append("\n詳しい内訳は [strategy.md](strategy.md)（買い方別）と [backtest.md](backtest.md)（予測精度）。\n")
     text = "\n".join(out)
     (ROOT / "reports" / "summary.md").write_text(text)

@@ -42,17 +42,17 @@ def fetch_card(f: Fetcher, race_id: str, listed: dict | None = None) -> dict | N
     card["pedigree"] = nk.parse_shutuba_past_pedigree(fetch_text(f, nk.url_shutuba_past(race_id)))
     odds: dict[str, dict] = {}
     status = None
+    # While sales are open, "init" serves a snapshot that can be ~50 minutes old and "update"
+    # the current board; before sales (predicted odds) and after the race only "init" has
+    # data. The action is chosen once, on the 単勝 table, and used for every bet type so one
+    # card never mixes a live table with a stale one.
+    action = "update"
     for t in ODDS_TYPES:
-        # While sales are open, the "init" action serves a snapshot that can be ~50 minutes
-        # old; "update" returns the current board. Before sales open (predicted odds) and after
-        # the race (final odds) only "init" has data, so fall back to it.
-        text = ""
-        for action in ("update", "init"):
-            _, body = f.get_bytes(nk.url_odds(race_id, t).replace("action=init", f"action={action}"),
-                                  referer=nk.url_shutuba(race_id))
-            text = decode(body)
-            if nk.parse_odds(text, t)["odds"]:
-                break
+        text = fetch_text(f, nk.url_odds(race_id, t).replace("action=init", f"action={action}"),
+                          referer=nk.url_shutuba(race_id))
+        if t == 1 and not nk.parse_odds(text, 1)["odds"]:
+            action = "init"
+            text = fetch_text(f, nk.url_odds(race_id, t), referer=nk.url_shutuba(race_id))
         for tt in ((1, 2) if t == 1 else (t,)):
             o = nk.parse_odds(text, tt)
             if tt == 1:
@@ -62,6 +62,7 @@ def fetch_card(f: Fetcher, race_id: str, listed: dict | None = None) -> dict | N
                 odds[nk.ODDS_TYPE[tt]] = {"-".join(map(str, k)): list(v) for k, v in o["odds"].items()}
         if status in ("NG", "yoso", None):
             break  # no real odds yet: other bet types are not served either
+    card["odds_action"] = action
     card["odds_status"] = status
     card["odds"] = odds
     card["fetched_at"] = dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).isoformat(timespec="seconds")

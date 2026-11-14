@@ -1,18 +1,19 @@
-"""Calibrate multi-horse bet probabilities against the market's own prices.
+"""Multi-horse bets on races that have a full odds table.
 
-Turning win probabilities into 馬連 / ワイド / 三連複 ... probabilities with a
-Harville-type formula and buying whatever looks under-priced loses badly (about
-50% return on graded races, and worse the higher the claimed edge): the tickets
-that look cheapest are simply the ones where the formula is most wrong.
+Win probabilities are turned into 馬連 / ワイド / 三連複 ... probabilities with a discounted
+Harville formula (see betting.py); ``build`` lines them up with each ticket's odds and
+payout so selection rules can be backtested, and ``evaluate`` reports returns by expected
+value threshold.
 
-So every ticket probability is blended with the probability implied by that
-ticket's own odds:
+The model's "expected value" for these tickets is not a true expected value: tickets with
+model EV >= 1 have returned about 0.98 per unit, not the ~1.24 the model claims. It is
+useful for ranking (returns rise with it), not as a promise.
 
-    p'(ticket) ∝ p_model(ticket)^a * q_market(ticket)^b
-
-with (a, b) fitted per bet type by maximum likelihood on settled races. a near 0
-means "the model adds nothing to this pool's prices"; expected values computed
-from p' are then honest, and usually below 1.
+``evaluate`` also reports a blended variant, p' ∝ p_model^a * q_market^b with (a, b)
+fitted per bet type on the other half of the races. Because q ∝ 1/odds and a + b ≈ 1, its
+EV is nearly a monotone function of the raw EV, so those rows are the high-EV tail of the
+raw rule rather than an independent method; they rest on few races and are not used for
+live predictions.
 """
 from __future__ import annotations
 
@@ -102,8 +103,9 @@ def evaluate(races: dict[str, dict], thresholds=(0.9, 1.0, 1.05, 1.15)) -> tuple
     """Two-fold out-of-sample test: calibrate on one half of the races (by date), bet the other.
 
     Returns (summary rows per bet type and EV threshold, calibration fitted on all races,
-    per-race records). The "全買い目" rows are the no-selection baseline (every ticket
-    with at least 0.5% model probability).
+    per-race records). The "全買い目" rows are NOT an unselected baseline: they hold every
+    ticket to which the model gives at least 0.5% probability (about a quarter of all
+    tickets). The return of truly every ticket is in reports/summary.md.
     """
     ids = sorted(races, key=lambda r: races[r]["date"])
     half = len(ids) // 2

@@ -308,6 +308,19 @@ def parse_db_race(html: str, race_id: str) -> dict[str, Any] | None:
 
 # ---------------------------------------------------------------- race card (upcoming)
 
+def card_going(d1: str) -> str | None:
+    """Going from a race card's data line. It shows up as "/ 予報 良 /" before the race,
+    "/ 良 /" afterwards and sometimes as "馬場:良"; the "直線:…" segment is wind, not going.
+    None while it has not been announced."""
+    for part in d1.split("/")[2:]:
+        if "直線" in part:
+            continue
+        gm = re.search(r"(不良|稍重|稍|重|良)", part)
+        if gm:
+            return {"稍": "稍重"}.get(gm.group(1), gm.group(1))
+    return None
+
+
 def parse_shutuba(html: str, race_id: str) -> dict[str, Any] | None:
     soup = BeautifulSoup(html, "lxml")
     table = soup.select_one("table.Shutuba_Table")
@@ -338,8 +351,7 @@ def parse_shutuba(html: str, race_id: str) -> dict[str, Any] | None:
     race["inout"] = "外" if "外" in after and "内" not in after else ("内" if "内" in after and "外" not in after else None)
     m = re.search(r"天候\s*:\s*(\S+)", d1)
     race["weather"] = m.group(1) if m else None
-    m = re.search(r"馬場\s*:\s*(\S+)", d1) or re.search(r"/\s*(良|稍重|稍|重|不良)\s*(?:/|$)", d1)
-    race["going"] = {"稍": "稍重"}.get(m.group(1), m.group(1)) if m else None
+    race["going"] = card_going(d1)
     m = re.search(r"(\d+)回\s*(\S+)\s*(\d+)日目\s*(.*?)\s*(\d+)頭", d2)
     race["kai"] = int(m.group(1)) if m else None
     race["day"] = int(m.group(3)) if m else None

@@ -5,6 +5,8 @@
   "how": "モデル+オッズ",
   "races": 676,
   "tickets": 676,
+  "universe": "2015〜2026年の全レース（検証期間）",
+  "hit_basis": "点",
   "hit_rate": 0.3003,
   "roi": 1.1796,
   "ci_low": 1.0313,
@@ -13,15 +15,59 @@
  },
  {
   "group": "モデルの期待値で選ぶ",
+  "label": "単勝 期待値1.00以上（重賞だけ）",
+  "how": "モデル+オッズ",
+  "races": 655,
+  "tickets": 857,
+  "universe": "重賞（G1〜G3）",
+  "hit_basis": "点",
+  "hit_rate": 0.0852,
+  "roi": 1.144,
+  "ci_low": 0.8118,
+  "ci_high": 1.531,
+  "rank": 2
+ },
+ {
+  "group": "予想レポートの買い目",
+  "label": "買い目A（単勝だけ） 重賞（G1〜G3）",
+  "how": "モデル+オッズ",
+  "races": 655,
+  "tickets": null,
+  "universe": "重賞（G1〜G3）",
+  "hit_basis": "レース",
+  "hit_rate": 0.1115,
+  "roi": 1.144,
+  "ci_low": 0.8123,
+  "ci_high": 1.5273,
+  "rank": 3
+ },
+ {
+  "group": "モデルの期待値で選ぶ",
   "label": "単勝 期待値1.10以上",
   "how": "モデル+オッズ",
   "races": 6149,
   "tickets": 6891,
+  "universe": "2015〜2026年の全レース（検証期間）",
+  "hit_basis": "点",
   "hit_rate": 0.0791,
-  "roi": 1.1295,
-  "ci_low": 1.0116,
-  "ci_high": 1.255,
-  "rank": 2
+  "roi": 1.1281,
+  "ci_low": 1.0094,
+  "ci_high": 1.2539,
+  "rank": 4
+ },
+ {
+  "group": "予想レポートの買い目",
+  "label": "買い目A（単勝だけ） オープン以上",
+  "how": "モデル+オッズ",
+  "races": 1420,
+  "tickets": null,
+  "universe": "オープン以上",
+  "hit_basis": "レース",
+  "hit_rate": 0.1246,
+  "roi": 1.103,
+  "ci_low": 0.8941,
+  "ci_high": 1.3347,
+  "rank": 5
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -29,11 +75,13 @@
   "how": "モデル+オッズ",
   "races": 1485,
   "tickets": 1485,
+  "universe": "2015〜2026年の全レース（検証期間）",
+  "hit_basis": "点",
   "hit_rate": 0.3037,
-  "roi": 1.0954,
-  "ci_low": 1.004,
-  "ci_high": 1.1827,
-  "rank": 3
+  "roi": 1.0948,
+  "ci_low": 1.0034,
+  "ci_high": 1.1815,
+  "rank": 6
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -41,23 +89,41 @@
   "how": "モデル+オッズ",
   "races": 10816,
   "tickets": 13162,
+  "universe": "2015〜2026年の全レース（検証期間）",
+  "hit_basis": "点",
   "hit_rate": 0.084,
-  "roi": 1.0743,
-  "ci_low": 0.9892,
-  "ci_high": 1.1582,
-  "rank": 4
+  "roi": 1.0736,
+  "ci_low": 0.9887,
+  "ci_high": 1.1572,
+  "rank": 7
  },
  {
   "group": "モデルの期待値で選ぶ",
-  "label": "単勝 期待値1.00以上",
+  "label": "単勝 期待値1.00以上（G1だけ）",
   "how": "モデル+オッズ",
-  "races": 17538,
-  "tickets": 24377,
-  "hit_rate": 0.0881,
-  "roi": 1.041,
-  "ci_low": 0.986,
-  "ci_high": 1.0986,
-  "rank": 5
+  "races": 90,
+  "tickets": 115,
+  "universe": "G1",
+  "hit_basis": "点",
+  "hit_rate": 0.113,
+  "roi": 1.0409,
+  "ci_low": 0.4512,
+  "ci_high": 1.6788,
+  "rank": 8
+ },
+ {
+  "group": "予想レポートの買い目",
+  "label": "買い目A（単勝だけ） G1",
+  "how": "モデル+オッズ",
+  "races": 90,
+  "tickets": null,
+  "universe": "G1",
+  "hit_basis": "レース",
+  "hit_rate": 0.1444,
+  "roi": 1.0409,
+  "ci_low": 0.4508,
+  "ci_high": 1.6729,
+  "rank": 9
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -65,11 +131,27 @@
   "how": "モデル+オッズ",
   "races": 2974,
   "tickets": 25618,
+  "universe": "オープン以上",
+  "hit_basis": "点",
   "hit_rate": 0.0215,
   "roi": 1.0403,
-  "ci_low": 0.929,
-  "ci_high": 1.1538,
-  "rank": 6
+  "ci_low": 0.9349,
+  "ci_high": 1.1491,
+  "rank": 10
+ },
+ {
+  "group": "モデルの期待値で選ぶ",
+  "label": "単勝 期待値1.00以上",
+  "how": "モデル+オッズ",
+  "races": 17538,
+  "tickets": 24377,
+  "universe": "2015〜2026年の全レース（検証期間）",
+  "hit_basis": "点",
+  "hit_rate": 0.0881,
+  "roi": 1.04,
+  "ci_low": 0.9851,
+  "ci_high": 1.0975,
+  "rank": 11
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -77,11 +159,13 @@
   "how": "モデル+オッズ",
   "races": 3012,
   "tickets": 37529,
+  "universe": "オープン以上",
+  "hit_basis": "点",
   "hit_rate": 0.0127,
   "roi": 1.0314,
-  "ci_low": 0.9112,
-  "ci_high": 1.1502,
-  "rank": 7
+  "ci_low": 0.9129,
+  "ci_high": 1.1499,
+  "rank": 12
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -89,11 +173,13 @@
   "how": "モデル+オッズ",
   "races": 25959,
   "tickets": 43637,
+  "universe": "2015〜2026年の全レース（検証期間）",
+  "hit_basis": "点",
   "hit_rate": 0.094,
-  "roi": 1.0264,
-  "ci_low": 0.9864,
-  "ci_high": 1.0707,
-  "rank": 8
+  "roi": 1.0252,
+  "ci_low": 0.9851,
+  "ci_high": 1.0691,
+  "rank": 13
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -101,11 +187,13 @@
   "how": "モデル+オッズ",
   "races": 2949,
   "tickets": 51089,
+  "universe": "オープン以上",
+  "hit_basis": "点",
   "hit_rate": 0.0183,
   "roi": 1.0248,
-  "ci_low": 0.9064,
-  "ci_high": 1.1367,
-  "rank": 9
+  "ci_low": 0.9129,
+  "ci_high": 1.1354,
+  "rank": 14
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -113,11 +201,13 @@
   "how": "モデル+オッズ",
   "races": 3016,
   "tickets": 96227,
+  "universe": "オープン以上",
+  "hit_basis": "点",
   "hit_rate": 0.0226,
   "roi": 0.9822,
-  "ci_low": 0.9079,
-  "ci_high": 1.0607,
-  "rank": 10
+  "ci_low": 0.9069,
+  "ci_high": 1.0599,
+  "rank": 15
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -125,11 +215,27 @@
   "how": "モデル+オッズ",
   "races": 33921,
   "tickets": 75495,
+  "universe": "2015〜2026年の全レース（検証期間）",
+  "hit_basis": "点",
   "hit_rate": 0.1,
-  "roi": 0.9737,
-  "ci_low": 0.9448,
-  "ci_high": 1.0,
-  "rank": 11
+  "roi": 0.9721,
+  "ci_low": 0.9425,
+  "ci_high": 0.9985,
+  "rank": 16
+ },
+ {
+  "group": "モデルの期待値で選ぶ",
+  "label": "馬連・ワイド・三連複 期待値1.00以上（重賞だけ）",
+  "how": "モデル+オッズ",
+  "races": 1518,
+  "tickets": 49253,
+  "universe": "重賞（G1〜G3）",
+  "hit_basis": "点",
+  "hit_rate": 0.0212,
+  "roi": 0.9544,
+  "ci_low": 0.8491,
+  "ci_high": 1.0599,
+  "rank": 17
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -137,11 +243,27 @@
   "how": "モデル+オッズ",
   "races": 38519,
   "tickets": 124684,
+  "universe": "2015〜2026年の全レース（検証期間）",
+  "hit_basis": "点",
   "hit_rate": 0.1068,
-  "roi": 0.9459,
-  "ci_low": 0.9248,
-  "ci_high": 0.9668,
-  "rank": 12
+  "roi": 0.9441,
+  "ci_low": 0.9233,
+  "ci_high": 0.965,
+  "rank": 18
+ },
+ {
+  "group": "予想レポートの買い目",
+  "label": "買い目B（単勝＋馬連・ワイド・三連複） オープン以上",
+  "how": "モデル+オッズ",
+  "races": 3020,
+  "tickets": null,
+  "universe": "オープン以上",
+  "hit_basis": "レース",
+  "hit_rate": 0.3974,
+  "roi": 0.9422,
+  "ci_low": 0.876,
+  "ci_high": 1.0127,
+  "rank": 19
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -149,11 +271,13 @@
   "how": "モデル+オッズ",
   "races": 3025,
   "tickets": 144009,
+  "universe": "オープン以上",
+  "hit_basis": "点",
   "hit_rate": 0.0256,
   "roi": 0.9358,
-  "ci_low": 0.8802,
-  "ci_high": 0.9967,
-  "rank": 13
+  "ci_low": 0.8809,
+  "ci_high": 0.9905,
+  "rank": 20
  },
  {
   "group": "決まった形で買う",
@@ -162,10 +286,26 @@
   "races": 4802,
   "tickets": null,
   "hit_rate": 0.2432,
+  "hit_basis": "レース",
+  "universe": "2015〜2026年の全レース（検証期間）",
   "roi": 0.9138,
   "ci_low": 0.8705,
   "ci_high": 0.9612,
-  "rank": 14
+  "rank": 21
+ },
+ {
+  "group": "予想レポートの買い目",
+  "label": "買い目B（単勝＋馬連・ワイド・三連複） 重賞（G1〜G3）",
+  "how": "モデル+オッズ",
+  "races": 1518,
+  "tickets": null,
+  "universe": "重賞（G1〜G3）",
+  "hit_basis": "レース",
+  "hit_rate": 0.3827,
+  "roi": 0.9124,
+  "ci_low": 0.8181,
+  "ci_high": 1.006,
+  "rank": 22
  },
  {
   "group": "決まった形で買う",
@@ -174,10 +314,12 @@
   "races": 8883,
   "tickets": null,
   "hit_rate": 0.9303,
+  "hit_basis": "レース",
+  "universe": "2015〜2026年の全レース（検証期間）",
   "roi": 0.9057,
   "ci_low": 0.8964,
   "ci_high": 0.9152,
-  "rank": 15
+  "rank": 23
  },
  {
   "group": "決まった形で買う",
@@ -186,10 +328,12 @@
   "races": 8883,
   "tickets": null,
   "hit_rate": 0.7872,
+  "hit_basis": "レース",
+  "universe": "2015〜2026年の全レース（検証期間）",
   "roi": 0.9004,
   "ci_low": 0.8905,
   "ci_high": 0.9102,
-  "rank": 16
+  "rank": 24
  },
  {
   "group": "人気で選ぶ",
@@ -197,11 +341,13 @@
   "how": "人気だけで選ぶ",
   "races": 12480,
   "tickets": 12488,
+  "universe": "2010〜2026年の全レース",
+  "hit_basis": "点",
   "hit_rate": 0.8066,
   "roi": 0.8929,
   "ci_low": 0.885,
   "ci_high": 0.9007,
-  "rank": 17
+  "rank": 25
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -209,11 +355,13 @@
   "how": "モデル+オッズ",
   "races": 2869,
   "tickets": 33080,
+  "universe": "オープン以上",
+  "hit_basis": "点",
   "hit_rate": 0.0345,
   "roi": 0.8813,
-  "ci_low": 0.7926,
-  "ci_high": 0.9641,
-  "rank": 18
+  "ci_low": 0.8018,
+  "ci_high": 0.9792,
+  "rank": 26
  },
  {
   "group": "決まった形で買う",
@@ -222,10 +370,12 @@
   "races": 21434,
   "tickets": null,
   "hit_rate": 0.2048,
+  "hit_basis": "レース",
+  "universe": "2015〜2026年の全レース（検証期間）",
   "roi": 0.8694,
   "ci_low": 0.8424,
   "ci_high": 0.8936,
-  "rank": 19
+  "rank": 27
  },
  {
   "group": "人気で選ぶ",
@@ -233,23 +383,41 @@
   "how": "人気だけで選ぶ",
   "races": 56128,
   "tickets": 56128,
+  "universe": "2010〜2026年の全レース",
+  "hit_basis": "点",
   "hit_rate": 0.6405,
   "roi": 0.8404,
   "ci_low": 0.8349,
   "ci_high": 0.8456,
-  "rank": 20
+  "rank": 28
  },
  {
-  "group": "基準",
-  "label": "馬連・ワイド・三連複を選ばず買う",
-  "how": "選ばずに全部",
+  "group": "モデルの期待値で選ぶ",
+  "label": "馬連・ワイド・三連複 期待値1.00以上（G1だけ）",
+  "how": "モデル+オッズ",
+  "races": 279,
+  "tickets": 9900,
+  "universe": "G1",
+  "hit_basis": "点",
+  "hit_rate": 0.0194,
+  "roi": 0.8142,
+  "ci_low": 0.6262,
+  "ci_high": 1.0262,
+  "rank": 29
+ },
+ {
+  "group": "モデルの期待値で選ぶ",
+  "label": "馬連・ワイド・三連複（モデルが的中確率0.5%以上と見た買い目を全部）",
+  "how": "モデル+オッズ",
   "races": 3025,
   "tickets": 455193,
+  "universe": "オープン以上",
+  "hit_basis": "点",
   "hit_rate": 0.03,
   "roi": 0.7925,
-  "ci_low": 0.7759,
-  "ci_high": 0.8098,
-  "rank": 21
+  "ci_low": 0.7741,
+  "ci_high": 0.8089,
+  "rank": 30
  },
  {
   "group": "人気で選ぶ",
@@ -257,11 +425,27 @@
   "how": "人気だけで選ぶ",
   "races": 56129,
   "tickets": 56129,
+  "universe": "2010〜2026年の全レース",
+  "hit_basis": "点",
   "hit_rate": 0.3259,
   "roi": 0.7831,
   "ci_low": 0.7739,
   "ci_high": 0.7929,
-  "rank": 22
+  "rank": 31
+ },
+ {
+  "group": "予想レポートの買い目",
+  "label": "買い目B（単勝＋馬連・ワイド・三連複） G1",
+  "how": "モデル+オッズ",
+  "races": 279,
+  "tickets": null,
+  "universe": "G1",
+  "hit_basis": "レース",
+  "hit_rate": 0.3978,
+  "roi": 0.7395,
+  "ci_low": 0.5887,
+  "ci_high": 0.9167,
+  "rank": 32
  },
  {
   "group": "基準",
@@ -269,23 +453,27 @@
   "how": "選ばずに全部",
   "races": 56129,
   "tickets": 793449,
+  "universe": "2010〜2026年の全レース",
+  "hit_basis": "点",
   "hit_rate": 0.0708,
   "roi": 0.7222,
   "ci_low": 0.711,
   "ci_high": 0.7331,
-  "rank": 23
+  "rank": 33
  },
  {
-  "group": "避けたい買い方",
-  "label": "三連単を選ばず買う",
+  "group": "基準",
+  "label": "馬連・ワイド・三連複を全通り買う",
   "how": "選ばずに全部",
-  "races": 431,
-  "tickets": 12376,
-  "hit_rate": 0.008,
-  "roi": 0.6254,
-  "ci_low": 0.5015,
-  "ci_high": 0.7583,
-  "rank": 24
+  "races": 3025,
+  "tickets": 1910171,
+  "universe": "オープン以上",
+  "hit_basis": "点",
+  "hit_rate": 0.0079,
+  "roi": 0.6446,
+  "ci_low": 0.5919,
+  "ci_high": 0.7055,
+  "rank": 34
  },
  {
   "group": "人気で選ぶ",
@@ -293,11 +481,13 @@
   "how": "人気だけで選ぶ",
   "races": 41403,
   "tickets": 144994,
+  "universe": "2010〜2026年の全レース",
+  "hit_basis": "点",
   "hit_rate": 0.0043,
   "roi": 0.5267,
   "ci_low": 0.4784,
   "ci_high": 0.5784,
-  "rank": 25
+  "rank": 35
  },
  {
   "group": "人気で選ぶ",
@@ -305,22 +495,12 @@
   "how": "人気だけで選ぶ",
   "races": 50742,
   "tickets": 170801,
+  "universe": "2010〜2026年の全レース",
+  "hit_basis": "点",
   "hit_rate": 0.0028,
   "roi": 0.4657,
   "ci_low": 0.4219,
   "ci_high": 0.511,
-  "rank": 26
- },
- {
-  "group": "避けたい買い方",
-  "label": "三連単 期待値1.00以上",
-  "how": "モデル+オッズ",
-  "races": 328,
-  "tickets": 2567,
-  "hit_rate": 0.0035,
-  "roi": 0.3972,
-  "ci_low": 0.1341,
-  "ci_high": 0.6848,
-  "rank": 27
+  "rank": 36
  }
 ]

@@ -172,15 +172,8 @@ def portfolio_ev(bets: list[Bet]) -> tuple[int, float]:
 
 
 def budget_slip(bets: list[Bet], budget: int, unit: int = 100) -> list[Bet]:
-    """Fit the qualifying tickets into a budget.
-
-    Tickets are taken in order of hit probability, one unit each, until the money runs
-    out; money left over after every ticket has one unit is added from the top, one
-    unit at a time. Trimming by probability rather than by expected value keeps the
-    backtested return about the same while hitting far more often (in the backtest the
-    ten likeliest qualifying tickets hit 5.0% of the time against 1.7% for the ten
-    with the highest expected value).
-    """
+    """Fit tickets into a budget: one unit each in order of hit probability until the money
+    runs out; money left after every ticket has a unit is added from the top, a unit at a time."""
     ordered = sorted(bets, key=lambda b: -b.prob)
     n_units = budget // unit
     for b in ordered:
@@ -193,6 +186,44 @@ def budget_slip(bets: list[Bet], budget: int, unit: int = 100) -> list[Bet]:
         n_units -= 1
         i += 1
     return [b for b in ordered if b.stake > 0]
+
+
+CORE_TYPES = ("馬連", "ワイド", "三連複")
+WIN_EV = 0.95          # 単勝 threshold used in the mixed slip
+TOP_PICK_SHARE = 0.4   # share of the budget put on the model's top pick when its win EV >= 1.0
+
+
+def make_slips(cand: list[Bet], top_number: int, budget: int, min_ev: float = 1.0
+               ) -> tuple[list[Bet], list[Bet]]:
+    """The two budget slips of a race, from every priced ticket (``cand``).
+
+    A (win only)  単勝 with EV >= 1.0, a fifth of the budget per horse at most.
+    B (mixed)     単勝 with EV >= 0.95 plus 馬連/ワイド/三連複 with EV >= ``min_ev``, likeliest
+                  first; 40% goes on the model's top pick first when its win EV is >= 1.0.
+
+    Predictions and the backtest both call this, so the reported record is for exactly the
+    slips that are published.
+    """
+    def copy(b: Bet) -> Bet:
+        return Bet(b.bet_type, b.combo, b.prob, b.odds, b.ev, b.kelly)
+
+    solid = [copy(b) for b in cand if b.bet_type == "単勝" and b.ev >= 1.0 and b.prob >= 0.01]
+    per = max(100, int(budget * 0.2 // 100) * 100)
+    win_slip = budget_slip(solid, min(budget, per * len(solid)))
+
+    wins = [b for b in cand if b.bet_type == "単勝" and b.ev >= WIN_EV and b.prob >= 0.01]
+    core = [b for b in cand if b.bet_type in CORE_TYPES and b.ev >= min_ev and b.prob >= 0.005]
+    top = next((b for b in cand if b.bet_type == "単勝" and b.combo == (top_number,)), None)
+    anchor = int(budget * TOP_PICK_SHARE // 100) * 100 if top is not None and top.ev >= 1.0 else 0
+    slip = budget_slip([copy(b) for b in wins + core], budget - anchor)
+    if anchor:
+        hit = next((b for b in slip if b.bet_type == "単勝" and b.combo == top.combo), None)
+        if hit is None:
+            hit = copy(top)
+            slip.insert(0, hit)
+        hit.stake += anchor
+        slip.sort(key=lambda b: -b.prob)
+    return win_slip, slip
 
 
 # ------------------------------------------------------------------ grouping for entry

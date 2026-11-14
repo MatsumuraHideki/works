@@ -12,6 +12,7 @@ Usage:
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
 import sys
@@ -26,6 +27,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PRED = ROOT / "reports" / "predictions"
 LIVE = ROOT / "data" / "cards" / "results"
 OUT = ROOT / "reports"
+JST = dt.timezone(dt.timedelta(hours=9))
 
 
 def _key(bet_type: str, combo) -> tuple[int, ...]:
@@ -77,6 +79,16 @@ def settle_all(log=print) -> list[dict]:
         if not slip and jp.with_suffix(".md").exists():
             slip = slip_from_markdown(jp.with_suffix(".md").read_text())
         res = load_result(race["race_id"], raw_payouts)
+        # a "prediction" whose snapshot was taken after post time must never be scored
+        try:
+            post = dt.datetime.fromisoformat(f"{race['date']}T{race['start_time']}:00").replace(tzinfo=JST)
+            snap = dt.datetime.fromisoformat(str(d.get("fetched_at")))
+            snap = snap if snap.tzinfo else snap.replace(tzinfo=JST)
+            if snap >= post:
+                log(f"skip {race['race_id']}: snapshot {snap} is not before post time {post}")
+                continue
+        except (KeyError, TypeError, ValueError):
+            pass
         win_slip = d.get("win_slip") or []
         row = {"date": race["date"], "race_id": race["race_id"], "race": race["name"], "grade": race.get("grade"),
                "odds_time": d.get("odds_time"), "tickets": len(slip), "stake": sum(t["stake"] for t in slip),

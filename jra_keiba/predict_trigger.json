@@ -2,7 +2,7 @@
   "note": "Pushing a change to this file runs the jra-predict workflow on this branch. cards_only=true stops after saving the cards and odds; results='id,id' saves only the results and payouts of those races (for checking predictions).",
   "grades": "G1,G2,G3",
   "dates": "20261115",
-  "requested_at": "2026-11-14T06:55:44Z",
+  "requested_at": "2026-11-14T11:18:48Z",
   "cards_only": true,
-  "results": "202605050311,202608050311"
+  "results": ""
 }

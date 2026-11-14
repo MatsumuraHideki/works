@@ -27,7 +27,37 @@ ASPECTS = {"ability": "能力", "form": "近走", "aptitude": "適性", "people"
            "pedigree": "血統", "race": "展開・枠"}
 
 
-def load_cards(race_ids: list[str] | None = None, since: dt.date | None = None) -> list[dict]:
+JST = dt.timezone(dt.timedelta(hours=9))
+
+
+def post_time(card: dict) -> dt.datetime | None:
+    r = card["race"]
+    try:
+        return dt.datetime.fromisoformat(f"{r['date']}T{r['start_time']}:00").replace(tzinfo=JST)
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def snapshot_time(card: dict) -> dt.datetime | None:
+    try:
+        t = dt.datetime.fromisoformat(str(card["fetched_at"]))
+    except (KeyError, TypeError, ValueError):
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=JST)
+
+
+def is_pre_race(card: dict) -> bool:
+    """True when the snapshot (card and odds) was taken before the scheduled post time."""
+    post, snap = post_time(card), snapshot_time(card)
+    return post is None or snap is None or snap < post
+
+
+def load_cards(race_ids: list[str] | None = None, since: dt.date | None = None,
+               now: dt.datetime | None = None) -> list[dict]:
+    """Cards to predict. A race whose post time has passed is never predicted again (that
+    would overwrite the prediction that was published before the race), and a snapshot taken
+    after post time is not a prediction at all."""
+    now = now or dt.datetime.now(JST)
     cards = []
     for p in sorted(CARDS.glob("*.json")):
         c = json.loads(p.read_text())
@@ -35,12 +65,19 @@ def load_cards(race_ids: list[str] | None = None, since: dt.date | None = None) 
             continue
         if not race_ids and since and c["race"]["date"] < since.isoformat():
             continue
+        post = post_time(c)
+        if (post is not None and now >= post) or not is_pre_race(c):
+            print(f"skip {c['race']['race_id']} {c['race']['name']}: post time has passed")
+            continue
         cards.append(c)
     return cards
 
 
 def cards_to_frames(cards: list[dict]) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     races = pd.DataFrame([c["race"] for c in cards])
+    # Going is not announced until race day; the model never saw a missing value for it, so
+    # an unknown going is computed as 良 (about 70% of races) and the report says so.
+    races["going"] = races["going"].fillna("良")
     runners = pd.DataFrame([r for c in cards for r in c["runners"] if not r.get("cancelled")])
     for col in ("finish", "time_sec", "last3f", "win_odds", "popularity", "prize"):
         runners[col] = np.nan
@@ -81,6 +118,23 @@ def hours_to_post(card: dict) -> float | None:
     return (post - snap).total_seconds() / 3600
 
 
+def slip_record(plan: str, grade: str | None) -> str:
+    """Backtest of the published slip rule (reports/summary.json), for this race's grade."""
+    sp = ROOT / "reports" / "summary.json"
+    if not sp.exists():
+        return "この買い方の過去検証はまだありません。"
+    rows = json.loads(sp.read_text())
+    universe = "G1" if grade == "G1" else ("重賞（G1〜G3）" if grade in ("G2", "G3") else "オープン以上")
+    name = "買い目A（単勝だけ）" if plan == "A" else "買い目B（単勝＋馬連・ワイド・三連複）"
+    parts = []
+    for u in dict.fromkeys([universe, "オープン以上"]):
+        r = next((x for x in rows if x["label"] == f"{name} {u}"), None)
+        if r:
+            parts.append(f"{u} {r['races']:,} レースで回収率 {_pct(r['roi'])}"
+                         f"（偶然の幅 {_pct(r['ci_low'])}〜{_pct(r['ci_high'])}、当たりがあったレース {_pct(r['hit_rate'])}）")
+    return "この買い目そのものの過去検証: " + "、".join(parts) + "。" if parts else "この買い方の過去検証はまだありません。"
+
+
 def mark(values: pd.Series) -> pd.Series:
     """Within-race marks for an aspect score: ◎ best, ○ top quarter, △ above median."""
     if values.nunique() <= 1:          # no information for this aspect (e.g. pedigree not collected yet)
@@ -91,8 +145,7 @@ def mark(values: pd.Series) -> pd.Series:
                      np.where(r <= n * 0.5, "△", "－"))), index=values.index)
 
 
-WIN_EV = 0.95      # 単勝 threshold whose backtest is reported in reports/summary.json
-TOP_PICK_SHARE = 0.4   # share of a budget put on the model's top pick when its win EV >= 1.0
+WIN_EV = betting.WIN_EV
 
 
 def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bankroll: int, min_ev: float,
@@ -101,6 +154,12 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
     rows = rows.copy()
     tables, win_odds, kind = card_odds(card, rows)
     rows["odds"] = win_odds
+    # With real odds, a runner without a win price has been scratched after the card was
+    # published: drop it rather than fall back to the odds-free model for the whole race.
+    dropped: list[str] = []
+    if kind == "real" and rows["odds"].isna().any() and rows["odds"].notna().sum() >= 2:
+        dropped = [str(x) for x in rows.loc[rows["odds"].isna(), "horse_name"]]
+        rows = rows[rows["odds"].notna()].copy()
     use_market = kind != "none" and rows["odds"].notna().all()
     rows = model.add_market_features(rows, "odds")       # NaN when there are no odds
     s = model.predict_stage1(boosters, rows, feats)
@@ -120,41 +179,20 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
     slip: list[betting.Bet] = []
     win_slip: list[betting.Bet] = []
     top_by_type: dict[str, list[betting.Bet]] = {}
-    if kind == "real" and drawn and len(rows) >= 2:
+    # Slips need the odds-blended probabilities: their backtest is for that model only.
+    if kind == "real" and drawn and use_market and len(rows) >= 2:
         probs = betting.bet_probabilities(rows["p"].to_numpy(), [int(x) for x in rows["number"]],
                                           art["lam2"], art["lam3"])
         cand = betting.evaluate_bets(probs, tables)
-        # Same rule as the backtest (reports/backtest.md section 4): every 馬連 / ワイド / 三連複
-        # ticket whose model expected value reaches the threshold, 100 yen each. Buying only
-        # the few highest-EV tickets tested much worse than buying the whole set.
+        # every 馬連 / ワイド / 三連複 ticket whose model EV reaches the threshold, 100 yen each
+        # (the rule of reports/backtest.md section 4)
         bets = sorted((b for b in cand if b.bet_type in exotic.CORE and b.ev >= min_ev and b.prob >= 0.005),
                       key=lambda b: (exotic.CORE.index(b.bet_type), -b.ev))
         for b in bets:
             b.stake = 100
         if budget:
-            wins = [b for b in cand if b.bet_type == "単勝" and b.ev >= WIN_EV and b.prob >= 0.01]
-            solid = [betting.Bet(b.bet_type, b.combo, b.prob, b.odds, b.ev, b.kelly)
-                     for b in cand if b.bet_type == "単勝" and b.ev >= 1.0 and b.prob >= 0.01]
-            # flat stakes are what the backtest measures: a fifth of the budget per horse, so a
-            # single long shot never takes the whole budget
-            per = max(100, int(budget * 0.2 // 100) * 100)
-            win_slip = betting.budget_slip(solid, min(budget, per * len(solid)))
-            pool = [betting.Bet(b.bet_type, b.combo, b.prob, b.odds, b.ev, b.kelly) for b in wins + bets]
-            # Best-supported rule in the backtest: the model's top pick when its own win EV is
-            # 1.0 or more. When it applies it gets a fixed share of the budget up front.
             top = rows.loc[rows["p"].idxmax()]
-            anchor = 0
-            if pd.notna(top["ev"]) and top["ev"] >= 1.0:
-                anchor = int(budget * TOP_PICK_SHARE // 100) * 100
-            slip = betting.budget_slip(pool, budget - anchor)
-            if anchor:
-                key = (int(top["number"]),)
-                hit = next((b for b in slip if b.bet_type == "単勝" and b.combo == key), None)
-                if hit is None:
-                    hit = betting.Bet("単勝", key, float(top["p"]), float(top["odds"]), float(top["ev"]), 0.0)
-                    slip.insert(0, hit)
-                hit.stake += anchor
-                slip.sort(key=lambda b: -b.prob)
+            win_slip, slip = betting.make_slips(cand, int(top["number"]), budget, min_ev)
         for bt in betting.BET_TYPES:
             top = sorted((b for b in cand if b.bet_type == bt and b.prob >= 0.005),
                          key=lambda b: b.ev, reverse=True)[:5]
@@ -168,7 +206,8 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
     stored = json.loads(path.read_text()) if path.exists() else []
     validated = strategy.apply_strategies(stored, g, card["race"]["race_id"]) if kind != "yoso" else []
     return {"card": card, "rows": rows.sort_values("p", ascending=False), "kind": kind, "validated": validated, "slip": slip, "win_slip": win_slip, "budget": budget,
-            "use_market": use_market, "drawn": drawn, "bets": bets, "top_by_type": top_by_type}
+            "use_market": use_market, "drawn": drawn, "bets": bets, "top_by_type": top_by_type,
+            "dropped": dropped, "going_assumed": card["race"].get("going") is None}
 
 
 def _pct(x: float) -> str:
@@ -185,6 +224,12 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
                  "yoso": "netkeiba の予想オッズ（発売前。実際のオッズではありません）",
                  "none": "オッズ未発表"}[kind]
     out.append(f"- オッズ: {odds_note}")
+    if res.get("going_assumed"):
+        out.append("- 馬場状態が未発表のため「良」として計算しています。発表後に変わることがあります。")
+    else:
+        out.append(f"- 馬場状態: {r.get('going')}")
+    if res.get("dropped"):
+        out.append(f"- 単勝オッズが付いていない馬（出走取消の可能性）を除いて計算: {'、'.join(res['dropped'])}")
     hrs = hours_to_post(c)
     if kind == "real" and hrs is not None and hrs > 6:
         out.append(f"- **発走まで約 {hrs:.0f} 時間あり、まだ票数が少ない段階のオッズです。**"
@@ -230,14 +275,16 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
         else:
             out.append("該当なし。\n")
     if kind == "real" and res["drawn"] and res.get("budget"):
-        out.append(f"### 予算 {res['budget']:,} 円の買い目 A：単勝だけ（検証の成績が最も良い買い方）\n")
+        out.append(f"### 予算 {res['budget']:,} 円の買い目 A：単勝だけ\n")
         sp = ROOT / "reports" / "summary.json"
         hist = next((r for r in json.loads(sp.read_text()) if r["label"] == "単勝 期待値1.00以上"), None) \
             if sp.exists() else None
+        out.append("単勝の期待値 1.00 以上の馬だけを、1 頭あたり予算の 2 割までで買います（残りは使いません）。")
         if hist:
-            out.append(f"単勝の期待値 1.00 以上の馬だけを、1 頭あたり予算の 2 割までで買います（残りは使いません）。過去検証（{hist['races']:,} レース・{hist['tickets']:,} 点）: "
+            out.append(f"全レースでの過去検証（{hist['races']:,} レース・{hist['tickets']:,} 点）: "
                        f"的中率 {_pct(hist['hit_rate'])}、回収率 {_pct(hist['roi'])}"
-                       f"（偶然の幅 {_pct(hist['ci_low'])}〜{_pct(hist['ci_high'])}）。\n")
+                       f"（偶然の幅 {_pct(hist['ci_low'])}〜{_pct(hist['ci_high'])}）。")
+        out.append(slip_record("A", r.get("grade")) + "\n")
         if res.get("win_slip"):
             for b in res["win_slip"]:
                 name = rows.loc[rows["number"] == b.combo[0], "horse_name"]
@@ -274,9 +321,7 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
                     body = "-".join(map(str, g["others"]))
                 out.append(f"- {g['bet_type']} {body}（{g['n']}点 × {g['stake']:,}円 = {g['n'] * g['stake']:,}円）")
             total = sum(b.stake for b in res["slip"])
-            out.append(f"\n合計 {len(res['slip'])} 点 {total:,} 円。"
-                       "過去の検証では、この選び方の回収率は単勝・馬連・ワイド・三連複とも 93〜96% 前後で、"
-                       "選ばずに買う場合（72〜80%）よりは良いものの、プラスになるとは言えていません。\n")
+            out.append(f"\n合計 {len(res['slip'])} 点 {total:,} 円。{slip_record('B', r.get('grade'))}\n")
         else:
             out.append("基準を満たす買い目がありません。このレースは見送りです。\n")
     if kind == "real" and res["drawn"]:
@@ -284,11 +329,11 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
         evp = ROOT / "reports" / "ev_backtest.json"
         ev = json.loads(evp.read_text()) if evp.exists() else None
         if ev:
-            base = f"。選ばずに買った場合は {_pct(ev['baseline_roi'])}" if ev.get("baseline_roi") else ""
+            base = (f"。モデルが的中確率 0.5% 以上と見た買い目を全部買った場合は {_pct(ev['baseline_roi'])}"
+                    if ev.get("baseline_roi") else "")
             out.append(f"過去検証（同じルール、{ev['races']} レース・{ev['tickets']:,} 点）: 的中率 {_pct(ev['hit'])}、"
                        f"回収率 {_pct(ev['roi'])}（偶然の幅 {_pct(ev['ci_low'])}〜{_pct(ev['ci_high'])}）{base}。"
-                       "偶然の幅の下限が 100% を超えるまでは、プラスと言い切れない買い方です。"
-                       "期待値が特に高い数点だけに絞ると成績が悪化したため、該当する買い目を全部買う前提です。\n")
+                       "偶然の幅の下限が 100% を超えるまでは、プラスと言い切れない買い方です。\n")
         else:
             out.append("**この選び方はまだ過去データで検証できていません。**参考として見てください。\n")
         if res["bets"]:
