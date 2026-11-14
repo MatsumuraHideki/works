@@ -351,6 +351,12 @@
  ],
  "odds_time": "2026-11-14 14:40:42",
  "odds_status": "middle",
+ "odds_update_probe": {
+  "status": "middle",
+  "time": "2026-11-14 15:29:07",
+  "n": 13,
+  "head": "{\"status\":\"middle\",\"data\":{\"send_date\":\"2026-11-14\",\"send_time\":\"15:29:11\",\"official_datetime\":\"2026-11-14 15:29:07\",\"update_datetime\":\"2026-11-14 15:29:16\",\"yy\":\"26\",\"jyo\":\"08\",\"kai\":\"05\",\"nichi\":\"03"
+ },
  "odds": {
   "単勝": {
    "1": [
@@ -9727,5 +9733,5 @@
    ]
   }
  },
- "fetched_at": "2026-11-14T15:14:17+09:00"
+ "fetched_at": "2026-11-14T15:29:28+09:00"
 }
