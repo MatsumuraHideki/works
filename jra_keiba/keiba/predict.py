@@ -118,6 +118,7 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
     drawn = rows["number"].notna().all()
     bets: list[betting.Bet] = []
     slip: list[betting.Bet] = []
+    win_slip: list[betting.Bet] = []
     top_by_type: dict[str, list[betting.Bet]] = {}
     if kind == "real" and drawn and len(rows) >= 2:
         probs = betting.bet_probabilities(rows["p"].to_numpy(), [int(x) for x in rows["number"]],
@@ -132,6 +133,12 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
             b.stake = 100
         if budget:
             wins = [b for b in cand if b.bet_type == "単勝" and b.ev >= WIN_EV and b.prob >= 0.01]
+            solid = [betting.Bet(b.bet_type, b.combo, b.prob, b.odds, b.ev, b.kelly)
+                     for b in cand if b.bet_type == "単勝" and b.ev >= 1.0 and b.prob >= 0.01]
+            # flat stakes are what the backtest measures: a fifth of the budget per horse, so a
+            # single long shot never takes the whole budget
+            per = max(100, int(budget * 0.2 // 100) * 100)
+            win_slip = betting.budget_slip(solid, min(budget, per * len(solid)))
             pool = [betting.Bet(b.bet_type, b.combo, b.prob, b.odds, b.ev, b.kelly) for b in wins + bets]
             # Best-supported rule in the backtest: the model's top pick when its own win EV is
             # 1.0 or more. When it applies it gets a fixed share of the budget up front.
@@ -160,7 +167,7 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
     path = ROOT / "reports" / "strategy_top.json"
     stored = json.loads(path.read_text()) if path.exists() else []
     validated = strategy.apply_strategies(stored, g, card["race"]["race_id"]) if kind != "yoso" else []
-    return {"card": card, "rows": rows.sort_values("p", ascending=False), "kind": kind, "validated": validated, "slip": slip, "budget": budget,
+    return {"card": card, "rows": rows.sort_values("p", ascending=False), "kind": kind, "validated": validated, "slip": slip, "win_slip": win_slip, "budget": budget,
             "use_market": use_market, "drawn": drawn, "bets": bets, "top_by_type": top_by_type}
 
 
@@ -223,7 +230,23 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
         else:
             out.append("該当なし。\n")
     if kind == "real" and res["drawn"] and res.get("budget"):
-        out.append(f"### 予算 {res['budget']:,} 円の買い目\n")
+        out.append(f"### 予算 {res['budget']:,} 円の買い目 A：単勝だけ（検証の成績が最も良い買い方）\n")
+        sp = ROOT / "reports" / "summary.json"
+        hist = next((r for r in json.loads(sp.read_text()) if r["label"] == "単勝 期待値1.00以上"), None) \
+            if sp.exists() else None
+        if hist:
+            out.append(f"単勝の期待値 1.00 以上の馬だけを、1 頭あたり予算の 2 割までで買います（残りは使いません）。過去検証（{hist['races']:,} レース・{hist['tickets']:,} 点）: "
+                       f"的中率 {_pct(hist['hit_rate'])}、回収率 {_pct(hist['roi'])}"
+                       f"（偶然の幅 {_pct(hist['ci_low'])}〜{_pct(hist['ci_high'])}）。\n")
+        if res.get("win_slip"):
+            for b in res["win_slip"]:
+                name = rows.loc[rows["number"] == b.combo[0], "horse_name"]
+                out.append(f"- 単勝 {b.combo[0]} {name.iloc[0] if len(name) else ''}　{b.stake:,}円"
+                           f"（{b.odds:.1f} 倍、勝率 {_pct(b.prob)}、当たれば {b.stake * b.odds:,.0f}円）")
+            out.append("")
+        else:
+            out.append("該当する馬がいません。A の買い方ではこのレースは**見送り**です。\n")
+        out.append(f"### 予算 {res['budget']:,} 円の買い目 B：高配当も狙う（単勝＋馬連・ワイド・三連複）\n")
         if res["slip"]:
             out.append("単勝は期待値 0.95 以上、馬連・ワイド・三連複は期待値 "
                        f"{min_ev:.2f} 以上の買い目を、当たりやすい順に 100 円ずつ入れ、余った分を上から足しています。"
@@ -323,6 +346,8 @@ def to_json(res: dict) -> dict:
                      "ev": None if pd.isna(x["ev"]) else round(float(x["ev"]), 3)} for _, x in rows.iterrows()],
         "validated_strategies": res.get("validated", []),
         "budget": res.get("budget", 0),
+        "win_slip": [{"type": b.bet_type, "combo": list(b.combo), "stake": b.stake, "odds": b.odds,
+                      "prob": round(b.prob, 5)} for b in res.get("win_slip", [])],
         "slip": [{"type": b.bet_type, "combo": list(b.combo), "stake": b.stake, "odds": b.odds,
                   "prob": round(b.prob, 5)} for b in res.get("slip", [])],
         "bets": [{"type": b.bet_type, "combo": list(b.combo), "prob": round(b.prob, 5), "odds": b.odds,

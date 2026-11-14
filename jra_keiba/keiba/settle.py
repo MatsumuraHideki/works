@@ -35,7 +35,7 @@ def _key(bet_type: str, combo) -> tuple[int, ...]:
 
 def slip_from_markdown(text: str) -> list[dict]:
     """Slips written before the JSON carried them: read the 予算 table of the report."""
-    m = re.search(r"### 予算 [\d,]+ 円の買い目(.*?)(?:\*\*まとめて買う場合|\n合計 )", text, re.S)
+    m = re.search(r"### 予算 [\d,]+ 円の買い目(?: B[^\n]*)?\n(.*?)(?:\*\*まとめて買う場合|\n合計 )", text, re.S)
     if not m:
         return []
     out = []
@@ -77,6 +77,7 @@ def settle_all(log=print) -> list[dict]:
         if not slip and jp.with_suffix(".md").exists():
             slip = slip_from_markdown(jp.with_suffix(".md").read_text())
         res = load_result(race["race_id"], raw_payouts)
+        win_slip = d.get("win_slip") or []
         row = {"date": race["date"], "race_id": race["race_id"], "race": race["name"], "grade": race.get("grade"),
                "odds_time": d.get("odds_time"), "tickets": len(slip), "stake": sum(t["stake"] for t in slip),
                "settled": res is not None}
@@ -90,6 +91,9 @@ def settle_all(log=print) -> list[dict]:
                     ret += got
                     sep = "→" if t["type"] in ORDERED else "-"
                     hits.append(f"{t['type']} {sep.join(map(str, t['combo']))}（{t['stake']:,}円 → {got:,.0f}円）")
+            a_ret = sum(res["pay"].get((t["type"], _key(t["type"], t["combo"])), 0.0) * t["stake"] for t in win_slip)
+            row.update({"a_tickets": len(win_slip), "a_stake": sum(t["stake"] for t in win_slip), "a_return": round(a_ret),
+                        "a_picks": [f"{t['combo'][0]}番 {t['stake']:,}円" for t in win_slip]})
             top = d["runners"][0] if d.get("runners") else None
             row.update({"return": round(ret), "hits": hits, "top3": res["top3"], "source": res["source"],
                         "model_top": f"{top['number']} {top['horse']}" if top else None})
@@ -105,6 +109,16 @@ def write_record(rows: list[dict]) -> str:
         stake, ret = sum(r["stake"] for r in done), sum(r["return"] for r in done)
         out.append(f"**通算: {len(done)} レース、購入 {stake:,} 円、払戻 {ret:,} 円、回収率 {ret / stake * 100:.1f}%、"
                    f"当たりがあったレース {sum(1 for r in done if r['return'] > 0)} / {len(done)}**\n")
+        a = [r for r in done if r.get("a_stake")]
+        if a:
+            sa, ra = sum(r["a_stake"] for r in a), sum(r["a_return"] for r in a)
+            out.append(f"**買い目 A（単勝だけ）の通算: {len(a)} レース、購入 {sa:,} 円、払戻 {ra:,} 円、回収率 {ra / sa * 100:.1f}%**\n")
+            out.append("| 日付 | レース | A の買い目 | 購入 | 払戻 |")
+            out.append("|---|---|---|---|---|")
+            for r in sorted(a, key=lambda r: (r["date"], r["race_id"]), reverse=True):
+                out.append(f"| {r['date']} | {r['race']} | {'、'.join(r['a_picks'])} | {r['a_stake']:,}円 | {r['a_return']:,}円 |")
+            out.append("")
+        out.append("買い目 B（単勝＋馬連・ワイド・三連複）:\n")
         out.append("| 日付 | レース | 点数 | 購入 | 払戻 | 収支 | 当たった買い目 | 1〜3着 |")
         out.append("|---|---|---|---|---|---|---|---|")
         for r in sorted(done, key=lambda r: (r["date"], r["race_id"]), reverse=True):

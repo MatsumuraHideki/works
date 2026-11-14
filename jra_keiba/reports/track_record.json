@@ -8,6 +8,10 @@
   "tickets": 50,
   "stake": 5000,
   "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
   "return": 0,
   "hits": [],
   "top3": [
@@ -27,6 +31,10 @@
   "tickets": 50,
   "stake": 5000,
   "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
   "return": 0,
   "hits": [],
   "top3": [
@@ -42,7 +50,7 @@
   "race_id": "202608050411",
   "race": "エリザベス女王杯",
   "grade": "G1",
-  "odds_time": "2026-11-13 19:35:25",
+  "odds_time": "2026-11-14 15:31:27",
   "tickets": 50,
   "stake": 5000,
   "settled": false

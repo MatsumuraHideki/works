@@ -51,9 +51,14 @@ def build(res: dict, raw: Path = features.RAW) -> list[dict]:
         rows.append(_row("基準" if "全頭" in label else "人気で選ぶ", label, how, *_by_race(d, mask, col)))
     # --- 単勝 by model expected value (walk-forward test races)
     o = oos.assign(ret_win=oos["win"] * oos["win_odds"], ev=oos["p_final"] * oos["win_odds"])
-    for thr in (0.85, 0.90, 0.95):
+    for thr in (0.85, 0.90, 0.95, 1.00, 1.05, 1.10):
         rows.append(_row("モデルの期待値で選ぶ", f"単勝 期待値{thr:.2f}以上", "モデル+オッズ",
                          *_by_race(o, (o["ev"] >= thr) & (o["p_final"] >= 0.01), "ret_win")))
+    # the model's top pick of a race, backed only when its own win EV reaches the threshold
+    top = o.loc[o.groupby("race_id")["p_final"].idxmax()]
+    for thr in (1.00, 1.05):
+        rows.append(_row("モデルの期待値で選ぶ", f"単勝 モデル1位の馬（その期待値が{thr:.2f}以上のレースだけ）",
+                         "モデル+オッズ", *_by_race(top, top["ev"] >= thr, "ret_win")))
     # --- multi-horse pools by model expected value (races with full odds)
     odds_df = features.load_odds(raw)
     if len(odds_df):
