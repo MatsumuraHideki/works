@@ -234,6 +234,22 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
             for b in res["slip"]:
                 out.append(f"| {b.bet_type} | {b.label()} | {b.stake:,}円 | {b.odds:.1f} | {_pct(b.prob)} | "
                            f"{b.stake * b.odds:,.0f}円 |")
+            out.append("\n**まとめて買う場合（上の買い目と同じ内容）**\n")
+            for g in betting.grouped_slip(res["slip"]):
+                nums = "・".join(map(str, g["others"]))
+                if g["kind"] == "ボックス":
+                    body = f"ボックス {nums}"
+                elif g["kind"] == "ながし":
+                    body = f"ながし 軸 {g['axis'][0]} － 相手 {nums}"
+                elif g["kind"] == "軸1頭ながし":
+                    body = f"軸1頭ながし 軸 {g['axis'][0]} － 相手 {nums}"
+                elif g["kind"] == "軸2頭ながし":
+                    body = f"軸2頭ながし 軸 {g['axis'][0]}・{g['axis'][1]} － 相手 {nums}"
+                elif g["bet_type"] in ("単勝", "複勝"):
+                    body = nums
+                else:
+                    body = "-".join(map(str, g["others"]))
+                out.append(f"- {g['bet_type']} {body}（{g['n']}点 × {g['stake']:,}円 = {g['n'] * g['stake']:,}円）")
             total = sum(b.stake for b in res["slip"])
             out.append(f"\n合計 {len(res['slip'])} 点 {total:,} 円。"
                        "過去の検証では、この選び方の回収率は単勝・馬連・ワイド・三連複とも 93〜96% 前後で、"

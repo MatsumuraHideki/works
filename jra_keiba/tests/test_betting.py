@@ -44,3 +44,37 @@ def test_budget_slip_trims_by_probability_and_spends_the_budget():
     assert [(b.combo, b.stake) for b in slip] == [((1, 2), 200), ((2, 3), 200), ((1, 3), 100)]
     assert sum(b.stake for b in slip) == 500
     assert betting.budget_slip([], 500) == []
+
+
+def _expand(groups, three=False):
+    from itertools import combinations
+    out = []
+    for kind, axis, others in groups:
+        if kind == "ボックス":
+            out += list(combinations(sorted(others), 3 if three else 2))
+        elif kind == "ながし":
+            out += [tuple(sorted((axis[0], o))) for o in others]
+        elif kind == "軸2頭ながし":
+            out += [tuple(sorted(axis + [o])) for o in others]
+        elif kind == "軸1頭ながし":
+            out += [tuple(sorted((axis[0],) + c)) for c in combinations(others, 2)]
+        else:
+            out.append(tuple(sorted(others)))
+    return out
+
+
+def test_grouping_covers_exactly_the_same_tickets():
+    import random
+    from itertools import combinations
+    rng = random.Random(3)
+    for _ in range(40):
+        horses = list(range(1, 15))
+        pairs = rng.sample(list(combinations(horses, 2)), rng.randint(1, 30))
+        got = _expand(betting.group_pairs(pairs))
+        assert sorted(got) == sorted(pairs) and len(got) == len(set(got))
+        triples = rng.sample(list(combinations(horses, 3)), rng.randint(1, 25))
+        got = _expand(betting.group_triples(triples), three=True)
+        assert sorted(got) == sorted(triples) and len(got) == len(set(got))
+    assert betting.group_pairs([(1, 2), (1, 3), (2, 3)]) == [("ボックス", [], [1, 2, 3])]
+    assert betting.group_pairs([(5, 7), (5, 11), (5, 10)]) == [("ながし", [5], [7, 10, 11])]
+    assert betting.group_triples([(1, 2, 3), (1, 2, 4), (1, 3, 4), (2, 3, 4)]) == [("ボックス", [], [1, 2, 3, 4])]

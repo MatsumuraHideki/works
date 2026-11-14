@@ -193,3 +193,133 @@ def budget_slip(bets: list[Bet], budget: int, unit: int = 100) -> list[Bet]:
         n_units -= 1
         i += 1
     return [b for b in ordered if b.stake > 0]
+
+
+# ------------------------------------------------------------------ grouping for entry
+
+def _max_clique(adj: dict[int, set[int]]) -> list[int]:
+    """Largest clique of a small graph (fields have at most 18 runners)."""
+    best: list[int] = []
+
+    def grow(r: list[int], p: set[int]) -> None:
+        nonlocal best
+        if len(r) > len(best):
+            best = r[:]
+        for v in sorted(p, key=lambda x: -len(adj[x] & p)):
+            if len(r) + len(p) <= len(best):
+                return
+            grow(r + [v], p & adj[v])
+            p = p - {v}
+
+    grow([], set(adj))
+    return sorted(best)
+
+
+def group_pairs(pairs: list[tuple[int, int]]) -> list[tuple[str, list[int], list[int]]]:
+    """Cover a set of two-horse tickets exactly with boxes, one-axis wheels and singles.
+
+    Returns (kind, axis, others): kind 'ボックス' (others = the boxed horses),
+    'ながし' (axis = [a], others = partners) or '通常' (others = the pair).
+    Greedy: always take the form that covers the most remaining tickets.
+    """
+    left = {tuple(sorted(p)) for p in pairs}
+    out = []
+    while left:
+        adj: dict[int, set[int]] = {}
+        for a, b in left:
+            adj.setdefault(a, set()).add(b)
+            adj.setdefault(b, set()).add(a)
+        star = max(adj, key=lambda v: (len(adj[v]), -v))
+        clique = _max_clique(adj)
+        n_box = len(clique) * (len(clique) - 1) // 2
+        if len(clique) >= 3 and n_box > len(adj[star]):
+            out.append(("ボックス", [], clique))
+            left -= {(a, b) for i, a in enumerate(clique) for b in clique[i + 1:]}
+        elif len(adj[star]) >= 2:
+            out.append(("ながし", [star], sorted(adj[star])))
+            left -= {tuple(sorted((star, b))) for b in adj[star]}
+        else:
+            p = min(left)
+            out.append(("通常", [], list(p)))
+            left.discard(p)
+    return out
+
+
+def group_triples(triples: list[tuple[int, int, int]]) -> list[tuple[str, list[int], list[int]]]:
+    """Cover a set of 三連複 tickets exactly with boxes, wheels and singles.
+
+    kinds: 'ボックス' (others = horses), '軸1頭ながし' (axis=[a], every pair of others),
+    '軸2頭ながし' (axis=[a, b], each of others as the third horse), '通常'.
+    """
+    left = {tuple(sorted(t)) for t in triples}
+    out = []
+    while left:
+        horses = sorted({h for t in left for h in t})
+        best = ("通常", [], list(min(left)), 1)
+        # two fixed horses + any third
+        pair_cnt: dict[tuple[int, int], list[int]] = {}
+        for a, b, c in left:
+            pair_cnt.setdefault((a, b), []).append(c)
+            pair_cnt.setdefault((a, c), []).append(b)
+            pair_cnt.setdefault((b, c), []).append(a)
+        pk = max(pair_cnt, key=lambda k: (len(pair_cnt[k]), -k[0], -k[1]))
+        if len(pair_cnt[pk]) >= 2:
+            best = ("軸2頭ながし", list(pk), sorted(pair_cnt[pk]), len(pair_cnt[pk]))
+        # one fixed horse + every pair among a set (a clique in that horse's link graph)
+        for a in horses:
+            adj: dict[int, set[int]] = {}
+            for t in left:
+                if a in t:
+                    b, c = [x for x in t if x != a]
+                    adj.setdefault(b, set()).add(c)
+                    adj.setdefault(c, set()).add(b)
+            if not adj:
+                continue
+            cl = _max_clique(adj)
+            n = len(cl) * (len(cl) - 1) // 2
+            if len(cl) >= 3 and n > best[3]:
+                best = ("軸1頭ながし", [a], cl, n)
+                # a full box is the same set plus the triples among the partners themselves
+                box = sorted([a] + cl)
+                inner = {tuple(sorted((x, y, z))) for i, x in enumerate(box) for j, y in enumerate(box[i + 1:], i + 1)
+                         for z in box[j + 1:]}
+                if inner <= left and len(inner) > n:
+                    best = ("ボックス", [], box, len(inner))
+        kind, axis, others, _ = best
+        if kind == "通常":
+            left.discard(tuple(others))
+        elif kind == "軸2頭ながし":
+            left -= {tuple(sorted(axis + [c])) for c in others}
+        elif kind == "軸1頭ながし":
+            left -= {tuple(sorted((axis[0], x, y))) for i, x in enumerate(others) for y in others[i + 1:]}
+        else:
+            left -= {tuple(sorted((x, y, z))) for i, x in enumerate(others) for j, y in enumerate(others[i + 1:], i + 1)
+                     for z in others[j + 1:]}
+        out.append((kind, axis, others))
+    return out
+
+
+def grouped_slip(bets: list[Bet]) -> list[dict]:
+    """A budget slip rewritten as the fewest box / wheel entries, per bet type and stake."""
+    out = []
+    order = {"単勝": 0, "複勝": 1, "馬連": 2, "ワイド": 3, "三連複": 4}
+    keys = sorted({(b.bet_type, b.stake) for b in bets}, key=lambda k: (order.get(k[0], 9), -k[1]))
+    for bt, stake in keys:
+        combos = [b.combo for b in bets if b.bet_type == bt and b.stake == stake]
+        if bt in ("単勝", "複勝"):
+            out.append({"bet_type": bt, "kind": "通常", "axis": [], "others": sorted(c[0] for c in combos),
+                        "n": len(combos), "stake": stake})
+            continue
+        groups = group_pairs(combos) if bt in ("馬連", "ワイド") else group_triples(combos)
+        for kind, axis, others in groups:
+            if kind == "ボックス":
+                k = len(others)
+                n = k * (k - 1) // 2 if bt in ("馬連", "ワイド") else k * (k - 1) * (k - 2) // 6
+            elif kind == "軸1頭ながし":
+                n = len(others) * (len(others) - 1) // 2
+            elif kind in ("ながし", "軸2頭ながし"):
+                n = len(others)
+            else:
+                n = 1
+            out.append({"bet_type": bt, "kind": kind, "axis": axis, "others": others, "n": n, "stake": stake})
+    return out
