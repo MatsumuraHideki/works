@@ -73,8 +73,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dates", default="", help="comma separated YYYYMMDD; default: race days in the next 6 days")
     ap.add_argument("--grades", default="G1,G2,G3", help="comma separated grades, or 'all'")
     ap.add_argument("--interval", type=float, default=2.0)
+    ap.add_argument("--results", default="", help="comma separated race ids: save their result and payouts instead")
     args = ap.parse_args(argv)
     f = Fetcher(min_interval=args.interval)
+    if args.results:
+        out = CARDS / "results"
+        out.mkdir(parents=True, exist_ok=True)
+        for rid in [x for x in args.results.split(",") if x]:
+            res = nk.parse_result_page(fetch_text(f, nk.url_result(rid)), rid)
+            if res is None:
+                print(f"result {rid}: not published yet")
+                continue
+            (out / f"{rid}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1))
+            print(f"result {rid}: {len(res['payouts'])} payouts, winner {res['order'][0] if res['order'] else '?'}")
+        return 0
     try:
         dates = [d for d in args.dates.split(",") if d] or upcoming_dates(f)
         grades = None if args.grades == "all" else set(args.grades.split(","))

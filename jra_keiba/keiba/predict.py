@@ -322,6 +322,9 @@ def to_json(res: dict) -> dict:
                      "win_odds": None if pd.isna(x["odds"]) else float(x["odds"]),
                      "ev": None if pd.isna(x["ev"]) else round(float(x["ev"]), 3)} for _, x in rows.iterrows()],
         "validated_strategies": res.get("validated", []),
+        "budget": res.get("budget", 0),
+        "slip": [{"type": b.bet_type, "combo": list(b.combo), "stake": b.stake, "odds": b.odds,
+                  "prob": round(b.prob, 5)} for b in res.get("slip", [])],
         "bets": [{"type": b.bet_type, "combo": list(b.combo), "prob": round(b.prob, 5), "odds": b.odds,
                   "ev": round(b.ev, 3), "stake": b.stake} for b in res["bets"]],
     }

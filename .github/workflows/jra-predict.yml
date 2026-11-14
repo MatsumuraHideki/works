@@ -55,8 +55,15 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then
             GRADES=$(jq -r '.grades // "G1,G2,G3"' predict_trigger.json)
             DATES=$(jq -r '.dates // ""' predict_trigger.json)
-            echo "cards_only=$(jq -r '.cards_only // false' predict_trigger.json)" >> "$GITHUB_OUTPUT"
+            RESULTS=$(jq -r '.results // ""' predict_trigger.json)
             echo "retrain=$(jq -r '.retrain // false' predict_trigger.json)" >> "$GITHUB_OUTPUT"
+            if [ -n "$RESULTS" ]; then
+              # answer-checking: only save the results and payouts of the listed races
+              echo "cards_only=true" >> "$GITHUB_OUTPUT"
+              python -m keiba.cards --results "$RESULTS"
+              exit 0
+            fi
+            echo "cards_only=$(jq -r '.cards_only // false' predict_trigger.json)" >> "$GITHUB_OUTPUT"
           fi
           python -m keiba.cards --grades "$GRADES" ${DATES:+--dates "$DATES"}
       - name: Commit cards

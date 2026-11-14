@@ -46,6 +46,10 @@ def url_shutuba_past(race_id: str) -> str:
     return f"https://race.netkeiba.com/race/shutuba_past.html?race_id={race_id}"
 
 
+def url_result(race_id: str) -> str:
+    return f"https://race.netkeiba.com/race/result.html?race_id={race_id}"
+
+
 def url_odds(race_id: str, type_: int) -> str:
     return f"https://race.netkeiba.com/api/api_get_jra_odds.html?race_id={race_id}&type={type_}&action=init"
 
@@ -429,3 +433,45 @@ def parse_odds(body: str, type_: int) -> dict[str, Any]:
         out[combo] = (lo, hi)
     return {"status": js.get("status"), "time": data.get("official_datetime") if isinstance(data, dict) else None,
             "odds": out}
+
+
+# ---------------------------------------------------------------- result page (race day)
+
+RESULT_BET = {"Tansho": "単勝", "Fukusho": "複勝", "Wakuren": "枠連", "Umaren": "馬連", "Wide": "ワイド",
+              "Umatan": "馬単", "Fuku3": "三連複", "Tan3": "三連単"}
+
+
+def parse_result_page(html: str, race_id: str) -> dict[str, Any] | None:
+    """Finishing order and payouts from race.netkeiba.com's result page, which is published
+    minutes after a race (the database page used for history follows later).
+    Returns None while the payouts are not up yet."""
+    soup = BeautifulSoup(html, "lxml")
+    tables = soup.select("table.Payout_Detail_Table")
+    if not tables:
+        return None
+    payouts = []
+    for tb in tables:
+        for tr in tb.find_all("tr"):
+            bt = next((RESULT_BET[c] for c in tr.get("class", []) if c in RESULT_BET), None)
+            res, pay = tr.select_one("td.Result"), tr.select_one("td.Payout")
+            if bt is None or res is None or pay is None:
+                continue
+            uls = res.find_all("ul")
+            if uls:
+                combos = [[int(x) for x in (_txt(li) for li in ul.find_all("li")) if x.isdigit()] for ul in uls]
+            else:
+                combos = [[int(x)] for x in (_txt(sp) for sp in res.find_all("span")) if x.isdigit()]
+            combos = [c for c in combos if c]
+            amounts = [_num(re.sub(r"[^0-9,]", "", x)) for x in pay.stripped_strings]
+            amounts = [a for a in amounts if a]
+            for c, a in zip(combos, amounts):
+                payouts.append({"bet_type": bt, "combo": c, "payout": a})
+    if not payouts:
+        return None
+    order = []
+    for tr in soup.select("table#All_Result_Table tr.HorseList"):
+        tds = tr.find_all("td")
+        if len(tds) < 4:
+            continue
+        order.append({"finish": _txt(tds[0]), "number": _num(_txt(tds[2])), "horse_name": _txt(tds[3])})
+    return {"race_id": race_id, "payouts": payouts, "order": order}
