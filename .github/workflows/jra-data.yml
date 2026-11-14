@@ -1,0 +1,164 @@
+name: jra-data
+# Collects JRA race data from netkeiba in a single slow request stream
+# (3+ seconds between requests) and commits it under jra_keiba/data/raw.
+# The chunks of jra_keiba/scrape_plan.json run strictly one after another; if the
+# site answers "too many requests" (HTTP 400) the chunk fails and the rest is skipped.
+on:
+  push:
+    branches: ["claude/jra-race-prediction-model-ps1z1w"]
+    paths: ["jra_keiba/scrape_plan.json"]
+  schedule:
+    - cron: "17 13 * * 1"   # Mondays 22:17 JST: pick up the weekend's results
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "newest month (YYYY-MM); empty = current month"
+        default: ""
+      to:
+        description: "oldest month (YYYY-MM); empty = previous month"
+        default: ""
+permissions:
+  contents: write
+concurrency:
+  group: jra-data
+  cancel-in-progress: false
+jobs:
+  c0:
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 0
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c1:
+    needs: c0
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 1
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c2:
+    needs: c1
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 2
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c3:
+    needs: c2
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 3
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c4:
+    needs: c3
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 4
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c5:
+    needs: c4
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 5
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c6:
+    needs: c5
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 6
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c7:
+    needs: c6
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 7
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c8:
+    needs: c7
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 8
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c9:
+    needs: c8
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 9
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c10:
+    needs: c9
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 10
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c11:
+    needs: c10
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 11
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c12:
+    needs: c11
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 12
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c13:
+    needs: c12
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 13
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c14:
+    needs: c13
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 14
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c15:
+    needs: c14
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 15
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c16:
+    needs: c15
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 16
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c17:
+    needs: c16
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 17
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c18:
+    needs: c17
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 18
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}
+  c19:
+    needs: c18
+    uses: ./.github/workflows/jra-scrape-chunk.yml
+    with:
+      index: 19
+      from: ${{ inputs.from || '' }}
+      to: ${{ inputs.to || '' }}

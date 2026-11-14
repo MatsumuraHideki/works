@@ -1,0 +1,86 @@
+[
+ {
+  "date": "2026-11-14",
+  "race_id": "202605050311",
+  "race": "武蔵野S",
+  "grade": "G3",
+  "odds_time": "2026-11-14 14:25:22",
+  "tickets": 50,
+  "stake": 5000,
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [
+   {
+    "number": 12,
+    "horse": "ロックターミガン",
+    "odds": 19.3,
+    "final": 14.4,
+    "ev": 1.065,
+    "ev_final": 0.795
+   }
+  ],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "15 ルヴァレドクール",
+   "1 ダノンフィーゴ",
+   "13 ライノ"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "6 ドンインザムード"
+ },
+ {
+  "date": "2026-11-14",
+  "race_id": "202608050311",
+  "race": "デイリー杯2歳S",
+  "grade": "G2",
+  "odds_time": "2026-11-14 14:40:42",
+  "tickets": 50,
+  "stake": 5000,
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [
+   {
+    "number": 3,
+    "horse": "レオンティウス",
+    "odds": 20.4,
+    "final": 20.6,
+    "ev": 1.122,
+    "ev_final": 1.133
+   },
+   {
+    "number": 7,
+    "horse": "リュウトウコヤク",
+    "odds": 42.4,
+    "final": 51.7,
+    "ev": 1.037,
+    "ev_final": 1.267
+   }
+  ],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "5 ブラッドバローズ",
+   "11 シェフザーデ",
+   "7 リュウトウコヤク"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "8 キューティボンド"
+ },
+ {
+  "date": "2026-11-15",
+  "race_id": "202608050411",
+  "race": "エリザベス女王杯",
+  "grade": "G1",
+  "odds_time": "2026-11-14 20:30:14",
+  "tickets": 50,
+  "stake": 5000,
+  "settled": false
+ }
+]
