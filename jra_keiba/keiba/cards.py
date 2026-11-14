@@ -85,6 +85,12 @@ def main(argv: list[str] | None = None) -> int:
             if res is None:
                 print(f"result {rid}: not published yet")
                 continue
+            try:        # final 単勝 odds, to measure how far the odds moved after the prediction
+                o = nk.parse_odds(fetch_text(f, nk.url_odds(rid, 1), referer=nk.url_result(rid)), 1)
+                if o["status"] == "result":
+                    res["final_win_odds"] = {str(k[0]): v[0] for k, v in o["odds"].items()}
+            except Exception as exc:  # the result itself is what matters; odds are a bonus
+                print(f"result {rid}: final odds not saved ({exc})")
             (out / f"{rid}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1))
             print(f"result {rid}: {len(res['payouts'])} payouts, winner {res['order'][0] if res['order'] else '?'}")
         return 0

@@ -1,6 +1,44 @@
 [
  {
   "group": "モデルの期待値で選ぶ",
+  "label": "単勝 期待値1.10以上（G1だけ）",
+  "how": "モデル+オッズ",
+  "races": 25,
+  "tickets": 25,
+  "universe": "G1",
+  "hit_basis": "点",
+  "hit_rate": 0.16,
+  "roi": 1.856,
+  "ci_low": 0.356,
+  "ci_high": 4.0043,
+  "recent_from": 2023,
+  "races_recent": 10,
+  "roi_recent": 3.21,
+  "recent_low": null,
+  "recent_high": null,
+  "rank": 1
+ },
+ {
+  "group": "予想レポートの買い目",
+  "label": "買い目A（単勝だけ） G1",
+  "how": "モデル+オッズ",
+  "races": 25,
+  "tickets": null,
+  "universe": "G1",
+  "hit_basis": "レース",
+  "hit_rate": 0.16,
+  "roi": 1.856,
+  "ci_low": 0.216,
+  "ci_high": 3.8526,
+  "recent_from": 2023,
+  "races_recent": 10,
+  "roi_recent": 3.21,
+  "recent_low": null,
+  "recent_high": null,
+  "rank": 2
+ },
+ {
+  "group": "モデルの期待値で選ぶ",
   "label": "単勝 モデル1位の馬（その期待値が1.05以上のレースだけ）",
   "how": "モデル+オッズ",
   "races": 676,
@@ -11,7 +49,50 @@
   "roi": 1.1796,
   "ci_low": 1.0313,
   "ci_high": 1.3243,
-  "rank": 1
+  "recent_from": 2023,
+  "races_recent": 264,
+  "roi_recent": 0.9898,
+  "recent_low": 0.7765,
+  "recent_high": 1.2027,
+  "rank": 3
+ },
+ {
+  "group": "モデルの期待値で選ぶ",
+  "label": "単勝 期待値1.10以上（重賞だけ）",
+  "how": "モデル+オッズ",
+  "races": 215,
+  "tickets": 233,
+  "universe": "重賞（G1〜G3）",
+  "hit_basis": "点",
+  "hit_rate": 0.0687,
+  "roi": 1.17,
+  "ci_low": 0.4732,
+  "ci_high": 2.3195,
+  "recent_from": 2023,
+  "races_recent": 64,
+  "roi_recent": 0.5485,
+  "recent_low": 0.0,
+  "recent_high": 1.3187,
+  "rank": 4
+ },
+ {
+  "group": "予想レポートの買い目",
+  "label": "買い目A（単勝だけ） 重賞（G1〜G3）",
+  "how": "モデル+オッズ",
+  "races": 215,
+  "tickets": null,
+  "universe": "重賞（G1〜G3）",
+  "hit_basis": "レース",
+  "hit_rate": 0.0744,
+  "roi": 1.17,
+  "ci_low": 0.4264,
+  "ci_high": 2.1183,
+  "recent_from": 2023,
+  "races_recent": 64,
+  "roi_recent": 0.5485,
+  "recent_low": 0.0,
+  "recent_high": 1.3582,
+  "rank": 5
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -25,21 +106,12 @@
   "roi": 1.144,
   "ci_low": 0.8118,
   "ci_high": 1.531,
-  "rank": 2
- },
- {
-  "group": "予想レポートの買い目",
-  "label": "買い目A（単勝だけ） 重賞（G1〜G3）",
-  "how": "モデル+オッズ",
-  "races": 655,
-  "tickets": null,
-  "universe": "重賞（G1〜G3）",
-  "hit_basis": "レース",
-  "hit_rate": 0.1115,
-  "roi": 1.144,
-  "ci_low": 0.8123,
-  "ci_high": 1.5273,
-  "rank": 3
+  "recent_from": 2023,
+  "races_recent": 217,
+  "roi_recent": 0.8435,
+  "recent_low": 0.4829,
+  "recent_high": 1.2565,
+  "rank": 6
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -53,21 +125,12 @@
   "roi": 1.1281,
   "ci_low": 1.0094,
   "ci_high": 1.2539,
-  "rank": 4
- },
- {
-  "group": "予想レポートの買い目",
-  "label": "買い目A（単勝だけ） オープン以上",
-  "how": "モデル+オッズ",
-  "races": 1420,
-  "tickets": null,
-  "universe": "オープン以上",
-  "hit_basis": "レース",
-  "hit_rate": 0.1246,
-  "roi": 1.103,
-  "ci_low": 0.8941,
-  "ci_high": 1.3347,
-  "rank": 5
+  "recent_from": 2023,
+  "races_recent": 1579,
+  "roi_recent": 1.0796,
+  "recent_low": 0.8662,
+  "recent_high": 1.3041,
+  "rank": 7
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -81,7 +144,12 @@
   "roi": 1.0948,
   "ci_low": 1.0034,
   "ci_high": 1.1815,
-  "rank": 6
+  "recent_from": 2023,
+  "races_recent": 590,
+  "roi_recent": 0.9653,
+  "recent_low": 0.8359,
+  "recent_high": 1.0919,
+  "rank": 8
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -95,7 +163,12 @@
   "roi": 1.0736,
   "ci_low": 0.9887,
   "ci_high": 1.1572,
-  "rank": 7
+  "recent_from": 2023,
+  "races_recent": 3009,
+  "roi_recent": 0.9627,
+  "recent_low": 0.8353,
+  "recent_high": 1.1075,
+  "rank": 9
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -109,21 +182,12 @@
   "roi": 1.0409,
   "ci_low": 0.4512,
   "ci_high": 1.6788,
-  "rank": 8
- },
- {
-  "group": "予想レポートの買い目",
-  "label": "買い目A（単勝だけ） G1",
-  "how": "モデル+オッズ",
-  "races": 90,
-  "tickets": null,
-  "universe": "G1",
-  "hit_basis": "レース",
-  "hit_rate": 0.1444,
-  "roi": 1.0409,
-  "ci_low": 0.4508,
-  "ci_high": 1.6729,
-  "rank": 9
+  "recent_from": 2023,
+  "races_recent": 26,
+  "roi_recent": 1.06,
+  "recent_low": 0.0,
+  "recent_high": 2.3443,
+  "rank": 10
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -135,9 +199,14 @@
   "hit_basis": "点",
   "hit_rate": 0.0215,
   "roi": 1.0403,
-  "ci_low": 0.9349,
-  "ci_high": 1.1491,
-  "rank": 10
+  "ci_low": 0.9419,
+  "ci_high": 1.1568,
+  "recent_from": 2023,
+  "races_recent": 1013,
+  "roi_recent": 0.9923,
+  "recent_low": 0.8094,
+  "recent_high": 1.1863,
+  "rank": 11
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -151,7 +220,12 @@
   "roi": 1.04,
   "ci_low": 0.9851,
   "ci_high": 1.0975,
-  "rank": 11
+  "recent_from": 2023,
+  "races_recent": 5081,
+  "roi_recent": 0.974,
+  "recent_low": 0.8816,
+  "recent_high": 1.0806,
+  "rank": 12
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -163,9 +237,14 @@
   "hit_basis": "点",
   "hit_rate": 0.0127,
   "roi": 1.0314,
-  "ci_low": 0.9129,
-  "ci_high": 1.1499,
-  "rank": 12
+  "ci_low": 0.9137,
+  "ci_high": 1.1464,
+  "recent_from": 2023,
+  "races_recent": 1030,
+  "roi_recent": 1.0505,
+  "recent_low": 0.8598,
+  "recent_high": 1.2382,
+  "rank": 13
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -179,7 +258,12 @@
   "roi": 1.0252,
   "ci_low": 0.9851,
   "ci_high": 1.0691,
-  "rank": 13
+  "recent_from": 2023,
+  "races_recent": 7840,
+  "roi_recent": 0.9839,
+  "recent_low": 0.9139,
+  "recent_high": 1.062,
+  "rank": 14
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -191,9 +275,52 @@
   "hit_basis": "点",
   "hit_rate": 0.0183,
   "roi": 1.0248,
-  "ci_low": 0.9129,
-  "ci_high": 1.1354,
-  "rank": 14
+  "ci_low": 0.9134,
+  "ci_high": 1.1464,
+  "recent_from": 2023,
+  "races_recent": 1012,
+  "roi_recent": 1.0624,
+  "recent_low": 0.8661,
+  "recent_high": 1.2537,
+  "rank": 15
+ },
+ {
+  "group": "予想レポートの買い目",
+  "label": "買い目A（単勝だけ） オープン以上",
+  "how": "モデル+オッズ",
+  "races": 512,
+  "tickets": null,
+  "universe": "オープン以上",
+  "hit_basis": "レース",
+  "hit_rate": 0.082,
+  "roi": 1.0081,
+  "ci_low": 0.618,
+  "ci_high": 1.4746,
+  "recent_from": 2023,
+  "races_recent": 170,
+  "roi_recent": 0.5951,
+  "recent_low": 0.2539,
+  "recent_high": 1.0034,
+  "rank": 16
+ },
+ {
+  "group": "モデルの期待値で選ぶ",
+  "label": "単勝 期待値1.00以上1.10未満",
+  "how": "モデル+オッズ",
+  "races": 13873,
+  "tickets": 17486,
+  "universe": "2015〜2026年の全レース（検証期間）",
+  "hit_basis": "点",
+  "hit_rate": 0.0917,
+  "roi": 1.0053,
+  "ci_low": 0.94,
+  "ci_high": 1.0702,
+  "recent_from": 2023,
+  "races_recent": 4083,
+  "roi_recent": 0.9379,
+  "recent_low": 0.8271,
+  "recent_high": 1.0531,
+  "rank": 17
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -205,9 +332,14 @@
   "hit_basis": "点",
   "hit_rate": 0.0226,
   "roi": 0.9822,
-  "ci_low": 0.9069,
-  "ci_high": 1.0599,
-  "rank": 15
+  "ci_low": 0.9084,
+  "ci_high": 1.0633,
+  "recent_from": 2023,
+  "races_recent": 1032,
+  "roi_recent": 1.0197,
+  "recent_low": 0.8975,
+  "recent_high": 1.1488,
+  "rank": 18
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -221,7 +353,12 @@
   "roi": 0.9721,
   "ci_low": 0.9425,
   "ci_high": 0.9985,
-  "rank": 16
+  "recent_from": 2023,
+  "races_recent": 10499,
+  "roi_recent": 0.9526,
+  "recent_low": 0.9021,
+  "recent_high": 1.0072,
+  "rank": 19
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -233,9 +370,14 @@
   "hit_basis": "点",
   "hit_rate": 0.0212,
   "roi": 0.9544,
-  "ci_low": 0.8491,
-  "ci_high": 1.0599,
-  "rank": 17
+  "ci_low": 0.8509,
+  "ci_high": 1.0621,
+  "recent_from": 2023,
+  "races_recent": 497,
+  "roi_recent": 0.906,
+  "recent_low": 0.7427,
+  "recent_high": 1.0854,
+  "rank": 20
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -249,7 +391,12 @@
   "roi": 0.9441,
   "ci_low": 0.9233,
   "ci_high": 0.965,
-  "rank": 18
+  "recent_from": 2023,
+  "races_recent": 12349,
+  "roi_recent": 0.9174,
+  "recent_low": 0.881,
+  "recent_high": 0.9563,
+  "rank": 21
  },
  {
   "group": "予想レポートの買い目",
@@ -261,9 +408,14 @@
   "hit_basis": "レース",
   "hit_rate": 0.3974,
   "roi": 0.9422,
-  "ci_low": 0.876,
-  "ci_high": 1.0127,
-  "rank": 19
+  "ci_low": 0.8755,
+  "ci_high": 1.0149,
+  "recent_from": 2023,
+  "races_recent": 1033,
+  "roi_recent": 0.9461,
+  "recent_low": 0.8406,
+  "recent_high": 1.0554,
+  "rank": 22
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -275,9 +427,14 @@
   "hit_basis": "点",
   "hit_rate": 0.0256,
   "roi": 0.9358,
-  "ci_low": 0.8809,
-  "ci_high": 0.9905,
-  "rank": 20
+  "ci_low": 0.8771,
+  "ci_high": 0.9881,
+  "recent_from": 2023,
+  "races_recent": 1034,
+  "roi_recent": 0.9801,
+  "recent_low": 0.888,
+  "recent_high": 1.0731,
+  "rank": 23
  },
  {
   "group": "決まった形で買う",
@@ -291,7 +448,12 @@
   "roi": 0.9138,
   "ci_low": 0.8705,
   "ci_high": 0.9612,
-  "rank": 21
+  "recent_from": null,
+  "races_recent": null,
+  "roi_recent": null,
+  "recent_low": null,
+  "recent_high": null,
+  "rank": 24
  },
  {
   "group": "予想レポートの買い目",
@@ -303,9 +465,14 @@
   "hit_basis": "レース",
   "hit_rate": 0.3827,
   "roi": 0.9124,
-  "ci_low": 0.8181,
-  "ci_high": 1.006,
-  "rank": 22
+  "ci_low": 0.8183,
+  "ci_high": 1.0155,
+  "recent_from": 2023,
+  "races_recent": 497,
+  "roi_recent": 0.8057,
+  "recent_low": 0.6702,
+  "recent_high": 0.9407,
+  "rank": 25
  },
  {
   "group": "決まった形で買う",
@@ -319,7 +486,12 @@
   "roi": 0.9057,
   "ci_low": 0.8964,
   "ci_high": 0.9152,
-  "rank": 23
+  "recent_from": null,
+  "races_recent": null,
+  "roi_recent": null,
+  "recent_low": null,
+  "recent_high": null,
+  "rank": 26
  },
  {
   "group": "決まった形で買う",
@@ -333,7 +505,12 @@
   "roi": 0.9004,
   "ci_low": 0.8905,
   "ci_high": 0.9102,
-  "rank": 24
+  "recent_from": null,
+  "races_recent": null,
+  "roi_recent": null,
+  "recent_low": null,
+  "recent_high": null,
+  "rank": 27
  },
  {
   "group": "人気で選ぶ",
@@ -347,7 +524,12 @@
   "roi": 0.8929,
   "ci_low": 0.885,
   "ci_high": 0.9007,
-  "rank": 25
+  "recent_from": 2023,
+  "races_recent": 3059,
+  "roi_recent": 0.9056,
+  "recent_low": 0.8907,
+  "recent_high": 0.9206,
+  "rank": 28
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -359,9 +541,14 @@
   "hit_basis": "点",
   "hit_rate": 0.0345,
   "roi": 0.8813,
-  "ci_low": 0.8018,
-  "ci_high": 0.9792,
-  "rank": 26
+  "ci_low": 0.7925,
+  "ci_high": 0.9695,
+  "recent_from": 2023,
+  "races_recent": 983,
+  "roi_recent": 1.0046,
+  "recent_low": 0.8501,
+  "recent_high": 1.1663,
+  "rank": 29
  },
  {
   "group": "決まった形で買う",
@@ -375,7 +562,12 @@
   "roi": 0.8694,
   "ci_low": 0.8424,
   "ci_high": 0.8936,
-  "rank": 27
+  "recent_from": null,
+  "races_recent": null,
+  "roi_recent": null,
+  "recent_low": null,
+  "recent_high": null,
+  "rank": 30
  },
  {
   "group": "人気で選ぶ",
@@ -389,7 +581,12 @@
   "roi": 0.8404,
   "ci_low": 0.8349,
   "ci_high": 0.8456,
-  "rank": 28
+  "recent_from": 2023,
+  "races_recent": 12882,
+  "roi_recent": 0.8492,
+  "recent_low": 0.8375,
+  "recent_high": 0.8611,
+  "rank": 31
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -401,9 +598,14 @@
   "hit_basis": "点",
   "hit_rate": 0.0194,
   "roi": 0.8142,
-  "ci_low": 0.6262,
-  "ci_high": 1.0262,
-  "rank": 29
+  "ci_low": 0.6144,
+  "ci_high": 1.0268,
+  "recent_from": 2023,
+  "races_recent": 88,
+  "roi_recent": 1.0162,
+  "recent_low": 0.6422,
+  "recent_high": 1.4008,
+  "rank": 32
  },
  {
   "group": "モデルの期待値で選ぶ",
@@ -415,9 +617,14 @@
   "hit_basis": "点",
   "hit_rate": 0.03,
   "roi": 0.7925,
-  "ci_low": 0.7741,
-  "ci_high": 0.8089,
-  "rank": 30
+  "ci_low": 0.7746,
+  "ci_high": 0.8092,
+  "recent_from": 2023,
+  "races_recent": 1034,
+  "roi_recent": 0.8074,
+  "recent_low": 0.7801,
+  "recent_high": 0.8358,
+  "rank": 33
  },
  {
   "group": "人気で選ぶ",
@@ -431,7 +638,12 @@
   "roi": 0.7831,
   "ci_low": 0.7739,
   "ci_high": 0.7929,
-  "rank": 31
+  "recent_from": 2023,
+  "races_recent": 12882,
+  "roi_recent": 0.7938,
+  "recent_low": 0.7727,
+  "recent_high": 0.8148,
+  "rank": 34
  },
  {
   "group": "予想レポートの買い目",
@@ -443,9 +655,14 @@
   "hit_basis": "レース",
   "hit_rate": 0.3978,
   "roi": 0.7395,
-  "ci_low": 0.5887,
-  "ci_high": 0.9167,
-  "rank": 32
+  "ci_low": 0.5715,
+  "ci_high": 0.9121,
+  "recent_from": 2023,
+  "races_recent": 88,
+  "roi_recent": 0.8753,
+  "recent_low": 0.5748,
+  "recent_high": 1.2102,
+  "rank": 35
  },
  {
   "group": "基準",
@@ -459,7 +676,12 @@
   "roi": 0.7222,
   "ci_low": 0.711,
   "ci_high": 0.7331,
-  "rank": 33
+  "recent_from": 2023,
+  "races_recent": 12882,
+  "roi_recent": 0.7155,
+  "recent_low": 0.6929,
+  "recent_high": 0.7388,
+  "rank": 36
  },
  {
   "group": "基準",
@@ -471,9 +693,14 @@
   "hit_basis": "点",
   "hit_rate": 0.0079,
   "roi": 0.6446,
-  "ci_low": 0.5919,
-  "ci_high": 0.7055,
-  "rank": 34
+  "ci_low": 0.59,
+  "ci_high": 0.7019,
+  "recent_from": 2023,
+  "races_recent": 1034,
+  "roi_recent": 0.6474,
+  "recent_low": 0.5689,
+  "recent_high": 0.7414,
+  "rank": 37
  },
  {
   "group": "人気で選ぶ",
@@ -487,7 +714,12 @@
   "roi": 0.5267,
   "ci_low": 0.4784,
   "ci_high": 0.5784,
-  "rank": 35
+  "recent_from": 2023,
+  "races_recent": 8935,
+  "roi_recent": 0.5551,
+  "recent_low": 0.4434,
+  "recent_high": 0.6658,
+  "rank": 38
  },
  {
   "group": "人気で選ぶ",
@@ -501,6 +733,11 @@
   "roi": 0.4657,
   "ci_low": 0.4219,
   "ci_high": 0.511,
-  "rank": 36
+  "recent_from": 2023,
+  "races_recent": 11633,
+  "roi_recent": 0.4629,
+  "recent_low": 0.3739,
+  "recent_high": 0.5633,
+  "rank": 39
  }
 ]

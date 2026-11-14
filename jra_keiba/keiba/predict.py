@@ -277,13 +277,19 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
     if kind == "real" and res["drawn"] and res.get("budget"):
         out.append(f"### 予算 {res['budget']:,} 円の買い目 A：単勝だけ\n")
         sp = ROOT / "reports" / "summary.json"
-        hist = next((r for r in json.loads(sp.read_text()) if r["label"] == "単勝 期待値1.00以上"), None) \
+        a_thr = betting.WIN_SLIP_EV
+        hist = next((r for r in json.loads(sp.read_text()) if r["label"] == f"単勝 期待値{a_thr:.2f}以上"), None) \
             if sp.exists() else None
-        out.append("単勝の期待値 1.00 以上の馬だけを、1 頭あたり予算の 2 割までで買います（残りは使いません）。")
+        out.append(f"単勝の期待値 {a_thr:.2f} 以上の馬だけを、1 頭あたり予算の 2 割までで買います（残りは使いません）。"
+                   "基準を 1.00 より高くしているのは、買ったあとにオッズが下がる分の余裕です"
+                   "（期待値 1.00〜1.10 の馬は、確定オッズで計算しても損益ゼロ前後でした）。")
         if hist:
             out.append(f"全レースでの過去検証（{hist['races']:,} レース・{hist['tickets']:,} 点）: "
                        f"的中率 {_pct(hist['hit_rate'])}、回収率 {_pct(hist['roi'])}"
                        f"（偶然の幅 {_pct(hist['ci_low'])}〜{_pct(hist['ci_high'])}）。")
+            if hist.get("roi_recent") is not None:
+                out.append(f"直近（{hist['recent_from']}年以降、{hist['races_recent']:,} レース）に限ると "
+                           f"{_pct(hist['roi_recent'])}（偶然の幅 {_pct(hist['recent_low'])}〜{_pct(hist['recent_high'])}）。")
         out.append(slip_record("A", r.get("grade")) + "\n")
         if res.get("win_slip"):
             for b in res["win_slip"]:

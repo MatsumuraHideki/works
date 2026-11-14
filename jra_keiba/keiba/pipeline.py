@@ -61,9 +61,22 @@ def fit_all(raw: Path = features.RAW, oof_years: int | None = None, fold_months:
     test_years = years[min(min_train_periods, max(1, len(years) - 2)):]
     if oof_years:
         test_years = years[1:][-oof_years:]
-    rounds = model.tune_rounds(hist, feats, years[-2]) if len(years) >= 3 else dict(model.N_ROUNDS)
+    tuned: dict = {}
+
+    def rounds_before(y) -> dict:
+        """Boosting rounds for a model that predicts period ``y``: early-stopped on the period
+        just before it, so no fold is tuned on races it is tested on (or on later ones)."""
+        prev = [p for p in years if p < y]
+        if len(prev) < 2:
+            return dict(model.N_ROUNDS)
+        if prev[-1] not in tuned:
+            tuned[prev[-1]] = model.tune_rounds(hist[hist["year"] < y], feats, prev[-1])
+        return tuned[prev[-1]]
+
+    oof = model.walk_forward(hist, feats, test_years, rounds_before, log=log)
+    # the production model trains on everything; its rounds come from the last complete period
+    rounds = rounds_before(years[-1]) if len(years) >= 3 else dict(model.N_ROUNDS)
     log(f"boosting rounds: {rounds}")
-    oof = model.walk_forward(hist, feats, test_years, rounds, log=log)
     hist = hist.join(oof)
     o = hist.dropna(subset=["s_win", "m"]).copy()
     o = o[np.isfinite(o["m"])]

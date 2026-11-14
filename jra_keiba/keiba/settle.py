@@ -57,7 +57,8 @@ def load_result(race_id: str, raw_payouts: pd.DataFrame | None) -> dict | None:
         r = json.loads(p.read_text())
         pay = {(x["bet_type"], _key(x["bet_type"], x["combo"])): x["payout"] / 100.0 for x in r["payouts"]}
         top3 = [f"{int(o['number'])} {o['horse_name']}" for o in r["order"][:3] if o.get("number")]
-        return {"pay": pay, "top3": top3, "source": "当日の結果ページ"}
+        final = {int(k): float(v) for k, v in (r.get("final_win_odds") or {}).items() if v}
+        return {"pay": pay, "top3": top3, "source": "当日の結果ページ", "final_win_odds": final}
     if raw_payouts is not None and len(raw_payouts):
         g = raw_payouts[raw_payouts["race_id"] == race_id]
         if len(g):
@@ -106,6 +107,15 @@ def settle_all(log=print) -> list[dict]:
             a_ret = sum(res["pay"].get((t["type"], _key(t["type"], t["combo"])), 0.0) * t["stake"] for t in win_slip)
             row.update({"a_tickets": len(win_slip), "a_stake": sum(t["stake"] for t in win_slip), "a_return": round(a_ret),
                         "a_picks": [f"{t['combo'][0]}番 {t['stake']:,}円" for t in win_slip]})
+            # how the 単勝 odds of the horses that looked like value moved by the close
+            final = res.get("final_win_odds") or {}
+            drift = []
+            for x in d.get("runners", []):
+                fo = final.get(x.get("number"))
+                if fo and x.get("win_odds") and x.get("ev") is not None and x["ev"] >= 1.0:
+                    drift.append({"number": x["number"], "horse": x["horse"], "odds": x["win_odds"], "final": fo,
+                                  "ev": x["ev"], "ev_final": round(x["p"] * fo, 3)})
+            row["drift"] = drift
             top = d["runners"][0] if d.get("runners") else None
             row.update({"return": round(ret), "hits": hits, "top3": res["top3"], "source": res["source"],
                         "model_top": f"{top['number']} {top['horse']}" if top else None})
@@ -137,6 +147,19 @@ def write_record(rows: list[dict]) -> str:
             grade = f"（{r['grade']}）" if r.get("grade") else ""
             out.append(f"| {r['date']} | {r['race']}{grade} | {r['tickets']} | {r['stake']:,}円 | {r['return']:,}円 | "
                        f"{r['return'] - r['stake']:+,}円 | {'、'.join(r['hits']) or 'なし'} | {' / '.join(r['top3']) or '-'} |")
+        out.append("")
+    moved = [(r, x) for r in done for x in r.get("drift", [])]
+    if moved:
+        ratio = sum(x["final"] / x["odds"] for _, x in moved) / len(moved)
+        out.append("### 買ったあとのオッズの動き\n")
+        out.append("予想した時点で単勝の期待値が 1.00 以上だった馬の、予想時と確定のオッズです。"
+                   "過去検証は確定オッズで計算しているので、ここで期待値が下がる分だけ実際の成績は検証より悪くなります。"
+                   f"これまでの平均では、確定オッズは予想時の {ratio * 100:.0f}% でした（{len(moved)} 頭）。\n")
+        out.append("| 日付 | レース | 馬 | 予想時 | 確定 | 期待値（予想時→確定） |")
+        out.append("|---|---|---|---|---|---|")
+        for r, x in sorted(moved, key=lambda t: (t[0]["date"], t[0]["race_id"]), reverse=True):
+            out.append(f"| {r['date']} | {r['race']} | {x['number']} {x['horse']} | {x['odds']:.1f}倍 | "
+                       f"{x['final']:.1f}倍 | {x['ev']:.2f} → {x['ev_final']:.2f} |")
         out.append("")
     pending = [r for r in rows if not r["settled"] and r["tickets"]]
     if pending:

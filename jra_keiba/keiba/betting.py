@@ -190,6 +190,10 @@ def budget_slip(bets: list[Bet], budget: int, unit: int = 100) -> list[Bet]:
 
 CORE_TYPES = ("馬連", "ワイド", "三連複")
 WIN_EV = 0.95          # 単勝 threshold used in the mixed slip
+# 単勝 threshold of the win-only slip. Backtests use closing odds; a slip is bought before the
+# close, and bets with EV 1.00-1.10 only broke even at closing odds (and lost in 2023-26),
+# so the win-only slip keeps a margin for the odds moving after purchase.
+WIN_SLIP_EV = 1.10
 TOP_PICK_SHARE = 0.4   # share of the budget put on the model's top pick when its win EV >= 1.0
 
 
@@ -197,7 +201,7 @@ def make_slips(cand: list[Bet], top_number: int, budget: int, min_ev: float = 1.
                ) -> tuple[list[Bet], list[Bet]]:
     """The two budget slips of a race, from every priced ticket (``cand``).
 
-    A (win only)  単勝 with EV >= 1.0, a fifth of the budget per horse at most.
+    A (win only)  単勝 with EV >= WIN_SLIP_EV, a fifth of the budget per horse at most.
     B (mixed)     単勝 with EV >= 0.95 plus 馬連/ワイド/三連複 with EV >= ``min_ev``, likeliest
                   first; 40% goes on the model's top pick first when its win EV is >= 1.0.
 
@@ -207,7 +211,7 @@ def make_slips(cand: list[Bet], top_number: int, budget: int, min_ev: float = 1.
     def copy(b: Bet) -> Bet:
         return Bet(b.bet_type, b.combo, b.prob, b.odds, b.ev, b.kelly)
 
-    solid = [copy(b) for b in cand if b.bet_type == "単勝" and b.ev >= 1.0 and b.prob >= 0.01]
+    solid = [copy(b) for b in cand if b.bet_type == "単勝" and b.ev >= WIN_SLIP_EV and b.prob >= 0.01]
     per = max(100, int(budget * 0.2 // 100) * 100)
     win_slip = budget_slip(solid, min(budget, per * len(solid)))
 

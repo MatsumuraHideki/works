@@ -1,0 +1,42 @@
+[
+ {
+  "threshold": 1.0,
+  "sigma": 0.0,
+  "roi": 1.04
+ },
+ {
+  "threshold": 1.0,
+  "sigma": 0.05,
+  "roi": 1.0288
+ },
+ {
+  "threshold": 1.0,
+  "sigma": 0.1,
+  "roi": 0.989
+ },
+ {
+  "threshold": 1.0,
+  "sigma": 0.2,
+  "roi": 0.9151
+ },
+ {
+  "threshold": 1.1,
+  "sigma": 0.0,
+  "roi": 1.1281
+ },
+ {
+  "threshold": 1.1,
+  "sigma": 0.05,
+  "roi": 1.0998
+ },
+ {
+  "threshold": 1.1,
+  "sigma": 0.1,
+  "roi": 1.0293
+ },
+ {
+  "threshold": 1.1,
+  "sigma": 0.2,
+  "roi": 0.9405
+ }
+]

@@ -103,16 +103,20 @@ def tune_rounds(df: pd.DataFrame, feats: list[str], valid_year: int) -> dict[str
 
 
 def walk_forward(df: pd.DataFrame, feats: list[str], test_years: list[int],
-                 rounds: dict[str, int] | None = None, log=print) -> pd.DataFrame:
-    """Out-of-fold stage-1 scores: for each test year train on all earlier years."""
+                 rounds=None, log=print) -> pd.DataFrame:
+    """Out-of-fold stage-1 scores: for each test year train on all earlier years.
+
+    ``rounds`` is a dict used for every fold, or a function of the test year so that each
+    fold's boosting rounds can be chosen from data that precedes it."""
     parts = []
     for y in test_years:
         tr, te = df[df["year"] < y], df[df["year"] == y]
         if not len(te) or not len(tr):
             continue
-        models = train_stage1(tr, feats, rounds)
+        r = rounds(y) if callable(rounds) else rounds
+        models = train_stage1(tr, feats, r)
         parts.append(predict_stage1(models, te, feats))
-        log(f"  fold {y}: train={len(tr):,} test={len(te):,}")
+        log(f"  fold {y}: train={len(tr):,} test={len(te):,} rounds={r}")
     return pd.concat(parts) if parts else pd.DataFrame(columns=["s_win", "s_top3", "s_res"])
 
 

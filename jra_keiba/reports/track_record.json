@@ -12,6 +12,7 @@
   "a_stake": 0,
   "a_return": 0,
   "a_picks": [],
+  "drift": [],
   "return": 0,
   "hits": [],
   "top3": [
@@ -35,6 +36,7 @@
   "a_stake": 0,
   "a_return": 0,
   "a_picks": [],
+  "drift": [],
   "return": 0,
   "hits": [],
   "top3": [
