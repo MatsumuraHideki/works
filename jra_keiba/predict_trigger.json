@@ -2,6 +2,6 @@
   "note": "Pushing a change to this file runs the jra-predict workflow on this branch. cards_only=true stops after saving the cards and odds (predictions are then produced separately from the saved snapshot).",
   "grades": "G1,G2,G3",
   "dates": "20261114",
-  "requested_at": "2026-11-14T06:13:06Z",
+  "requested_at": "2026-11-14T06:28:12Z",
   "cards_only": true
 }
