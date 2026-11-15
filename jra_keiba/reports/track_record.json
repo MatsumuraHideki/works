@@ -78,9 +78,40 @@
   "race_id": "202608050411",
   "race": "エリザベス女王杯",
   "grade": "G1",
-  "odds_time": "2026-11-14 20:30:14",
+  "odds_time": "2026-11-15 15:23:12",
   "tickets": 50,
   "stake": 5000,
-  "settled": false
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [
+   {
+    "number": 6,
+    "horse": "ヴーレヴー",
+    "odds": 12.7,
+    "final": 9.5,
+    "ev": 1.004,
+    "ev_final": 0.751
+   },
+   {
+    "number": 14,
+    "horse": "チェルヴィニア",
+    "odds": 42.2,
+    "final": 50.8,
+    "ev": 1.015,
+    "ev_final": 1.224
+   }
+  ],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "15 ラフターラインズ",
+   "7 カムニャック",
+   "16 アクアヴァーナル"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "7 カムニャック"
  }
 ]
