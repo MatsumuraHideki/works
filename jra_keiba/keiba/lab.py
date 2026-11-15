@@ -438,6 +438,48 @@ def _cells(s: dict) -> str:
 HEAD = f"回収率 | 偶然の幅 | 〜{SPLIT - 1}年 | {SPLIT}年〜 | {SPLIT}年〜の幅"
 
 
+def takeaways(res: dict) -> list[str]:
+    """Plain-language conclusions, with the numbers read from the results."""
+    out = []
+    pick = lambda rows, **kw: next((r for r in rows if all(r.get(k) == v for k, v in kw.items())), None)
+    rng = lambda r: f"{_pc(r['all']['roi'])}（偶然の幅 {_pc(r['all']['lo'])}〜{_pc(r['all']['hi'])}、{SPLIT}年〜 {_pc(r['conf']['roi'])}）"
+    a = pick(res.get("win_rules", []), rule="期待値1.10以上", weight="均等")
+    b = pick(res.get("win_rules", []), rule="期待値1.10以上", weight="ケリー基準（上限つき）")
+    if a and b:
+        out.append(f"**賭け金に重みをつけると成績が安定する。** 単勝の期待値 1.10 以上を均等に買うと {rng(a)}、"
+                   f"自信の度合い（ケリー基準）で金額を変えると {rng(b)}。回収率の差は小さいが、偶然の幅の下限が上がる。"
+                   "→ 買い目 A に採用。")
+        out.append(f"**ただし、買ったあとのオッズのずれに弱い。** 同じ買い方でも、買った時点のオッズが確定から 1 割ずれると "
+                   f"{_pc(b['noise10'])}、2 割ずれると {_pc(b['noise20'])}。どの選び方・配り方でもこの落ち方はほぼ同じで、"
+                   "ここが最大の弱点。→ 全レースの発走 15 分前オッズを記録して、実際のずれを測ることにした。")
+    c = pick(res.get("win_grid", []), cap=5.0, thr=1.0, weight="均等")
+    if c:
+        out.append(f"**いちばん堅いのは「人気馬なのに期待値が高い」とき。** 単勝 5 倍未満で期待値 1.00 以上の馬は {rng(c)}、"
+                   f"年ごとに見ても {c['years_above']}/{c['years']} 年で 100% 超。該当は年 200 頭ほどと少ない。"
+                   "ケリー基準の配り方は、こういう馬に自然と厚く張る。")
+    w = pick(res.get("slips", []), set="ワイドだけ（当たりやすい順に20点）", weight="均等")
+    n = pick(res.get("slips", []), set="ワイド抜き（単勝・馬連・三連複）当たりやすい順に20点", weight="ケリー基準")
+    o50 = pick(res.get("slips", []), set="当たりやすい順に50点", weight="均等")
+    if w and n and o50:
+        out.append(f"**5,000 円の買い目は、ワイドを外して点数を絞り、ケリー基準で配るのが良かった。** "
+                   f"ワイドだけだと {_pc(w['all']['roi'])}、50 点を均等に買うと {_pc(o50['all']['roi'])}、"
+                   f"ワイド抜き 20 点をケリー基準で配ると {rng(n)}（当たりがあるレースは {_pc(n['all']['hit'])}）。"
+                   "→ 買い目 B に採用。多くの案から選んだ結果なので、実力は 100% 前後と見ておくのが妥当。")
+    s2 = res.get("stage2", [])
+    if s2:
+        full = [r for r in s2 if len(r["cols"]) >= 4]
+        lo, hi = min(r["logloss"] for r in full), max(r["logloss"] for r in full)
+        out.append(f"**予測モデルを増やしても良くならなかった。** 順位を直接学習するモデル、直近の年を重く見るモデルなどを"
+                   f"足したり入れ替えたりしても、予測のずれは {lo:.4f}〜{hi:.4f} とほぼ同じで、回収率の差も偶然の範囲。"
+                   "今の特徴量で引き出せる情報はほぼ使い切っていて、伸ばすなら新しい情報（血統、調教、直前のオッズの動き）が必要。")
+    pm = res.get("place_model", [])
+    if len(pm) >= 2:
+        out.append(f"**2 着・3 着の確率を着順ごとのモデルで出すと、わずかに良い。** 馬連・ワイド・三連複（期待値 1.00 以上）が "
+                   f"{_pc(pm[0]['期待値1.00以上']['all']['roi'])} → {_pc(pm[-1]['期待値1.00以上']['all']['roi'])}。"
+                   "差は偶然の範囲だが当てやすさの指標は一貫して改善したので、次にモデルを学習し直すときに入れる。")
+    return out
+
+
 def write_report(res: dict) -> str:
     out = ["# いろいろ試した結果（賭け金の配分・買い目の選び方・モデル）\n",
            "過去の検証用の予測（各年をそれより前のデータだけで学習）を使い、買い方やモデルの案を同じ物差しで比べました。"
@@ -544,7 +586,7 @@ def main(argv: list[str] | None = None) -> int:
         res["stage2"] = exp_stage2(o, heads)
     if run("place"):
         res["place_model"] = exp_place_model(o, tables, pay, art["lam2"], art["lam3"], heads)
-    res.setdefault("takeaways", [])
+    res["takeaways"] = takeaways(res)
     write_report(res)
     return 0
 

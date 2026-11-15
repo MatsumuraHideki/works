@@ -5,6 +5,8 @@ JRA の過去レース（新馬〜G1 の全クラス。G1/G2/G3 を含む）を�
 
 - **どう買えば回収率が高いか**: [`reports/strategy.md`](reports/strategy.md)（券種・人気・条件・買い方別の回収率）
 - 買い方を 1 本の表で比べたもの: [`reports/summary.md`](reports/summary.md)（`python -m keiba.summary` で再生成）
+- 賭け金の配り方・買い目の選び方・モデルの案を試した結果: [`reports/experiments.md`](reports/experiments.md)（`python -m keiba.lab`）
+- 予想の答え合わせ: [`reports/track_record.md`](reports/track_record.md)
 - 予想の最新版: [`reports/latest.md`](reports/latest.md)
 - 学習に使っていない期間での検証結果: [`reports/backtest.md`](reports/backtest.md)
 
@@ -15,7 +17,7 @@ JRA の過去レース（新馬〜G1 の全クラス。G1/G2/G3 を含む）を�
 | 1. データ収集 | netkeiba から結果・払戻・全券種の確定オッズ（重賞）・血統を取得。3 秒以上の間隔を空けた単一の取得列。取得元が HTTP 400（アクセス過多）を返したらその場で停止 | `keiba/scrape.py`, `keiba/netkeiba.py` |
 | 2. 特徴量 | レース前に分かる情報だけで作成（下の 6 観点） | `keiba/features.py` |
 | 3. 勝率モデル | LightGBM（勝ち・3 着内の 2 モデル）＋ オッズを出発点にしてそのズレだけを学習するモデル → レース内で条件付きロジットにかけて統合 | `keiba/model.py` |
-| 4. 買い目 | 着順確率（補正付き Harville）から全券種の的中確率を計算し、期待値 = 確率 × オッズ で選別。予算に合わせた買い目を 2 通り（A: 単勝だけ、B: 単勝＋馬連・ワイド・三連複）出し、ボックス・ながしにまとめる | `keiba/betting.py`, `keiba/exotic.py` |
+| 4. 買い目 | 着順確率（補正付き Harville）から全券種の的中確率を計算し、期待値 = 確率 × オッズ で選別。予算に合わせた買い目を 2 通り（A: 単勝だけ、B: 単勝＋馬連・三連複の最大 20 点）出し、金額は自信の度合い（ケリー基準）で重みづけして、ボックス・ながしにまとめる | `keiba/betting.py`, `keiba/exotic.py` |
 | 5. 予想 | 出馬表と最新オッズを取得してレポート出力 | `keiba/cards.py`, `keiba/predict.py` |
 | 6. 回収率分析 | 券種・人気・レース条件・買い方（フォーメーション）ごとの回収率を、前半/後半の再現性と誤差幅つきで集計 | `keiba/strategy.py` |
 
@@ -47,6 +49,7 @@ JRA の過去レース（新馬〜G1 の全クラス。G1/G2/G3 を含む）を�
 |---|---|---|
 | `jra-data` | 毎週月曜 22:17 JST / 手動 | 前週末の結果・オッズ・血統を追加 |
 | `jra-predict` | 金 20:23、土日 09:23・14:23 JST / 手動 | 重賞の出馬表とオッズを取得し `reports/` を更新 |
+| `jra-odds-watch` | `watch_trigger.json` の push / 手動 | その日の全レースの単勝オッズを発走 15 分前に記録（確定オッズとのずれを測るため） |
 
 定期実行はこのフォルダがデフォルトブランチに入ってから有効になります。
 手動実行は Actions タブ → ワークフロー → Run workflow。`jra-predict` の `grades` を `all` にすると全レースが対象です。
@@ -71,7 +74,9 @@ data/raw/results/YYYYMM.csv.gz   出走馬ごとの結果（着順・タイム�
 data/raw/payouts/YYYYMM.csv.gz   払戻
 data/raw/odds/YYYYMM.csv.gz      重賞の全券種・全通りの確定オッズ
 data/raw/pedigree.csv.gz         父・母・母父
+data/raw/odds_snapshots/YYYYMMDD.csv.gz  全レースの発走 15 分前の単勝オッズ
 data/cards/<race_id>.json        予想時点の出馬表とオッズのスナップショット
+models/model.pkl                 学習済みモデル（直前予想で再学習を待たないための保存版）
 ```
 
 ## 注意
