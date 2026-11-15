@@ -125,13 +125,16 @@ def slip_record(plan: str, grade: str | None) -> str:
         return "この買い方の過去検証はまだありません。"
     rows = json.loads(sp.read_text())
     universe = "G1" if grade == "G1" else ("重賞（G1〜G3）" if grade in ("G2", "G3") else "オープン以上")
-    name = "買い目A（単勝だけ）" if plan == "A" else "買い目B（単勝＋馬連・ワイド・三連複）"
+    name = "買い目A（単勝だけ）" if plan == "A" else "買い目B（単勝＋馬連・三連複）"
     parts = []
-    for u in dict.fromkeys([universe, "オープン以上"]):
+    # slip A needs only 単勝 odds, so it is also tested on every race; slip B on open-class races
+    for u in dict.fromkeys((["全レース"] if plan == "A" else []) + [universe, "オープン以上"]):
         r = next((x for x in rows if x["label"] == f"{name} {u}"), None)
         if r:
+            recent = f"、{r['recent_from']}年以降は {_pct(r['roi_recent'])}" if r.get("roi_recent") is not None else ""
             parts.append(f"{u} {r['races']:,} レースで回収率 {_pct(r['roi'])}"
-                         f"（偶然の幅 {_pct(r['ci_low'])}〜{_pct(r['ci_high'])}、当たりがあったレース {_pct(r['hit_rate'])}）")
+                         f"（偶然の幅 {_pct(r['ci_low'])}〜{_pct(r['ci_high'])}{recent}、"
+                         f"当たりがあったレース {_pct(r['hit_rate'])}）")
     return "この買い目そのものの過去検証: " + "、".join(parts) + "。" if parts else "この買い方の過去検証はまだありません。"
 
 
@@ -278,18 +281,10 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
         out.append(f"### 予算 {res['budget']:,} 円の買い目 A：単勝だけ\n")
         sp = ROOT / "reports" / "summary.json"
         a_thr = betting.WIN_SLIP_EV
-        hist = next((r for r in json.loads(sp.read_text()) if r["label"] == f"単勝 期待値{a_thr:.2f}以上"), None) \
-            if sp.exists() else None
-        out.append(f"単勝の期待値 {a_thr:.2f} 以上の馬だけを、1 頭あたり予算の 2 割までで買います（残りは使いません）。"
-                   "基準を 1.00 より高くしているのは、買ったあとにオッズが下がる分の余裕です"
-                   "（期待値 1.00〜1.10 の馬は、確定オッズで計算しても損益ゼロ前後でした）。")
-        if hist:
-            out.append(f"全レースでの過去検証（{hist['races']:,} レース・{hist['tickets']:,} 点）: "
-                       f"的中率 {_pct(hist['hit_rate'])}、回収率 {_pct(hist['roi'])}"
-                       f"（偶然の幅 {_pct(hist['ci_low'])}〜{_pct(hist['ci_high'])}）。")
-            if hist.get("roi_recent") is not None:
-                out.append(f"直近（{hist['recent_from']}年以降、{hist['races_recent']:,} レース）に限ると "
-                           f"{_pct(hist['roi_recent'])}（偶然の幅 {_pct(hist['recent_low'])}〜{_pct(hist['recent_high'])}）。")
+        out.append(f"単勝の期待値 {a_thr:.2f} 以上の馬だけを買います。金額は自信の度合い（ケリー基準）で変え、"
+                   f"ケリー基準の割合が {betting.KELLY_FULL * 100:.0f}% 以上の馬で予算いっぱい、それ未満は比例して少なくします"
+                   "（残りは使いません）。均等に買うより成績が安定した配り方です（reports/experiments.md）。"
+                   "基準を 1.00 より高くしているのは、買ったあとにオッズが下がる分の余裕です。")
         out.append(slip_record("A", r.get("grade")) + "\n")
         if res.get("win_slip"):
             for b in res["win_slip"]:
@@ -299,12 +294,12 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
             out.append("")
         else:
             out.append("該当する馬がいません。A の買い方ではこのレースは**見送り**です。\n")
-        out.append(f"### 予算 {res['budget']:,} 円の買い目 B：高配当も狙う（単勝＋馬連・ワイド・三連複）\n")
+        out.append(f"### 予算 {res['budget']:,} 円の買い目 B：高配当も狙う（単勝＋馬連・三連複）\n")
         if res["slip"]:
-            out.append("単勝は期待値 0.95 以上、馬連・ワイド・三連複は期待値 "
-                       f"{min_ev:.2f} 以上の買い目を、当たりやすい順に 100 円ずつ入れ、余った分を上から足しています。"
-                       "モデルの 1 位の馬が単勝の期待値 1.0 以上のときは、予算の 4 割を先にその単勝に充てます"
-                       "（検証で最も成績が良かった買い方のため）。\n")
+            out.append(f"単勝は期待値 {betting.WIN_EV:.2f} 以上、馬連・三連複は期待値 {min_ev:.2f} 以上の買い目から、"
+                       f"当たりやすい順に最大 {betting.SLIP_TICKETS} 点を選び、予算をケリー基準の割合に比例して配っています"
+                       "（期待値と当たりやすさの両方が高い買い目ほど厚く）。"
+                       "ワイドは検証で成績が悪かったので外しました（reports/experiments.md）。\n")
             out.append("| 券種 | 買い目 | 購入額 | オッズ | 的中確率 | 当たった場合の払戻 |")
             out.append("|---|---|---|---|---|---|")
             for b in res["slip"]:

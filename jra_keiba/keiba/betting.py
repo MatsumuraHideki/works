@@ -20,13 +20,17 @@ PAYOUT_RATE = {
 }
 
 
-def order_probs(p: np.ndarray, lam2: float = 0.85, lam3: float = 0.75) -> tuple[np.ndarray, np.ndarray]:
-    """Return (P2, P3): P2[i,j]=P(i 1st, j 2nd), P3[i,j,k]=P(i 1st, j 2nd, k 3rd)."""
+def order_probs(p: np.ndarray, lam2: float = 0.85, lam3: float = 0.75,
+                a: np.ndarray | None = None, b: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """Return (P2, P3): P2[i,j]=P(i 1st, j 2nd), P3[i,j,k]=P(i 1st, j 2nd, k 3rd).
+
+    Second and third place are drawn in proportion to strengths ``a`` and ``b`` among the
+    runners still unplaced; by default these are p ** lam2 and p ** lam3."""
     p = np.asarray(p, dtype=float)
     p = p / p.sum()
     n = len(p)
-    a = p ** lam2
-    b = p ** lam3
+    a = p ** lam2 if a is None else np.asarray(a, dtype=float)
+    b = p ** lam3 if b is None else np.asarray(b, dtype=float)
     eye = np.eye(n, dtype=bool)
     # second given first
     denom2 = a.sum() - a  # by first horse i
@@ -52,7 +56,8 @@ def place_slots(n_runners: int) -> int:
     return 0
 
 
-def bet_probabilities(p: np.ndarray, numbers: list[int], lam2: float = 0.85, lam3: float = 0.75
+def bet_probabilities(p: np.ndarray, numbers: list[int], lam2: float = 0.85, lam3: float = 0.75,
+                      a: np.ndarray | None = None, b: np.ndarray | None = None
                       ) -> dict[str, dict[tuple[int, ...], float]]:
     """Probability of every ticket of every bet type. Keys are tuples of 馬番.
 
@@ -60,7 +65,7 @@ def bet_probabilities(p: np.ndarray, numbers: list[int], lam2: float = 0.85, lam
     finishing order.
     """
     n = len(p)
-    P2, P3 = order_probs(p, lam2, lam3)
+    P2, P3 = order_probs(p, lam2, lam3, a, b)
     idx = range(n)
     out: dict[str, dict[tuple[int, ...], float]] = {t: {} for t in BET_TYPES}
     pn = np.asarray(p, dtype=float) / np.sum(p)
@@ -189,44 +194,77 @@ def budget_slip(bets: list[Bet], budget: int, unit: int = 100) -> list[Bet]:
 
 
 CORE_TYPES = ("馬連", "ワイド", "三連複")
-WIN_EV = 0.95          # 単勝 threshold used in the mixed slip
+# Rules of the two published slips. They were chosen in reports/experiments.md: stakes in
+# proportion to the Kelly fraction did better than flat stakes in both halves of the test
+# period, and ワイド tickets and long ticket lists pulled the mixed slip down.
+WIN_EV = 1.00          # 単勝 threshold in the mixed slip
 # 単勝 threshold of the win-only slip. Backtests use closing odds; a slip is bought before the
-# close, and bets with EV 1.00-1.10 only broke even at closing odds (and lost in 2023-26),
-# so the win-only slip keeps a margin for the odds moving after purchase.
+# close, and bets with EV 1.00-1.10 only broke even at closing odds, so the win-only slip
+# keeps a margin for the odds moving after purchase.
 WIN_SLIP_EV = 1.10
-TOP_PICK_SHARE = 0.4   # share of the budget put on the model's top pick when its win EV >= 1.0
+KELLY_FULL = 0.05      # Kelly fraction at which one horse gets the whole race budget
+SLIP_TYPES = ("馬連", "三連複")   # multi-horse bet types of the mixed slip
+SLIP_TICKETS = 20      # at most this many tickets in the mixed slip
+
+
+def kelly_fraction(prob: float, odds: float) -> float:
+    """Full-Kelly share of the bankroll for one bet (0 when the bet has no edge)."""
+    return max(0.0, (prob * odds - 1.0) / (odds - 1.0)) if odds > 1.0 else 0.0
+
+
+def allocate(weights: list[float], budget: int, unit: int = 100) -> list[int]:
+    """Split a budget in proportion to ``weights`` in whole units (largest remainder).
+    With more tickets than units, the heaviest get one unit each."""
+    n_units = budget // unit
+    total = sum(weights)
+    out = [0] * len(weights)
+    if not weights or total <= 0 or n_units <= 0:
+        return out
+    order = sorted(range(len(weights)), key=lambda i: -weights[i])
+    if len(weights) > n_units:
+        for i in order[:n_units]:
+            out[i] = unit
+        return out
+    raw = [w / total * n_units for w in weights]
+    base = [int(x) for x in raw]
+    left = n_units - sum(base)
+    for i in sorted(range(len(raw)), key=lambda i: -(raw[i] - base[i]))[:left]:
+        base[i] += 1
+    return [b * unit for b in base]
 
 
 def make_slips(cand: list[Bet], top_number: int, budget: int, min_ev: float = 1.0
                ) -> tuple[list[Bet], list[Bet]]:
     """The two budget slips of a race, from every priced ticket (``cand``).
 
-    A (win only)  単勝 with EV >= WIN_SLIP_EV, a fifth of the budget per horse at most.
-    B (mixed)     単勝 with EV >= 0.95 plus 馬連/ワイド/三連複 with EV >= ``min_ev``, likeliest
-                  first; 40% goes on the model's top pick first when its win EV is >= 1.0.
+    A (win only)  単勝 with EV >= WIN_SLIP_EV. Each horse gets the budget times
+                  min(1, Kelly fraction / KELLY_FULL): more on the horses the model is surer
+                  of, the whole budget only on a strong edge. The rest is not spent.
+    B (mixed)     単勝 with EV >= WIN_EV plus 馬連 / 三連複 with EV >= ``min_ev``: the
+                  SLIP_TICKETS likeliest, with the budget split in proportion to the Kelly
+                  fraction of each ticket.
 
     Predictions and the backtest both call this, so the reported record is for exactly the
-    slips that are published.
+    slips that are published. ``top_number`` is unused (kept for callers).
     """
     def copy(b: Bet) -> Bet:
-        return Bet(b.bet_type, b.combo, b.prob, b.odds, b.ev, b.kelly)
+        return Bet(b.bet_type, b.combo, b.prob, b.odds, b.ev, kelly_fraction(b.prob, b.odds))
 
-    solid = [copy(b) for b in cand if b.bet_type == "単勝" and b.ev >= WIN_SLIP_EV and b.prob >= 0.01]
-    per = max(100, int(budget * 0.2 // 100) * 100)
-    win_slip = budget_slip(solid, min(budget, per * len(solid)))
+    unit = 100
+    win_slip = [copy(b) for b in cand if b.bet_type == "単勝" and b.ev >= WIN_SLIP_EV and b.prob >= 0.01]
+    for b in win_slip:
+        b.stake = max(unit, int(budget * min(1.0, b.kelly / KELLY_FULL) // unit) * unit)
+    if sum(b.stake for b in win_slip) > budget:
+        for b, st in zip(win_slip, allocate([b.kelly for b in win_slip], budget, unit)):
+            b.stake = st
+    win_slip = sorted((b for b in win_slip if b.stake > 0), key=lambda b: -b.prob)
 
-    wins = [b for b in cand if b.bet_type == "単勝" and b.ev >= WIN_EV and b.prob >= 0.01]
-    core = [b for b in cand if b.bet_type in CORE_TYPES and b.ev >= min_ev and b.prob >= 0.005]
-    top = next((b for b in cand if b.bet_type == "単勝" and b.combo == (top_number,)), None)
-    anchor = int(budget * TOP_PICK_SHARE // 100) * 100 if top is not None and top.ev >= 1.0 else 0
-    slip = budget_slip([copy(b) for b in wins + core], budget - anchor)
-    if anchor:
-        hit = next((b for b in slip if b.bet_type == "単勝" and b.combo == top.combo), None)
-        if hit is None:
-            hit = copy(top)
-            slip.insert(0, hit)
-        hit.stake += anchor
-        slip.sort(key=lambda b: -b.prob)
+    pool = [copy(b) for b in cand if (b.bet_type == "単勝" and b.ev >= WIN_EV and b.prob >= 0.01)
+            or (b.bet_type in SLIP_TYPES and b.ev >= min_ev and b.prob >= 0.005)]
+    pool = sorted(pool, key=lambda b: -b.prob)[:SLIP_TICKETS]
+    for b, st in zip(pool, allocate([max(b.kelly, 1e-9) for b in pool], budget, unit)):
+        b.stake = st
+    slip = [b for b in pool if b.stake > 0]
     return win_slip, slip
 
 

@@ -132,6 +132,24 @@ def build(res: dict, raw: Path = features.RAW, budget: int = 5000) -> list[dict]
         rows.append(_row("モデルの期待値で選ぶ", f"単勝 モデル1位の馬（その期待値が{thr:.2f}以上のレースだけ）",
                          "モデル+オッズ", *_by_race(top, top["ev"] >= thr, "ret_win"), universe=test,
                          recent=_recent(top, top["ev"] >= thr, "ret_win", y0)))
+    # --- slip A on every test race (it needs only 単勝 odds), sized exactly as published
+    sel = o[(o["ev"] >= betting.WIN_SLIP_EV) & pick]
+    st, rt, late = [], [], []
+    for rid, g in sel.groupby("race_id", sort=False):
+        cand = [betting.Bet("単勝", (int(n),), float(p), float(od), float(p * od), 0.0)
+                for n, p, od in zip(g["number"], g["p_final"], g["win_odds"])]
+        win_slip, _ = betting.make_slips(cand, -1, budget)
+        back = dict(zip(g["number"].astype(int), g["ret_win"]))
+        st.append(sum(b.stake for b in win_slip) / 100.0)
+        rt.append(sum(b.stake * back[b.combo[0]] for b in win_slip) / 100.0)
+        late.append(g["date"].iloc[0].year >= y0)
+    if st:
+        st, rt, late = np.array(st), np.array(rt), np.array(late)
+        r = _row("予想レポートの買い目", "買い目A（単勝だけ） 全レース", "モデル+オッズ", st, rt, 0, len(st),
+                 universe=test, hit_basis="レース", recent=(y0, st[late], rt[late]))
+        r["hit_rate"] = round(float((rt > 0).mean()), 4)
+        r["tickets"] = None
+        rows.append(r)
     # --- multi-horse pools (open-class races, the only ones with a full odds table)
     odds_df = features.load_odds(raw)
     if len(odds_df):
@@ -194,7 +212,7 @@ def build(res: dict, raw: Path = features.RAW, budget: int = 5000) -> list[dict]
                     st.append(sum(b.stake for b in sl) / 100.0); rt.append(got / 100.0)
                     late.append(tabs["date"].year >= y0)
                     acc[name] = (st, rt, hits + int(got > 0), late)
-            for name, text in (("A", "買い目A（単勝だけ）"), ("B", "買い目B（単勝＋馬連・ワイド・三連複）")):
+            for name, text in (("A", "買い目A（単勝だけ）"), ("B", "買い目B（単勝＋馬連・三連複）")):
                 st, rt, hits, late = acc[name]
                 if st:
                     st, rt, late = np.array(st), np.array(rt), np.array(late)

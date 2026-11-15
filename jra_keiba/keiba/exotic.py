@@ -79,15 +79,20 @@ def fit_type(tabs: list[dict]) -> tuple[float, float]:
     return float(max(a, 0.0)), float(b)
 
 
-def build(oos: pd.DataFrame, odds_tables: dict, pay: dict, lam2: float, lam3: float, p_col: str = "p_final"
-          ) -> dict[str, dict]:
-    """{race_id: {'date', 'grade', bet_type: table}} for races with a full odds table."""
+def build(oos: pd.DataFrame, odds_tables: dict, pay: dict, lam2: float, lam3: float, p_col: str = "p_final",
+          a_col: str | None = None, b_col: str | None = None) -> dict[str, dict]:
+    """{race_id: {'date', 'grade', bet_type: table}} for races with a full odds table.
+
+    ``a_col`` / ``b_col`` name columns with second- and third-place strengths, replacing
+    the default p ** lam2 and p ** lam3."""
     out = {}
     for rid, g in oos[oos["race_id"].isin(odds_tables)].groupby("race_id", sort=False):
         g = g.dropna(subset=["number"])
         if len(g) < 5:
             continue
-        probs = betting.bet_probabilities(g[p_col].to_numpy(), [int(x) for x in g["number"]], lam2, lam3)
+        probs = betting.bet_probabilities(g[p_col].to_numpy(), [int(x) for x in g["number"]], lam2, lam3,
+                                          g[a_col].to_numpy() if a_col else None,
+                                          g[b_col].to_numpy() if b_col else None)
         winners = {bt: pay.get((rid, bt), {}) for bt in TYPES}
         tabs = race_tables(probs, odds_tables[rid], winners)
         tabs["date"], tabs["grade"] = g["date"].iloc[0], g["grade"].iloc[0]

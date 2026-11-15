@@ -78,3 +78,29 @@ def test_grouping_covers_exactly_the_same_tickets():
     assert betting.group_pairs([(1, 2), (1, 3), (2, 3)]) == [("ボックス", [], [1, 2, 3])]
     assert betting.group_pairs([(5, 7), (5, 11), (5, 10)]) == [("ながし", [5], [7, 10, 11])]
     assert betting.group_triples([(1, 2, 3), (1, 2, 4), (1, 3, 4), (2, 3, 4)]) == [("ボックス", [], [1, 2, 3, 4])]
+
+
+def test_slips_weight_stakes_by_kelly_and_skip_wide():
+    """Slip A sizes each horse by its Kelly fraction (never more than the budget); slip B
+    holds at most SLIP_TICKETS tickets, no ワイド, and spends exactly the budget."""
+    B = betting.Bet
+    cand = [B("単勝", (1,), 0.40, 3.0, 1.20, 0.0),      # Kelly 10% -> whole budget
+            B("単勝", (2,), 0.06, 20.0, 1.20, 0.0),     # Kelly ~1% -> a fifth of the budget
+            B("単勝", (3,), 0.10, 10.5, 1.05, 0.0),     # below slip A's threshold
+            B("ワイド", (1, 2), 0.30, 5.0, 1.50, 0.0),
+            B("馬連", (1, 2), 0.10, 15.0, 1.50, 0.0),
+            B("三連複", (1, 2, 3), 0.03, 60.0, 1.80, 0.0)]
+    a, b = betting.make_slips(cand, 1, 5000)
+    assert {x.combo for x in a} == {(1,), (2,)}
+    assert sum(x.stake for x in a) <= 5000 and all(x.stake % 100 == 0 and x.stake >= 100 for x in a)
+    assert a[0].combo == (1,) and a[0].stake > a[1].stake
+    assert all(x.bet_type != "ワイド" for x in b) and len(b) <= betting.SLIP_TICKETS
+    assert sum(x.stake for x in b) == 5000
+    solo, _ = betting.make_slips(cand[1:2], 2, 5000)
+    assert [x.stake for x in solo] == [1000]            # 5000 * (0.2/19) / 0.05 = 1052 -> 1000
+
+
+def test_allocate_spends_the_budget_in_units():
+    assert betting.allocate([3, 1], 400) == [300, 100]
+    assert sum(betting.allocate([0.5, 0.3, 0.2], 5000)) == 5000
+    assert betting.allocate([1.0] * 60, 5000).count(100) == 50
