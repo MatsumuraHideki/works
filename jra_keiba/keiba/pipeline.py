@@ -104,6 +104,7 @@ def fit_all(raw: Path = features.RAW, oof_years: int | None = None, fold_months:
         "models": {k: m.model_to_string() for k, m in models.items()},
         "feats": feats, "groups": groups, "rounds": rounds,
         "s2_fund": s2_fund.coef, "s2_full": s2_full.coef, "lam2": lam2, "lam3": lam3,
+        "pedigree": bool(df.attrs.get("pedigree", False)),
         "trained_through": str(hist["date"].max().date()), "n_races": int(hist["race_id"].nunique()),
         "years": [int(y) for y in years], "oos_years": [int(y) for y in test_years[1:]],
         "fold_months": fold_months, "data_from": str(hist["date"].min().date()),
@@ -118,12 +119,20 @@ def save_artifacts(art: dict) -> None:
         pickle.dump(art, fh)
 
 
+STORED = ROOT / "models" / "model.pkl"   # committed copy, so a fresh checkout can predict at once
+
+
 def load_artifacts() -> dict | None:
-    p = WORK / "model.pkl"
-    if not p.exists():
-        return None
-    with open(p, "rb") as fh:
-        return pickle.load(fh)
+    """The working model if there is one, else the committed copy (models/model.pkl).
+
+    Race-day predictions have about fifteen minutes; training takes far longer, so a fresh
+    checkout must not depend on retraining. Refresh the copy after a retrain with
+    ``cp data/work/model.pkl models/model.pkl``."""
+    for p in (WORK / "model.pkl", STORED):
+        if p.exists():
+            with open(p, "rb") as fh:
+                return pickle.load(fh)
+    return None
 
 
 def boosters(art: dict) -> dict[str, lgb.Booster]:

@@ -429,7 +429,8 @@ def main(argv: list[str] | None = None) -> int:
         strategy.write_strategy_report(res)
     boosters = pipeline.boosters(art)
     races, runners, ped = cards_to_frames(cards)
-    df = features.build_features(card_races=races, card_runners=runners, pedigree_extra=ped)
+    df = features.build_features(card_races=races, card_runners=runners, pedigree_extra=ped,
+                                 use_pedigree=bool(art.get("pedigree", False)))
     missing = [f for f in art["feats"] if f not in df.columns]
     if missing:   # a restored model from older code: train a fresh one rather than fail
         print(f"model/feature mismatch ({missing[:5]}), retraining")

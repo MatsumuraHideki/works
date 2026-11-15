@@ -513,15 +513,21 @@ def pedigree_usable(results: pd.DataFrame, ped: pd.DataFrame) -> tuple[bool, flo
 
 def build_features(raw: Path = RAW, card_races: pd.DataFrame | None = None,
                    card_runners: pd.DataFrame | None = None, pedigree_extra: pd.DataFrame | None = None,
-                   log=print) -> pd.DataFrame:
+                   log=print, use_pedigree: bool | None = None) -> pd.DataFrame:
+    """``use_pedigree=False`` keeps pedigree out even when coverage would allow it: a model
+    trained without pedigree must be fed features built without it. ``df.attrs['pedigree']``
+    records what was done."""
     races, results, _ = load_raw(raw)
     ped = load_pedigree(raw)
     ok, cov = pedigree_usable(results, ped)
-    if not ok:
+    if use_pedigree is False:
+        ped = None
+    elif not ok:
         if len(ped):
             log(f"pedigree covers only {cov:.1%} of horses -> not used (partial coverage leaks the future)")
         ped = None
     elif pedigree_extra is not None and len(pedigree_extra):
         ped = pd.concat([ped, pedigree_extra], ignore_index=True).drop_duplicates("horse_id")
-    df = build_frame(races, results, ped, card_races, card_runners)
-    return add_features(df)
+    out = add_features(build_frame(races, results, ped, card_races, card_runners))
+    out.attrs["pedigree"] = ped is not None
+    return out
