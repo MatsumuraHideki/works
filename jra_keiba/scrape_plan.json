@@ -18,37 +18,6 @@
    "from": "2026-11",
    "to": "2010-01",
    "max_minutes": 330
-  },
-  {
-   "cmd": "pedigree",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "pedigree",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "results",
-   "from": "2026-11",
-   "to": "2026-10",
-   "max_minutes": 120
-  },
-  {
-   "cmd": "odds",
-   "from": "2026-11",
-   "to": "2026-10",
-   "max_minutes": 120,
-   "args": "--op-class --types 1,4,5,7"
-  },
-  {
-   "cmd": "pedigree",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 60
   }
  ]
 }
