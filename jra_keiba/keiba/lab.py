@@ -353,25 +353,6 @@ def exp_stage2(o: pd.DataFrame, heads: bool) -> list[dict]:
 
 # ------------------------------------------------------------------ 5. place model for exotics
 
-def fit_place_logit(d: pd.DataFrame, cols: list[str], place: int) -> np.ndarray:
-    """Conditional logit for who finishes ``place``-th among the runners not yet placed."""
-    d = d[d["finish"].notna() & (d["finish"] >= place)]
-    X = d[cols].to_numpy(float)
-    codes, n = model._race_index(d["race_id"])
-    y = (d["finish"].to_numpy() == place).astype(float)
-    has = np.bincount(codes, weights=y, minlength=n)[codes] > 0
-    X, y = X[has], y[has]
-    codes, n = model._race_index(d["race_id"][has])
-    w = y / np.bincount(codes, weights=y, minlength=n)[codes]
-
-    def nll(theta):
-        p = model.softmax_by_race(X @ theta, codes, n)
-        return (-(w * np.log(np.clip(p, 1e-12, None))).sum() / n + 1e-4 * theta @ theta,
-                -(X * (w - p)[:, None]).sum(axis=0) / n + 2e-4 * theta)
-
-    return minimize(nll, np.full(len(cols), 0.3), jac=True, method="L-BFGS-B").x
-
-
 def exp_place_model(o: pd.DataFrame, tables: dict, pay: dict, lam2: float, lam3: float, heads: bool) -> list[dict]:
     """Second and third place from their own conditional logits instead of p ** lambda."""
     o = o.copy()
@@ -390,7 +371,7 @@ def exp_place_model(o: pd.DataFrame, tables: dict, pay: dict, lam2: float, lam3:
             d["a2"] = np.nan; d["a3"] = np.nan
             for y in years[1:]:
                 tr = o[o["year"] < y]
-                t2, t3 = fit_place_logit(tr, cols, 2), fit_place_logit(tr, cols, 3)
+                t2, t3 = model.fit_place_logit(tr, 2, cols), model.fit_place_logit(tr, 3, cols)
                 te = d["year"] == y
                 d.loc[te, "a2"] = np.exp(d.loc[te, cols].to_numpy(float) @ t2)
                 d.loc[te, "a3"] = np.exp(d.loc[te, cols].to_numpy(float) @ t3)
@@ -475,8 +456,8 @@ def takeaways(res: dict) -> list[str]:
     pm = res.get("place_model", [])
     if len(pm) >= 2:
         out.append(f"**2 着・3 着の確率を着順ごとのモデルで出すと、わずかに良い。** 馬連・ワイド・三連複（期待値 1.00 以上）が "
-                   f"{_pc(pm[0]['期待値1.00以上']['all']['roi'])} → {_pc(pm[-1]['期待値1.00以上']['all']['roi'])}。"
-                   "差は偶然の範囲だが当てやすさの指標は一貫して改善したので、次にモデルを学習し直すときに入れる。")
+                   f"{_pc(pm[0]['期待値1.00以上']['all']['roi'])} → {_pc(pm[1]['期待値1.00以上']['all']['roi'])}。"
+                   "差は偶然の範囲だが当てやすさの指標は一貫して改善した。→ 採用（表の 2 行目の方法）。")
     return out
 
 
@@ -579,7 +560,7 @@ def main(argv: list[str] | None = None) -> int:
         res["win_grid"] = exp_win_grid(o)
         res["win_rules"] = exp_win_rules(o)
     if run("slips"):
-        ex = exotic.build(o, tables, pay, art["lam2"], art["lam3"])
+        ex = exotic.build(o, tables, pay, art["lam2"], art["lam3"], **pipeline.place_cols(o))
         top = o.loc[o.groupby("race_id")["p_final"].idxmax()]
         res["slips"] = exp_slips(ex, top.set_index("race_id")["number"].astype(int).to_dict())
     if run("stage2"):

@@ -200,6 +200,41 @@ def fit_place_discount(df: pd.DataFrame, p_col: str = "p") -> tuple[float, float
     return float(lam2), float(lam3)
 
 
+PLACE_COLS = ["lp", "s_top3", "m"]   # log win probability, top-3 score, log market share
+
+
+def fit_place_logit(df: pd.DataFrame, place: int, cols: list[str] | None = None) -> np.ndarray:
+    """Conditional logit for who finishes ``place``-th among the runners not yet placed.
+
+    Second and third place get their own weights instead of a power of the win
+    probability: the top-3 score and the market carry information about placing that the
+    win probability alone does not."""
+    cols = cols or PLACE_COLS
+    d = df[df["finish"].notna() & (df["finish"] >= place)]
+    X = d[cols].to_numpy(dtype=float)
+    codes, n = _race_index(d["race_id"])
+    y = (d["finish"].to_numpy() == place).astype(float)
+    has = np.bincount(codes, weights=y, minlength=n)[codes] > 0
+    X, y = X[has], y[has]
+    codes, n = _race_index(d["race_id"][has])
+    w = y / np.bincount(codes, weights=y, minlength=n)[codes]
+
+    def nll(theta: np.ndarray) -> tuple[float, np.ndarray]:
+        p = softmax_by_race(X @ theta, codes, n)
+        return (-(w * np.log(np.clip(p, 1e-12, None))).sum() / n + 1e-4 * theta @ theta,
+                -(X * (w - p)[:, None]).sum(axis=0) / n + 2e-4 * theta)
+
+    return minimize(nll, np.full(len(cols), 0.3), jac=True, method="L-BFGS-B").x
+
+
+def place_strengths(df: pd.DataFrame, coef2, coef3, p_col: str = "p_final") -> tuple[np.ndarray, np.ndarray]:
+    """Second- and third-place strengths of the runners in ``df`` (any number of races)."""
+    x = pd.DataFrame({"lp": np.log(np.clip(df[p_col].to_numpy(dtype=float), 1e-9, None)),
+                      "s_top3": df["s_top3"].to_numpy(dtype=float), "m": df["m"].to_numpy(dtype=float)})
+    X = x[PLACE_COLS].to_numpy()
+    return np.exp(X @ np.asarray(coef2, dtype=float)), np.exp(X @ np.asarray(coef3, dtype=float))
+
+
 def calibration_table(p: np.ndarray, y: np.ndarray, bins: int = 10) -> pd.DataFrame:
     q = pd.qcut(p, bins, duplicates="drop")
     t = pd.DataFrame({"p": p, "y": y, "bin": q}).groupby("bin", observed=True).agg(

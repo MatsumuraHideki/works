@@ -109,8 +109,36 @@ def fit_all(raw: Path = features.RAW, oof_years: int | None = None, fold_months:
         "years": [int(y) for y in years], "oos_years": [int(y) for y in test_years[1:]],
         "fold_months": fold_months, "data_from": str(hist["date"].min().date()),
     }
+    res = add_place_model({"art": art, "oos": oos}, log)
     log(f"fit_all done in {time.time() - t0:.0f}s")
+    return res
+
+
+def add_place_model(res: dict, log=print) -> dict:
+    """Second / third place strengths from their own conditional logits (model.fit_place_logit).
+
+    The out-of-sample table gets columns a2 / a3, fitted year by year on earlier years only
+    (the first test year falls back to p ** lambda); the artifacts get the weights fitted
+    on every test year, for predictions."""
+    art, oos = res["art"], res["oos"].copy()
+    if not len(oos):
+        return res
+    oos["lp"] = np.log(np.clip(oos["p_final"].to_numpy(dtype=float), 1e-9, None))
+    oos["a2"] = oos["p_final"] ** art["lam2"]
+    oos["a3"] = oos["p_final"] ** art["lam3"]
+    years = sorted(oos["year"].unique())
+    for y in years[1:]:
+        tr, te = oos[oos["year"] < y], oos["year"] == y
+        a, b = model.place_strengths(oos[te], model.fit_place_logit(tr, 2), model.fit_place_logit(tr, 3))
+        oos.loc[te, "a2"], oos.loc[te, "a3"] = a, b
+    art["place2"], art["place3"] = model.fit_place_logit(oos, 2), model.fit_place_logit(oos, 3)
+    log(f"place model: 2nd={np.round(art['place2'], 3)} 3rd={np.round(art['place3'], 3)} (cols {model.PLACE_COLS})")
     return {"art": art, "oos": oos}
+
+
+def place_cols(oos: pd.DataFrame) -> dict:
+    """Keyword arguments for exotic.build: use the per-place strengths when the table has them."""
+    return {"a_col": "a2", "b_col": "a3"} if {"a2", "a3"} <= set(oos.columns) else {}
 
 
 def save_artifacts(art: dict) -> None:
@@ -272,7 +300,7 @@ def write_report(res: dict, raw: Path = features.RAW, log=print) -> str:
         _, _, payouts = features.load_raw(raw)
         tables = odds_tables(odds_df)
         pay = strategy.payout_maps(payouts[payouts["race_id"].isin(tables)])
-        ex = exotic.build(oos, tables, pay, art["lam2"], art["lam3"])
+        ex = exotic.build(oos, tables, pay, art["lam2"], art["lam3"], **place_cols(oos))
         summ, cal, _ = exotic.evaluate(ex)
         exotic.save_calibration(cal, len(ex))
         out.append("## 4. 複数頭の券種を期待値で選んだ場合（全通りの確定オッズがあるレース）\n")

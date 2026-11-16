@@ -2,41 +2,41 @@
  {
   "threshold": 1.0,
   "sigma": 0.0,
-  "roi": 1.0277
+  "roi": 1.0112
  },
  {
   "threshold": 1.0,
   "sigma": 0.05,
-  "roi": 1.0149
+  "roi": 1.0158
  },
  {
   "threshold": 1.0,
   "sigma": 0.1,
-  "roi": 0.9762
+  "roi": 0.9815
  },
  {
   "threshold": 1.0,
   "sigma": 0.2,
-  "roi": 0.9133
+  "roi": 0.9141
  },
  {
   "threshold": 1.1,
   "sigma": 0.0,
-  "roi": 1.082
+  "roi": 1.1312
  },
  {
   "threshold": 1.1,
   "sigma": 0.05,
-  "roi": 1.0726
+  "roi": 1.0738
  },
  {
   "threshold": 1.1,
   "sigma": 0.1,
-  "roi": 1.0253
+  "roi": 1.0358
  },
  {
   "threshold": 1.1,
   "sigma": 0.2,
-  "roi": 0.9347
+  "roi": 0.9459
  }
 ]

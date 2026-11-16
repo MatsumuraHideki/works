@@ -155,7 +155,7 @@ def build(res: dict, raw: Path = features.RAW, budget: int = 5000) -> list[dict]
     if len(odds_df):
         tables = pipeline.odds_tables(odds_df)
         pay = strategy.payout_maps(payouts[payouts["race_id"].isin(tables)])
-        ex = exotic.build(oos, tables, pay, art["lam2"], art["lam3"])
+        ex = exotic.build(oos, tables, pay, art["lam2"], art["lam3"], **pipeline.place_cols(oos))
         subsets = {"オープン以上": set(ex), "重賞（G1〜G3）": {r for r, t in ex.items() if t["grade"] in GRADED},
                    "G1": {r for r, t in ex.items() if t["grade"] == "G1"}}
 

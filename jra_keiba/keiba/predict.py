@@ -184,8 +184,11 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
     top_by_type: dict[str, list[betting.Bet]] = {}
     # Slips need the odds-blended probabilities: their backtest is for that model only.
     if kind == "real" and drawn and use_market and len(rows) >= 2:
+        a = b = None
+        if "place2" in art:      # per-place model (older artifacts fall back to p ** lambda)
+            a, b = model.place_strengths(rows, art["place2"], art["place3"], "p")
         probs = betting.bet_probabilities(rows["p"].to_numpy(), [int(x) for x in rows["number"]],
-                                          art["lam2"], art["lam3"])
+                                          art["lam2"], art["lam3"], a, b)
         cand = betting.evaluate_bets(probs, tables)
         # every 馬連 / ワイド / 三連複 ticket whose model EV reaches the threshold, 100 yen each
         # (the rule of reports/backtest.md section 4)
