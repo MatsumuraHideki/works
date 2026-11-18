@@ -9,7 +9,10 @@ Feature groups (the "aspects" reported with each prediction):
     ability    Elo ratings, speed figures, earnings, class reached
     form       recent finishes, margins, layoff
     aptitude   record on this surface / distance / course / going
-    people     jockey and trainer ratings and strike rates
+    jockey     jockey rating, strike rates (year, last 30 days, course, distance, class),
+               results against the market, riding style, record with this horse and stable,
+               and what a change of jockey means
+    trainer    trainer rating and strike rates
     pedigree   sire and broodmare-sire progeny records
     race       pace set-up, draw, weights, field
 """
@@ -409,11 +412,55 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
         df[f"{who}_top3_365"] = _rate(p["top3"], p["ran"], 0.21, 30.0)
         p = _by_date_prior(df, [col, "place", "surface"], ["ran", "top3"])
         df[f"{who}_course_top3"] = _rate(p["top3"], p["ran"], 0.21, 30.0)
-        _reg("people", [f"{who}_n365", f"{who}_win365", f"{who}_top3_365", f"{who}_course_top3"])
+        _reg("jockey" if who == "j" else "trainer",
+             [f"{who}_n365", f"{who}_win365", f"{who}_top3_365", f"{who}_course_top3"])
     p = _by_date_prior(df, ["jockey_id", "trainer_id"], ["ran", "top3"])
     df["jt_n"] = p["ran"]
     df["jt_top3"] = _rate(p["top3"], p["ran"], 0.21, 15.0)
-    _reg("people", ["elo_j", "elo_t", "jt_n", "jt_top3", "same_jockey"])
+    _reg("jockey", ["elo_j", "jt_n", "jt_top3", "same_jockey"])
+    _reg("trainer", ["elo_t"])
+
+    # ---------- jockey in depth (everything from earlier dates only; no odds of today's race)
+    # hot or cold: the last 30 days against the jockey's own year
+    p = _by_date_prior(df, ["jockey_id"], ["ran", "top3"], window="30D")
+    df["j_n30"] = p["ran"]
+    df["j_top3_30"] = _rate(p["top3"], p["ran"], 0.21, 15.0)
+    df["j_hot"] = df["j_top3_30"] - df["j_top3_365"]
+    # under today's conditions: distance band on this surface, and this class of race
+    p = _by_date_prior(df, ["jockey_id", "surface", "band"], ["ran", "top3"])
+    df["j_band_top3"] = _rate(p["top3"], p["ran"], 0.21, 30.0)
+    df["_cls"] = pd.cut(df["level"], [-1, 1.5, 3.5, 5.2, 99], labels=False).astype(float)  # maiden / conditions / open / graded
+    p = _by_date_prior(df, ["jockey_id", "_cls"], ["ran", "win", "top3"])
+    df["j_class_n"] = p["ran"]
+    df["j_class_win"] = _rate(p["win"], p["ran"], 0.07, 30.0)
+    df["j_class_top3"] = _rate(p["top3"], p["ran"], 0.21, 30.0)
+    # against the market: wins per win the odds implied over the past year (1.0 = as expected).
+    # Uses the odds of *earlier* races only, so the odds-free model stays odds-free today.
+    inv = 1.0 / df["win_odds"].where(df["win_odds"] > 0)
+    df["_mkt_p"] = inv / inv.groupby(df["race_id"]).transform("sum")
+    df["_win_o"] = df["win"].where(df["_mkt_p"].notna())
+    p = _by_date_prior(df, ["jockey_id"], ["_win_o", "_mkt_p"], window="365D")
+    df["j_ae_win"] = (p["_win_o"] + 10.0) / (p["_mkt_p"] + 10.0)
+    # riding style: where the jockey's mounts sit early, and how that fits this horse
+    df["_ep"] = df["early_pos"]
+    df["_ep_n"] = df["early_pos"].notna().astype(float)
+    p = _by_date_prior(df, ["jockey_id"], ["_ep", "_ep_n"], window="365D")
+    df["j_early"] = (p["_ep"] + 10.0 * 0.5) / (p["_ep_n"] + 10.0)
+    df["j_style_gap"] = df["j_early"] - df["style"]          # negative: rides more forward than the horse has run
+    # this jockey on this horse
+    df["jh_n"] = _prior_sum(df, ["horse_id", "jockey_id"], "ran")
+    df["jh_top3"] = _rate(_prior_sum(df, ["horse_id", "jockey_id"], "top3"), df["jh_n"], 0.24, 2.0)
+    df["jh_win"] = _rate(_prior_sum(df, ["horse_id", "jockey_id"], "win"), df["jh_n"], 0.08, 2.0)
+    df["jh_share"] = df["jh_n"] / df["h_starts"].clip(lower=1)      # how much of the horse's career
+    # change of jockey: is today's jockey rated above the last one (ratings as of each race)?
+    prev_elo_j = gh["elo_j"].shift(1)
+    df["j_upgrade"] = (df["elo_j"] - prev_elo_j).where(prev_jockey.notna()) * (1.0 - df["same_jockey"].fillna(1.0))
+    # how much this stable uses this jockey (share of the stable's runners over a year)
+    p = _by_date_prior(df, ["jockey_id", "trainer_id"], ["ran"], window="365D")
+    df["jt_share365"] = (p["ran"] / df["t_n365"].clip(lower=1.0)).clip(upper=1.0)
+    _reg("jockey", ["j_n30", "j_top3_30", "j_hot", "j_band_top3", "j_class_n", "j_class_win", "j_class_top3",
+                    "j_ae_win", "j_early", "j_style_gap", "jh_n", "jh_top3", "jh_win", "jh_share",
+                    "j_upgrade", "jt_share365"])
 
     # ---------- pedigree: progeny record of sire / broodmare sire under today's conditions
     for who in ("sire", "bms"):
@@ -460,7 +507,7 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     # ---------- relative-to-field versions of the strongest absolute features
     rel = ["elo_h", "elo_hs", "fig_max5", "fig_mean3", "l3f_mean3", "form_class5", "h_prize_per_start",
            "pos_mean3", "elo_j", "elo_t", "j_win365", "weight_carried", "h_top3_rate", "apt_band_top3",
-           "elo_sire"]
+           "elo_sire", "j_ae_win", "j_class_top3"]
     df = df.copy()  # defragment before adding many columns
     gr = df.groupby("race_id", sort=False)
     for c in rel:
@@ -471,7 +518,8 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
         grp = ("ability" if c in ("elo_h", "elo_hs", "fig_max5", "fig_mean3", "l3f_mean3", "form_class5",
                                   "h_prize_per_start", "h_top3_rate")
                else "form" if c == "pos_mean3"
-               else "people" if c in ("elo_j", "elo_t", "j_win365")
+               else "jockey" if c in ("elo_j", "j_win365", "j_ae_win", "j_class_top3")
+               else "trainer" if c == "elo_t"
                else "aptitude" if c == "apt_band_top3"
                else "pedigree" if c == "elo_sire" else "race")
         _reg(grp, [f"{c}_z", f"{c}_rk"])

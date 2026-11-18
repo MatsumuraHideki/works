@@ -23,7 +23,7 @@ from .scrape import today_jst
 ROOT = Path(__file__).resolve().parent.parent
 CARDS = ROOT / "data" / "cards"
 OUT = ROOT / "reports" / "predictions"
-ASPECTS = {"ability": "能力", "form": "近走", "aptitude": "適性", "people": "騎手厩舎",
+ASPECTS = {"ability": "能力", "form": "近走", "aptitude": "適性", "jockey": "騎手評価", "trainer": "厩舎",
            "pedigree": "血統", "race": "展開・枠"}
 
 
@@ -220,6 +220,31 @@ def _pct(x: float) -> str:
     return f"{x * 100:.1f}%"
 
 
+def jockey_table(rows: pd.DataFrame) -> list[str]:
+    """What the model knows about each jockey, in the order of the main table."""
+    need = {"j_win365", "j_class_top3", "jh_n", "same_jockey", "j_upgrade", "j_hot"}
+    if not need <= set(rows.columns):
+        return []
+    out = ["### 騎手の情報（モデルに入れている内容）\n",
+           "| 馬番 | 騎手 | 直近1年の勝率 | このクラスでの3着内率 | 直近30日の調子 | この馬での騎乗 | 乗り替わり |",
+           "|---|---|---|---|---|---|---|"]
+    for _, x in rows.iterrows():
+        num = str(int(x["number"])) if pd.notna(x["number"]) else "-"
+        hot = "－" if pd.isna(x["j_hot"]) else ("好調" if x["j_hot"] >= 0.04 else "不調" if x["j_hot"] <= -0.04 else "ふつう")
+        rides = "初めて" if not x["jh_n"] else f"{int(x['jh_n'])}回"
+        if pd.isna(x["same_jockey"]):
+            change = "初出走"
+        elif x["same_jockey"] == 1:
+            change = "前走と同じ"
+        else:
+            up = x["j_upgrade"]
+            change = "乗り替わり" + ("" if pd.isna(up) else "（騎手強化）" if up >= 40 else "（騎手弱化）" if up <= -40 else "（同程度）")
+        out.append(f"| {num} | {x.get('jockey_name') or ''} | {_pct(x['j_win365'])} | {_pct(x['j_class_top3'])} | {hot} | "
+                   f"{rides} | {change} |")
+    out.append("\n勝率・3着内率は騎乗数の少ない騎手ほど平均に寄せた値です。「騎手強化／弱化」は、前走の騎手との実力評価の差です。\n")
+    return out
+
+
 def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
     c, rows, kind = res["card"], res["rows"], res["kind"]
     r = c["race"]
@@ -260,6 +285,8 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
     out.append(f"「勝率」は{'モデルとオッズを統合した' if res['use_market'] else 'モデル単独の'}推定値。"
                f"「買える下限オッズ」は単勝の期待値が {min_ev:.2f} になるオッズで、これ以上つけば買い。"
                "観点別の印は、その観点がこの馬の評価をどれだけ押し上げているかのレース内順位（◎最上位 ○上位 △中位 －下位）。\n")
+
+    out += jockey_table(rows)
 
     if kind == "real":
         # 単勝: the threshold whose backtest is in reports/summary.json
