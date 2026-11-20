@@ -57,3 +57,15 @@ def test_settlement_scores_only_pre_race_predictions(tmp_path, monkeypatch):
     # the same file regenerated after the race must not be scored
     (pred / "20261114_R1.json").write_text(json.dumps({**base, "fetched_at": "2026-11-14T15:31:00+09:00"}))
     assert settle.settle_all(log=lambda *a: None) == []
+
+
+def test_day_bias_of_result_uses_draw_and_first_call():
+    """Race-day track bias: mean draw and early position of the first three, scratches left out."""
+    from keiba import netkeiba as nk
+    order = [{"finish": "1", "number": 1.0, "passing": "1-1"}, {"finish": "2", "number": 5.0, "passing": "3-2"},
+             {"finish": "3", "number": 3.0, "passing": "5-5"}, {"finish": "4", "number": 2.0, "passing": "2-3"},
+             {"finish": "5", "number": 4.0, "passing": "4-4"}, {"finish": "取消", "number": 6.0, "passing": ""}]
+    b = nk.day_bias_of_result({"order": order})
+    assert abs(b["inner"] - (0 + 4 + 2) / 3 / 4) < 1e-9          # five starters: (number - 1) / 4
+    assert abs(b["front"] - (0 + 2 + 4) / 3 / 4) < 1e-9
+    assert nk.day_bias_of_result({"order": order[:3]}) is None   # too few starters to mean anything

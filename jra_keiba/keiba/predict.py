@@ -23,8 +23,8 @@ from .scrape import today_jst
 ROOT = Path(__file__).resolve().parent.parent
 CARDS = ROOT / "data" / "cards"
 OUT = ROOT / "reports" / "predictions"
-ASPECTS = {"ability": "能力", "form": "近走", "aptitude": "適性", "jockey": "騎手評価", "trainer": "厩舎",
-           "pedigree": "血統", "race": "展開・枠"}
+ASPECTS = {"ability": "能力", "form": "近走", "aptitude": "適性", "jockey": "騎手評価", "trainer": "厩舎・馬主",
+           "pedigree": "血統", "race": "展開・枠", "day": "当日の馬場"}
 
 
 JST = dt.timezone(dt.timedelta(hours=9))
@@ -86,6 +86,12 @@ def cards_to_frames(cards: list[dict]) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
     ped = pd.DataFrame([p for c in cards for p in c.get("pedigree", [])],
                        columns=["horse_id", "sire", "dam", "bms"])
     return races, runners, ped
+
+
+def day_races_frame(cards: list[dict]) -> pd.DataFrame | None:
+    """Earlier races of the day saved with the cards (for the "today's track" features)."""
+    rows = {d["race_id"]: d for c in cards for d in c.get("day_races") or []}
+    return pd.DataFrame(list(rows.values())) if rows else None
 
 
 def card_odds(card: dict, rows: pd.DataFrame) -> tuple[dict[str, dict], pd.Series, str]:
@@ -259,6 +265,13 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
         out.append("- 馬場状態が未発表のため「良」として計算しています。発表後に変わることがあります。")
     else:
         out.append(f"- 馬場状態: {r.get('going')}")
+    if "day_n" in rows.columns and rows["day_n"].max() >= 1:
+        x = rows.iloc[0]
+        draw = "内枠の馬が上位に多い" if x["day_inner"] <= -0.05 else "外枠の馬が上位に多い" if x["day_inner"] >= 0.05 else "枠の内外に偏りなし"
+        pace = "前に行った馬が上位に多い" if x["day_front"] <= -0.10 else "後ろから来た馬が上位に多い" if x["day_front"] >= -0.02 else "脚質の偏りはふつう"
+        out.append(f"- 当日の馬場の傾向（同じコースの前の {int(x['day_n'])} レース）: {draw}、{pace}")
+    elif "day_n" in rows.columns:
+        out.append("- 当日の馬場の傾向: まだ前のレースの結果がないため、この観点は使っていません。")
     if res.get("dropped"):
         out.append(f"- 単勝オッズが付いていない馬（出走取消の可能性）を除いて計算: {'、'.join(res['dropped'])}")
     hrs = hours_to_post(c)
@@ -270,7 +283,7 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
         out.append(f"- 枠順確定前（登録 {len(rows)} 頭）。出走馬と枠順が確定すると確率は変わります。")
     out.append(f"- データ取得: {c.get('fetched_at')} / モデル学習範囲: 〜{art['trained_through']}\n")
 
-    head = ["馬番", "馬名", "騎手", "勝率", "モデル単独", "単勝オッズ", "期待値", "買える下限オッズ"] + list(ASPECTS.values())
+    head = ["馬番", "馬名", "騎手", "勝率", "モデル単独", "単勝オッズ", "期待値", "買える下限オッズ"]
     out.append("| " + " | ".join(head) + " |")
     out.append("|" + "---|" * len(head))
     for _, x in rows.iterrows():
@@ -279,12 +292,20 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
         ev = f"{x['ev']:.2f}" if pd.notna(x["ev"]) else "-"
         need = f"{min_ev / x['p_fund' if not res['use_market'] else 'p']:.1f}"
         cells = [num, str(x["horse_name"]), str(x.get("jockey_name") or ""), _pct(x["p"]), _pct(x["p_fund"]),
-                 odds, ev, need] + [x[f"a_{g}"] for g in ASPECTS]
+                 odds, ev, need]
         out.append("| " + " | ".join(cells) + " |")
     out.append("")
     out.append(f"「勝率」は{'モデルとオッズを統合した' if res['use_market'] else 'モデル単独の'}推定値。"
-               f"「買える下限オッズ」は単勝の期待値が {min_ev:.2f} になるオッズで、これ以上つけば買い。"
-               "観点別の印は、その観点がこの馬の評価をどれだけ押し上げているかのレース内順位（◎最上位 ○上位 △中位 －下位）。\n")
+               f"「買える下限オッズ」は単勝の期待値が {min_ev:.2f} になるオッズで、これ以上つけば買い。\n")
+    # the aspects in a table of their own, so both tables stay readable on a phone
+    out.append("### 観点別の評価\n")
+    head = ["馬番", "馬名"] + list(ASPECTS.values())
+    out.append("| " + " | ".join(head) + " |")
+    out.append("|" + "---|" * len(head))
+    for _, x in rows.iterrows():
+        num = str(int(x["number"])) if pd.notna(x["number"]) else "-"
+        out.append("| " + " | ".join([num, str(x["horse_name"])] + [x[f"a_{g}"] for g in ASPECTS]) + " |")
+    out.append("\n印は、その観点がこの馬の評価をどれだけ押し上げているかのレース内順位（◎最上位 ○上位 △中位 －下位）。\n")
 
     out += jockey_table(rows)
 
@@ -455,7 +476,7 @@ def main(argv: list[str] | None = None) -> int:
     boosters = pipeline.boosters(art)
     races, runners, ped = cards_to_frames(cards)
     df = features.build_features(card_races=races, card_runners=runners, pedigree_extra=ped,
-                                 use_pedigree=bool(art.get("pedigree", False)))
+                                 use_pedigree=bool(art.get("pedigree", False)), day_races=day_races_frame(cards))
     missing = [f for f in art["feats"] if f not in df.columns]
     if missing:   # a restored model from older code: train a fresh one rather than fail
         print(f"model/feature mismatch ({missing[:5]}), retraining")

@@ -67,5 +67,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           extra=""
-          if [ "$CMD" = "pedigree" ]; then extra="--since ${TO%%-*}"; fi
+          if [ "$CMD" = "pedigree" ] || [ "$CMD" = "horses" ]; then extra="--since ${TO%%-*}"; fi
           python -m keiba.scrape "$CMD" --from "$FROM" --to "$TO" --max-minutes "$MAXMIN" --push $extra $ARGS

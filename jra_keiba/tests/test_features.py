@@ -16,19 +16,21 @@ def _toy(seed: int = 0, n_days: int = 40) -> tuple[pd.DataFrame, pd.DataFrame, p
             n = int(rng.integers(6, 12))
             races.append(dict(race_id=rid, date=date, place="東京" if rn % 2 else "中山", surface="芝" if rn % 3 else "ダ",
                               direction="左", inout=None, distance=int(rng.choice([1400, 1600, 2000])),
-                              going=rng.choice(["良", "重"]), weather="晴", grade=None, race_no=rn, name="t",
-                              cond="", **{"class": "1勝"}))
+                              going=rng.choice(["良", "重"]), weather=rng.choice(["晴", "雨"]), grade=None,
+                              race_no=rn, name="t", cond="",
+                              laps="-".join(f"{x:.1f}" for x in rng.uniform(11.5, 13.0, 8)), **{"class": "1勝"}))
             horses, pool = pool[:n], pool[n:]
             fin = rng.permutation(n) + 1
             for i in range(n):
                 rows.append(dict(race_id=rid, finish=float(fin[i]), finish_raw=str(fin[i]), number=i + 1.0,
                                  horse_id=f"h{horses[i]}", horse_name="x", sex="牡", age=4.0, weight_carried=56.0,
                                  jockey_id=f"j{rng.integers(15)}", trainer_id=f"t{horses[i] % 20}",
+                                 owner_id=f"o{horses[i] % 7}", trainer_region="東" if horses[i] % 2 else "西",
                                  time_sec=95.0 + fin[i] * 0.2, passing=f"{fin[i]}-{fin[i]}", last3f=35.0,
                                  win_odds=float(rng.uniform(2, 50)), popularity=float(i + 1), body_weight=480.0,
                                  body_weight_diff=0.0, prize=float(max(0, 4 - fin[i]) * 100)))
     ped = pd.DataFrame({"horse_id": [f"h{i}" for i in range(80)], "sire": [f"s{i % 9}" for i in range(80)],
-                        "dam": "d", "bms": [f"b{i % 5}" for i in range(80)]})
+                        "dam": [f"d{i % 30}" for i in range(80)], "bms": [f"b{i % 5}" for i in range(80)]})
     return pd.DataFrame(races), pd.DataFrame(rows), ped
 
 
@@ -50,13 +52,42 @@ def test_no_leak_from_current_or_future_results():
     changed.loc[m, "passing"] = "1-1"
     changed.loc[m, "win_odds"] = 3.3
     changed.loc[m, "popularity"] = 1.0
-    alt = features.add_features(features.build_frame(races, changed, ped))
+    races2 = races.copy()                    # lap times are an outcome too
+    races2.loc[races2["race_id"].isin(late), "laps"] = "12.0-12.0-12.0-12.0-12.0-12.0-12.0-12.0"
+    alt = features.add_features(features.build_frame(races2, changed, ped))
     first_day = races.loc[races["date"] == cutoff, "race_id"]
+    # the "day" features read the earlier races of the same day by design: tested separately below
+    day = set(features.FEATURE_GROUPS["day"])
     a = base[base["race_id"].isin(first_day)].set_index(["race_id", "horse_id"])[cols].sort_index()
     b = alt[alt["race_id"].isin(first_day)].set_index(["race_id", "horse_id"])[cols].sort_index()
-    diff = [c for c in cols if not np.allclose(a[c].astype(float), b[c].astype(float), equal_nan=True, atol=1e-9)]
+    diff = [c for c in cols if c not in day
+            and not np.allclose(a[c].astype(float), b[c].astype(float), equal_nan=True, atol=1e-9)]
     assert diff == [], f"features leaking outcomes: {diff}"
     assert len(cols) > 80
+
+
+def test_day_bias_reads_only_earlier_races_of_the_day():
+    """Today's-track features of a race may use the races before it on the day, never the
+    race itself or later ones - and they must exist once an earlier race has been run."""
+    races, results, ped = _toy()
+    base = features.add_features(features.build_frame(races, results, ped))
+    cols = features.feature_columns()
+    cutoff = races["date"].sort_values().unique()[-6]
+    late = races.loc[(races["date"] > cutoff) | ((races["date"] == cutoff) & (races["race_no"] >= 4)), "race_id"]
+    changed = results.copy()
+    m = changed["race_id"].isin(late)
+    rng = np.random.default_rng(2)
+    changed.loc[m, "finish"] = changed[m].groupby("race_id")["finish"].transform(lambda s: rng.permutation(s.to_numpy()))
+    changed.loc[m, "finish_raw"] = changed.loc[m, "finish"].astype(int).astype(str)
+    changed.loc[m, "passing"] = "1-1"
+    alt = features.add_features(features.build_frame(races, changed, ped))
+    upto = races.loc[(races["date"] == cutoff) & (races["race_no"] <= 4), "race_id"]     # race 4 itself included
+    a = base[base["race_id"].isin(upto)].set_index(["race_id", "horse_id"])[cols].sort_index()
+    b = alt[alt["race_id"].isin(upto)].set_index(["race_id", "horse_id"])[cols].sort_index()
+    diff = [c for c in cols if not np.allclose(a[c].astype(float), b[c].astype(float), equal_nan=True, atol=1e-9)]
+    assert diff == [], f"features reading the race itself or later races: {diff}"
+    last = base[base["race_id"].isin(races.loc[(races["date"] == cutoff) & (races["race_no"] >= 5), "race_id"])]
+    assert last["day_n"].max() >= 1 and last.loc[last["day_n"] >= 1, "day_inner"].notna().all()
 
 
 def test_card_rows_get_features_without_results():

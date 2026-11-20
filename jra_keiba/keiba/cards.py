@@ -69,6 +69,31 @@ def fetch_card(f: Fetcher, race_id: str, listed: dict | None = None) -> dict | N
     return card
 
 
+def day_races(f: Fetcher, race_id: str, listed: list[dict], card: dict) -> list[dict]:
+    """Track-bias summaries of the races already run today at this course (for the model's
+    "today's track" features). One request per finished race, cached in data/cards/day/."""
+    out = []
+    cache = CARDS / "day"
+    cache.mkdir(parents=True, exist_ok=True)
+    for r in listed:
+        rid = r["race_id"]
+        if rid[:10] != race_id[:10] or int(rid[10:]) >= int(race_id[10:]) or not r["is_result"]:
+            continue
+        p = cache / f"{rid}.json"
+        if p.exists():
+            row = json.loads(p.read_text())
+        else:
+            res = nk.parse_result_page(fetch_text(f, nk.url_result(rid)), rid)
+            bias = nk.day_bias_of_result(res) if res else None
+            if res is None or bias is None or res.get("surface") not in ("芝", "ダ"):
+                continue
+            row = {"race_id": rid, "date": card["race"]["date"], "place": card["race"]["place"],
+                   "surface": res["surface"], "race_no": int(rid[10:]), **bias}
+            p.write_text(json.dumps(row, ensure_ascii=False))
+        out.append(row)
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dates", default="", help="comma separated YYYYMMDD; default: race days in the next 6 days")
@@ -100,18 +125,26 @@ def main(argv: list[str] | None = None) -> int:
         CARDS.mkdir(parents=True, exist_ok=True)
         n = 0
         for date in dates:
-            for r in nk.parse_race_list_sub(fetch_text(f, nk.url_race_list_sub(date))):
+            listed = nk.parse_race_list_sub(fetch_text(f, nk.url_race_list_sub(date)))
+            for r in listed:
                 if r["is_result"] or (grades is not None and r["grade"] not in grades):
                     continue
                 card = fetch_card(f, r["race_id"], r)
                 if card is None:
                     continue
                 card["race"]["date"] = card["race"]["date"] or f"{date[:4]}-{date[4:6]}-{date[6:]}"
+                try:        # earlier races of the day at this course; never worth losing the card for
+                    card["day_races"] = day_races(f, r["race_id"], listed, card)
+                except Blocked:
+                    raise
+                except Exception as exc:
+                    print(f"card {r['race_id']}: earlier races of the day not read ({exc})", flush=True)
+                    card["day_races"] = []
                 (CARDS / f"{r['race_id']}.json").write_text(json.dumps(card, ensure_ascii=False, indent=1))
                 n += 1
                 print(f"card {r['race_id']} {card['race']['date']} {card['race']['name']} "
                       f"runners={len(card['runners'])} odds={card['odds_status']} "
-                      f"types={list(card['odds'])}", flush=True)
+                      f"types={list(card['odds'])} day_races={len(card['day_races'])}", flush=True)
         print(f"{n} cards saved for dates {dates}")
     except Blocked as exc:
         print(f"BLOCKED: {exc}")

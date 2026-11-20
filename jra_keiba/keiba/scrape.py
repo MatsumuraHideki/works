@@ -335,11 +335,73 @@ def cmd_pedigree(args) -> int:
     return rc
 
 
+def cmd_horses(args) -> int:
+    """Runs outside JRA meetings (local tracks, overseas), from each horse's result page.
+
+    The race-by-race collection only sees JRA meetings, so a horse that came from a local
+    track or raced abroad has holes in its history. Horses are taken newest first; one
+    request per horse. Only the non-JRA runs are stored (data/raw/horse_runs.csv.gz); the
+    horses already read are remembered in state.json."""
+    f = Fetcher(min_interval=args.interval)
+    deadline = time.monotonic() + args.max_minutes * 60
+    path = RAW / "horse_runs.csv.gz"
+    cols = ["horse_id", "date", "venue", "race_name", "n_runners", "number", "win_odds", "popularity", "finish",
+            "finish_raw", "surface", "distance", "going", "time_sec", "passing", "last3f"]
+    runs = pd.read_csv(path, dtype={"horse_id": str}) if path.exists() else pd.DataFrame(columns=cols)
+    state = load_state()
+    done = set(state.get("horse_runs_done", []))
+    frames = [read_month("results", p.name[:6])[["race_id", "horse_id"]]
+              for p in sorted((RAW / "results").glob("*.csv.gz"), reverse=True)]
+    if not frames:
+        return 0
+    res = pd.concat(frames, ignore_index=True)
+    res = res[res["race_id"].str[:4] >= str(args.since)]
+    todo = [h for h in res.sort_values("race_id", ascending=False)["horse_id"].drop_duplicates()
+            if isinstance(h, str) and h not in done]
+    rows, n, rc = [], 0, 0
+    last_push = time.monotonic()
+
+    def flush() -> None:
+        nonlocal runs, rows
+        if rows:
+            runs = pd.concat([runs, pd.DataFrame(rows, columns=cols)], ignore_index=True)
+            runs.sort_values(["horse_id", "date"]).to_csv(path, index=False, compression={"method": "gzip", "mtime": 0})
+            rows = []
+        state["horse_runs_done"] = sorted(done)
+        save_state(state)
+
+    try:
+        for hid in todo:
+            if time.monotonic() > deadline:
+                break
+            got = nk.parse_horse_runs(fetch_text(f, nk.url_horse_result(hid)), hid)
+            n += 1
+            if got is None:            # no table: leave the horse for a later run
+                continue
+            done.add(hid)
+            rows += [{k: g[k] for k in cols} for g in got if not g["jra"]]
+            if n % 500 == 0:
+                print(f"horses: {n} read, {len(done)} done, {len(runs) + len(rows)} non-JRA runs, "
+                      f"requests={f.n_requests}", flush=True)
+                flush()
+                if args.push and time.monotonic() - last_push > args.push_every * 60:
+                    git_push("Add runs outside JRA")
+                    last_push = time.monotonic()
+    except Blocked as exc:
+        print(f"BLOCKED: {exc}", flush=True)
+        rc = 2
+    flush()
+    print(f"horses: done {n} read, {len(done)} of {len(done) + len(todo) - n} horses", flush=True)
+    if args.push:
+        git_push("Add runs outside JRA")
+    return rc
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     this_month = today_jst().strftime("%Y-%m")
-    for name in ("results", "odds", "pedigree"):
+    for name in ("results", "odds", "pedigree", "horses"):
         p = sub.add_parser(name)
         p.add_argument("--from", dest="start", default=this_month, help="newest month YYYY-MM")
         p.add_argument("--to", dest="end", default=this_month, help="oldest month YYYY-MM")
@@ -352,11 +414,13 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--op-class", action="store_true", help="also all open-class races (OP / Listed)")
             p.add_argument("--types", default="1,4,5,6,7,8",
                            help="odds API types: 1 単勝+複勝, 4 馬連, 5 ワイド, 6 馬単, 7 三連複, 8 三連単")
-        if name == "pedigree":
+        if name in ("pedigree", "horses"):
             p.add_argument("--since", type=int, default=2000, help="only races from this year on")
+        if name == "pedigree":
             p.add_argument("--min-unknown", type=int, default=1)
     args = ap.parse_args(argv)
-    return {"results": cmd_results, "odds": cmd_odds, "pedigree": cmd_pedigree}[args.cmd](args)
+    return {"results": cmd_results, "odds": cmd_odds, "pedigree": cmd_pedigree,
+            "horses": cmd_horses}[args.cmd](args)
 
 
 if __name__ == "__main__":

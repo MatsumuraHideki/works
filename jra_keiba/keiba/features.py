@@ -12,7 +12,9 @@ Feature groups (the "aspects" reported with each prediction):
     jockey     jockey rating, strike rates (year, last 30 days, course, distance, class),
                results against the market, riding style, record with this horse and stable,
                and what a change of jockey means
-    trainer    trainer rating and strike rates
+    trainer    trainer rating and strike rates (year, 30 days, distance, class, off a layoff or
+               first time out, against the market), owner strike rates, travel east / west
+    day        how the track has played in the earlier races of the same day (draw, pace)
     pedigree   sire and broodmare-sire progeny records
     race       pace set-up, draw, weights, field
 """
@@ -94,9 +96,12 @@ def build_frame(races: pd.DataFrame, results: pd.DataFrame, pedigree: pd.DataFra
             results[c] = pd.to_numeric(results[c], errors="coerce").astype(float)
     races["level"] = class_level(races)
     keep = ["race_id", "date", "place", "surface", "direction", "inout", "distance", "going", "weather",
-            "class", "grade", "level", "race_no", "name", "is_card", "cond"]
+            "class", "grade", "level", "race_no", "name", "is_card", "cond", "laps"]
     df = results.merge(races[[c for c in keep if c in races.columns]], on="race_id", how="inner")
     df = df[df["surface"].isin(["芝", "ダ"])].copy()
+    for c in ("owner_id", "trainer_region", "weather", "laps"):     # absent in minimal inputs
+        if c not in df.columns:
+            df[c] = np.nan
 
     raw_fin = df["finish_raw"].fillna("").astype(str) if "finish_raw" in df else pd.Series("", index=df.index)
     scratched = raw_fin.str.contains("取|除") & ~df["is_card"]
@@ -114,9 +119,10 @@ def build_frame(races: pd.DataFrame, results: pd.DataFrame, pedigree: pd.DataFra
     df["top3"] = (df["finish"] <= 3).astype(float).where(~df["is_card"])
 
     if pedigree is not None and len(pedigree):
-        df = df.merge(pedigree[["horse_id", "sire", "bms"]], on="horse_id", how="left")
+        df = df.merge(pedigree[["horse_id", "sire", "dam", "bms"]], on="horse_id", how="left")
     else:
         df["sire"] = np.nan
+        df["dam"] = np.nan
         df["bms"] = np.nan
     df["number"] = df["number"].astype(float)
     df = df.sort_values(["date", "race_id", "number", "horse_id"], kind="stable").reset_index(drop=True)
@@ -311,8 +317,91 @@ def _reg(group: str, names: list[str]) -> None:
             FEATURE_GROUPS[group].append(n)
 
 
-def add_features(df: pd.DataFrame) -> pd.DataFrame:
+EAST = ("東京", "中山", "福島", "新潟")
+WEST = ("京都", "阪神", "中京", "小倉")
+WEATHER_CODE = {"晴": 0.0, "曇": 1.0, "小雨": 2.0, "雨": 3.0, "小雪": 4.0, "雪": 5.0}
+
+
+def pace_balance(laps: str | None, distance: float) -> float:
+    """First 600 m minus last 600 m of a race, in seconds (negative = fast early).
+    The first lap is short when the distance is not a multiple of 200 m."""
+    try:
+        v = [float(x) for x in str(laps).split("-")]
+    except ValueError:
+        return np.nan
+    if len(v) < 6 or not distance or np.isnan(distance):
+        return np.nan
+    first = distance % 200 or 200.0
+    t, d = 0.0, 0.0
+    for i, lap in enumerate(v):
+        step = first if i == 0 else 200.0
+        if d + step >= 600.0:
+            t += lap * (600.0 - d) / step
+            break
+        t += lap
+        d += step
+    return t - sum(v[-3:])
+
+
+def add_pace(df: pd.DataFrame) -> pd.DataFrame:
+    """_pace_dev: pace balance of the race against the usual one for the surface and distance
+    (median of earlier seasons; the first season uses itself). An outcome column: features
+    read it only through a horse's earlier races."""
+    r = df.drop_duplicates("race_id")[["race_id", "date", "surface", "distance"]].copy()
+    laps = df.drop_duplicates("race_id")["laps"] if "laps" in df.columns else pd.Series(np.nan, index=r.index)
+    r["bal"] = [pace_balance(l, d) for l, d in zip(laps, r["distance"])]
+    r["y"] = r["date"].dt.year
+    r["par"] = np.nan
+    years = sorted(r["y"].unique())
+    for y in years:
+        cur = r["y"] == y
+        base = (r["y"] < y) if y != years[0] else cur
+        med = r[base & r["bal"].notna()].groupby(["surface", "distance"])["bal"].agg(["median", "size"])
+        med = med[med["size"] >= 20]["median"]
+        if len(med):
+            r.loc[cur, "par"] = med.reindex(pd.MultiIndex.from_frame(r.loc[cur, ["surface", "distance"]])).to_numpy()
+    r["_pace_dev"] = r["bal"] - r["par"]
+    out = df.merge(r[["race_id", "_pace_dev"]], on="race_id", how="left")
+    out.index = df.index
+    return out
+
+
+def day_bias(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.DataFrame:
+    """How the track has played today: where the first three of the *earlier* races of the
+    same day, course and surface were drawn and how far forward they raced.
+
+    ``day_races`` adds races that are not in the results yet (race day): columns date, place,
+    surface, race_no, inner, front, with inner / front the means over the first three.
+    Returns per-runner columns day_n, day_inner, day_front (NaN before the first race)."""
+    top = df[(df["finish"] <= 3) & (df["ran"] == 1)]
+    s = top.groupby("race_id").agg(inner=("rel_number", "mean"), front=("early_pos", "mean"))
+    meta = df.drop_duplicates("race_id").set_index("race_id")[["date", "place", "surface", "_race_no"]]
+    s = meta.join(s, how="left").reset_index().rename(columns={"_race_no": "race_no"})
+    if day_races is not None and len(day_races):
+        extra = day_races.copy()
+        extra["date"] = pd.to_datetime(extra["date"])
+        extra["race_id"] = [f"day{i}" for i in range(len(extra))]
+        done = s[s["inner"].notna()]
+        known = set(zip(done["date"], done["place"], done["race_no"]))
+        extra = extra[[k not in known for k in zip(extra["date"], extra["place"], extra["race_no"])]]
+        s = pd.concat([s, extra[list(s.columns)]], ignore_index=True)
+    s = s.sort_values(["date", "place", "surface", "race_no"]).reset_index(drop=True)
+    g = [s["date"], s["place"], s["surface"]]
+    for c, prior in (("inner", 0.5), ("front", 0.42)):
+        has = s[c].notna().astype(float)
+        v = s[c].fillna(0.0)
+        n = has.groupby(g).cumsum() - has
+        tot = v.groupby(g).cumsum() - v
+        s[f"day_{c}"] = ((tot + 2.0 * prior) / (n + 2.0)).where(n > 0)
+        s["day_n"] = n
+    out = df[["race_id"]].merge(s[["race_id", "day_n", "day_inner", "day_front"]], on="race_id", how="left")
+    out.index = df.index
+    return out[["day_n", "day_inner", "day_front"]]
+
+
+def add_features(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.DataFrame:
     df = add_speed_figures(df)
+    df = add_pace(df)
     df = add_elo(df)
     FEATURE_GROUPS.clear()
     df["band"] = dist_band(df["distance"])
@@ -504,6 +593,82 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
                   "body_weight_diff", "n_runners", "distance", "is_turf", "going_code", "level",
                   "is_female", "is_gelding", "month", "place_code", "dir_code"])
 
+    # ---------- trainer in depth, owner, travel
+    card_owner = df["is_card"] & df["owner_id"].isna()     # cards do not list the owner: last known one
+    df.loc[card_owner, "owner_id"] = df.groupby("horse_id", sort=False)["owner_id"].ffill()[card_owner]
+    p = _by_date_prior(df, ["trainer_id"], ["ran", "top3"], window="30D")
+    df["t_n30"] = p["ran"]
+    df["t_top3_30"] = _rate(p["top3"], p["ran"], 0.21, 15.0)
+    df["t_hot"] = df["t_top3_30"] - df["t_top3_365"]
+    p = _by_date_prior(df, ["trainer_id", "surface", "band"], ["ran", "top3"])
+    df["t_band_top3"] = _rate(p["top3"], p["ran"], 0.21, 30.0)
+    p = _by_date_prior(df, ["trainer_id", "_cls"], ["ran", "win", "top3"])
+    df["t_class_win"] = _rate(p["win"], p["ran"], 0.07, 30.0)
+    df["t_class_top3"] = _rate(p["top3"], p["ran"], 0.21, 30.0)
+    p = _by_date_prior(df, ["trainer_id"], ["_win_o", "_mkt_p"], window="365D")
+    df["t_ae_win"] = (p["_win_o"] + 10.0) / (p["_mkt_p"] + 10.0)
+    # how the stable does in today's situation: first start / back from 90+ days off / in training
+    df["_sit"] = np.select([df["h_starts"] == 0, df["days_since"] >= 90], [2.0, 1.0], 0.0)
+    p = _by_date_prior(df, ["trainer_id", "_sit"], ["ran", "win", "top3"])
+    df["t_sit_win"] = _rate(p["win"], p["ran"], 0.07, 20.0)
+    df["t_sit_top3"] = _rate(p["top3"], p["ran"], 0.21, 20.0)
+    df["layoff"] = (df["_sit"] == 1.0).astype(float)
+    # travel: a Miho (east) horse at a western course or the reverse. Hokkaido is away for both.
+    zone = df["place"].map({**{p_: "東" for p_ in EAST}, **{p_: "西" for p_ in WEST}})
+    home = df["trainer_region"].isin(["東", "西"])
+    df["away"] = ((zone != df["trainer_region"]) | zone.isna()).astype(float).where(home)
+    df["region_west"] = (df["trainer_region"] == "西").astype(float).where(home)
+    df["_away_k"] = df["away"].fillna(-1.0)
+    p = _by_date_prior(df, ["trainer_id", "_away_k"], ["ran", "top3"])
+    df["t_away_top3"] = _rate(p["top3"], p["ran"], 0.21, 30.0)
+    st = _prior_sum(df, ["horse_id", "_away_k"], "ran")
+    df["apt_away_n"] = st
+    df["apt_away_top3"] = _rate(_prior_sum(df, ["horse_id", "_away_k"], "top3"), st, 0.24, 2.0)
+    p = _by_date_prior(df, ["owner_id"], ["ran", "win", "top3"], window="365D")
+    known = df["owner_id"].notna()
+    df["o_n365"] = p["ran"].where(known)
+    df["o_win365"] = _rate(p["win"], p["ran"], 0.07, 30.0).where(known)
+    df["o_top3_365"] = _rate(p["top3"], p["ran"], 0.21, 30.0).where(known)
+    _reg("trainer", ["t_n30", "t_top3_30", "t_hot", "t_band_top3", "t_class_win", "t_class_top3", "t_ae_win",
+                     "t_sit_win", "t_sit_top3", "layoff", "away", "region_west", "t_away_top3",
+                     "o_n365", "o_win365", "o_top3_365"])
+    _reg("aptitude", ["apt_away_n", "apt_away_top3"])
+
+    # ---------- dam: how her other foals have done (this horse's own runs taken out)
+    p = _by_date_prior(df, ["dam"], ["ran", "win", "top3", "prize"])
+    known = df["dam"].notna()
+    dam_n = (p["ran"] - df["h_starts"]).clip(lower=0.0)
+    df["dam_n"] = dam_n.where(known)
+    df["dam_win"] = _rate((p["win"] - df["h_win_sum"]).clip(lower=0.0), dam_n, 0.07, 10.0).where(known)
+    df["dam_top3"] = _rate((p["top3"] - df["h_top3_sum"]).clip(lower=0.0), dam_n, 0.21, 10.0).where(known)
+    df["dam_prize"] = np.log1p((p["prize"] - df["h_prize_sum"]).clip(lower=0.0) / dam_n.clip(lower=1.0)).where(known)
+    _reg("pedigree", ["dam_n", "dam_win", "dam_top3", "dam_prize"])
+
+    # ---------- pace of the horse's earlier races, and how it copes with fast and slow ones
+    gp = df.groupby("horse_id", sort=False)["_pace_dev"]
+    l1, l2, l3 = gp.shift(1), gp.shift(2), gp.shift(3)
+    df["pace_dev_l1"] = l1
+    cnt = l1.notna().astype(float) + l2.notna() + l3.notna()
+    df["pace_dev_mean3"] = (l1.fillna(0) + l2.fillna(0) + l3.fillna(0)) / cnt.replace(0, np.nan)
+    for name, mask in (("fast", df["_pace_dev"] < -0.5), ("slow", df["_pace_dev"] > 0.5)):
+        df[f"_{name}"] = mask.astype(float)
+        df[f"_{name}_top3"] = df[f"_{name}"] * df["top3"].fillna(0.0)
+        n = _prior_sum(df, ["horse_id"], f"_{name}")
+        df[f"apt_{name}_n"] = n
+        df[f"apt_{name}_top3"] = _rate(_prior_sum(df, ["horse_id"], f"_{name}_top3"), n, 0.24, 2.0)
+    df["pace_fit"] = (df["apt_fast_top3"] - df["apt_slow_top3"]) * (df["pace_pressure"] - 0.25)
+    df["weather_code"] = df["weather"].map(WEATHER_CODE)       # 0 = fine; unknown on early cards
+    _reg("race", ["pace_dev_l1", "pace_dev_mean3", "apt_fast_n", "apt_fast_top3", "apt_slow_n", "apt_slow_top3",
+                  "pace_fit", "weather_code"])
+
+    # ---------- today's track: where the first three of the earlier races were drawn and raced
+    df["_race_no"] = pd.to_numeric(df["race_id"].str[-2:], errors="coerce")
+    b = day_bias(df, day_races)
+    df["day_n"], df["day_inner"], df["day_front"] = b["day_n"], b["day_inner"] - 0.5, b["day_front"] - 0.42
+    df["day_inner_x"] = (df["rel_number"] - 0.5) * df["day_inner"]     # positive: drawn on the side that is winning
+    df["day_front_x"] = (df["style"] - 0.42) * df["day_front"]         # positive: runs the way that is winning
+    _reg("day", ["day_n", "day_inner", "day_front", "day_inner_x", "day_front_x"])
+
     # ---------- relative-to-field versions of the strongest absolute features
     rel = ["elo_h", "elo_hs", "fig_max5", "fig_mean3", "l3f_mean3", "form_class5", "h_prize_per_start",
            "pos_mean3", "elo_j", "elo_t", "j_win365", "weight_carried", "h_top3_rate", "apt_band_top3",
@@ -561,7 +726,8 @@ def pedigree_usable(results: pd.DataFrame, ped: pd.DataFrame) -> tuple[bool, flo
 
 def build_features(raw: Path = RAW, card_races: pd.DataFrame | None = None,
                    card_runners: pd.DataFrame | None = None, pedigree_extra: pd.DataFrame | None = None,
-                   log=print, use_pedigree: bool | None = None) -> pd.DataFrame:
+                   log=print, use_pedigree: bool | None = None,
+                   day_races: pd.DataFrame | None = None) -> pd.DataFrame:
     """``use_pedigree=False`` keeps pedigree out even when coverage would allow it: a model
     trained without pedigree must be fed features built without it. ``df.attrs['pedigree']``
     records what was done."""
@@ -576,6 +742,6 @@ def build_features(raw: Path = RAW, card_races: pd.DataFrame | None = None,
         ped = None
     elif pedigree_extra is not None and len(pedigree_extra):
         ped = pd.concat([ped, pedigree_extra], ignore_index=True).drop_duplicates("horse_id")
-    out = add_features(build_frame(races, results, ped, card_races, card_runners))
+    out = add_features(build_frame(races, results, ped, card_races, card_runners), day_races)
     out.attrs["pedigree"] = ped is not None
     return out

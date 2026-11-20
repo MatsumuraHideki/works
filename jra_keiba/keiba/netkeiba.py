@@ -50,6 +50,10 @@ def url_result(race_id: str) -> str:
     return f"https://race.netkeiba.com/race/result.html?race_id={race_id}"
 
 
+def url_horse_result(horse_id: str) -> str:
+    return f"https://db.netkeiba.com/horse/result/{horse_id}/"
+
+
 def url_odds(race_id: str, type_: int) -> str:
     return f"https://race.netkeiba.com/api/api_get_jra_odds.html?race_id={race_id}&type={type_}&action=init"
 
@@ -481,9 +485,78 @@ def parse_result_page(html: str, race_id: str) -> dict[str, Any] | None:
     if not payouts:
         return None
     order = []
+    table = soup.select_one("table#All_Result_Table")
+    heads = [_txt(th) for th in table.find_all("th")] if table is not None else []
+    i_pass = next((i for i, h in enumerate(heads) if "通過" in h), None)
     for tr in soup.select("table#All_Result_Table tr.HorseList"):
         tds = tr.find_all("td")
         if len(tds) < 4:
             continue
-        order.append({"finish": _txt(tds[0]), "number": _num(_txt(tds[2])), "horse_name": _txt(tds[3])})
-    return {"race_id": race_id, "payouts": payouts, "order": order}
+        order.append({"finish": _txt(tds[0]), "number": _num(_txt(tds[2])), "horse_name": _txt(tds[3]),
+                      "passing": _txt(tds[i_pass]) if i_pass is not None and i_pass < len(tds) else None})
+    m = re.search(r"(芝|ダ|障)\D{0,3}(\d{3,4})m", _txt(soup.select_one(".RaceData01")) or "")
+    return {"race_id": race_id, "payouts": payouts, "order": order,
+            "surface": m.group(1) if m else None, "distance": int(m.group(2)) if m else None}
+
+
+JRA_MEETING = re.compile(r"^\d+(札幌|函館|福島|新潟|東京|中山|中京|京都|阪神|小倉)\d+$")
+
+
+def parse_horse_runs(html: str, horse_id: str) -> list[dict[str, Any]] | None:
+    """Every run on a horse's result page. ``jra`` is False for local (NAR) and overseas
+    runs, which the race-by-race collection of JRA meetings never sees.
+    Returns None when the page has no result table (so the horse is retried later)."""
+    soup = BeautifulSoup(html, "lxml")
+    table = soup.select_one("table.db_h_race_results")
+    if table is None:
+        return None
+    heads = [re.sub(r"\s+", "", th.get_text()) for th in table.find_all("th")]   # 頭<br>数 -> 頭数
+    col = {}
+    for i, h in enumerate(heads):
+        col.setdefault(h, i)
+
+    def cell(tds, name):
+        i = col.get(name, next((v for k, v in col.items() if k.startswith(name)), None))
+        return _txt(tds[i]) if i is not None and i < len(tds) else ""
+
+    out = []
+    for tr in table.find_all("tr"):
+        tds = tr.find_all("td")
+        if len(tds) < 10:
+            continue
+        date = cell(tds, "日付").replace("/", "-")
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+            continue
+        venue = cell(tds, "開催")
+        dist = cell(tds, "距離")
+        m = re.match(r"(芝|ダ|障)(\d+)", dist)
+        fin = cell(tds, "着順")
+        out.append({
+            "horse_id": horse_id, "date": date, "venue": venue, "jra": bool(JRA_MEETING.match(venue)),
+            "race_name": cell(tds, "レース名"), "n_runners": _num(cell(tds, "頭数")), "number": _num(cell(tds, "馬番")),
+            "win_odds": _num(cell(tds, "オッズ")), "popularity": _num(cell(tds, "人気")),
+            "finish": _num(fin) if fin.isdigit() else None, "finish_raw": fin,
+            "surface": m.group(1) if m else None, "distance": int(m.group(2)) if m else None,
+            "going": cell(tds, "馬場") or None, "time_sec": _parse_time(cell(tds, "タイム")),
+            "passing": cell(tds, "通過") or None, "last3f": _num(cell(tds, "上り")),
+        })
+    return out
+
+
+def day_bias_of_result(res: dict[str, Any]) -> dict[str, float] | None:
+    """Where the first three of a finished race were drawn and how far forward they raced
+    early (both 0..1), from a parsed race-day result page. None if it cannot be worked out."""
+    ran = [o for o in res.get("order", []) if not re.search("取|除", str(o.get("finish")))]
+    n = len(ran)
+    top = [o for o in ran if str(o.get("finish")).isdigit() and int(o["finish"]) <= 3 and o.get("number")]
+    if n < 4 or not top:
+        return None
+    inner = [(o["number"] - 1) / (n - 1) for o in top]
+    front = []
+    for o in top:
+        first = re.match(r"\s*(\d+)", str(o.get("passing") or ""))
+        if first:
+            front.append(min(1.0, max(0.0, (int(first.group(1)) - 1) / (n - 1))))
+    if not front:
+        return None
+    return {"inner": sum(inner) / len(inner), "front": sum(front) / len(front)}
