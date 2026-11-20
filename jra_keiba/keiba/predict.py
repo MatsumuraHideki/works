@@ -182,6 +182,8 @@ def predict_race(card: dict, rows: pd.DataFrame, art: dict, boosters: dict, bank
     contrib = model.group_contributions(boosters["win"], rows[feats], art["groups"])
     for g in ASPECTS:
         rows[f"a_{g}"] = mark(contrib[g]) if g in contrib else "－"
+    if "day_n" not in rows.columns or not (rows["day_n"].max() >= 1):
+        rows["a_day"] = "－"          # no earlier race today yet: nothing to rate
 
     drawn = rows["number"].notna().all()
     bets: list[betting.Bet] = []

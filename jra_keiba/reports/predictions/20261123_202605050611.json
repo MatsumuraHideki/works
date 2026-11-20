@@ -28,109 +28,109 @@
    "number": null,
    "horse": "ショウナンガレオン",
    "horse_id": "2024106438",
-   "p": 0.348,
-   "p_fundamental": 0.24,
+   "p": 0.3161,
+   "p_fundamental": 0.231,
    "win_odds": 2.2,
-   "ev": 0.766
+   "ev": 0.695
   },
   {
    "number": null,
    "horse": "ダノンダックス",
    "horse_id": "2024106662",
-   "p": 0.136,
-   "p_fundamental": 0.158,
+   "p": 0.1378,
+   "p_fundamental": 0.1688,
    "win_odds": 5.5,
-   "ev": 0.748
+   "ev": 0.758
   },
   {
    "number": null,
    "horse": "ジョドレルバンク",
    "horse_id": "2024106161",
-   "p": 0.1168,
-   "p_fundamental": 0.1076,
+   "p": 0.1166,
+   "p_fundamental": 0.0981,
    "win_odds": 7.2,
-   "ev": 0.841
+   "ev": 0.84
   },
   {
    "number": null,
    "horse": "キングリア",
    "horse_id": "2024106684",
-   "p": 0.092,
-   "p_fundamental": 0.1276,
+   "p": 0.0941,
+   "p_fundamental": 0.1093,
    "win_odds": 7.9,
-   "ev": 0.727
+   "ev": 0.743
   },
   {
    "number": null,
    "horse": "コラリオン",
    "horse_id": "2024106471",
-   "p": 0.0679,
-   "p_fundamental": 0.1,
+   "p": 0.0771,
+   "p_fundamental": 0.1269,
    "win_odds": 10.3,
-   "ev": 0.7
+   "ev": 0.794
   },
   {
    "number": null,
    "horse": "オンユアマークス",
    "horse_id": "2024104698",
-   "p": 0.0658,
-   "p_fundamental": 0.0394,
+   "p": 0.0712,
+   "p_fundamental": 0.0401,
    "win_odds": 10.4,
-   "ev": 0.684
+   "ev": 0.74
   },
   {
    "number": null,
    "horse": "シルヴァノーブル",
    "horse_id": "2024101851",
-   "p": 0.0548,
-   "p_fundamental": 0.0384,
+   "p": 0.0583,
+   "p_fundamental": 0.0363,
    "win_odds": 12.4,
-   "ev": 0.679
+   "ev": 0.723
   },
   {
    "number": null,
    "horse": "ビンドゥング",
    "horse_id": "2024107180",
-   "p": 0.0489,
-   "p_fundamental": 0.1098,
+   "p": 0.0532,
+   "p_fundamental": 0.1075,
    "win_odds": 14.5,
-   "ev": 0.708
+   "ev": 0.772
   },
   {
    "number": null,
    "horse": "スローブギ",
    "horse_id": "2024105964",
-   "p": 0.0361,
-   "p_fundamental": 0.0346,
+   "p": 0.0414,
+   "p_fundamental": 0.0419,
    "win_odds": 19.6,
-   "ev": 0.707
+   "ev": 0.812
   },
   {
    "number": null,
    "horse": "ティフォシ",
    "horse_id": "2024103816",
-   "p": 0.0254,
-   "p_fundamental": 0.0208,
+   "p": 0.0261,
+   "p_fundamental": 0.0168,
    "win_odds": 29.5,
-   "ev": 0.75
+   "ev": 0.77
   },
   {
    "number": null,
    "horse": "ニースケンス",
    "horse_id": "2024107189",
-   "p": 0.0062,
-   "p_fundamental": 0.0125,
+   "p": 0.0057,
+   "p_fundamental": 0.0141,
    "win_odds": 87.7,
-   "ev": 0.547
+   "ev": 0.502
   },
   {
    "number": null,
    "horse": "テンカタイヘイ",
    "horse_id": "2024106851",
-   "p": 0.0022,
-   "p_fundamental": 0.0113,
+   "p": 0.0023,
+   "p_fundamental": 0.0092,
    "win_odds": 170.6,
-   "ev": 0.368
+   "ev": 0.401
   }
  ],
  "validated_strategies": [],
