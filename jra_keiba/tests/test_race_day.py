@@ -69,3 +69,6 @@ def test_day_bias_of_result_uses_draw_and_first_call():
     assert abs(b["inner"] - (0 + 4 + 2) / 3 / 4) < 1e-9          # five starters: (number - 1) / 4
     assert abs(b["front"] - (0 + 2 + 4) / 3 / 4) < 1e-9
     assert nk.day_bias_of_result({"order": order[:3]}) is None   # too few starters to mean anything
+    bare = [{**o, "passing": ""} for o in order]                   # corner calls not posted yet
+    b = nk.day_bias_of_result({"order": bare})
+    assert b["front"] is None and abs(b["inner"] - 0.5) < 1e-9

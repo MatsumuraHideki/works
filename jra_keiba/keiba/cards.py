@@ -75,9 +75,12 @@ def day_races(f: Fetcher, race_id: str, listed: list[dict], card: dict) -> list[
     out = []
     cache = CARDS / "day"
     cache.mkdir(parents=True, exist_ok=True)
-    for r in listed:
+    same = [r for r in listed if r["race_id"][:10] == race_id[:10] and int(r["race_id"][10:]) < int(race_id[10:])]
+    print(f"  day races for {race_id}: {len(same)} earlier at the course, "
+          f"{sum(r['is_result'] for r in same)} with a result link", flush=True)
+    for r in same:
         rid = r["race_id"]
-        if rid[:10] != race_id[:10] or int(rid[10:]) >= int(race_id[10:]) or not r["is_result"]:
+        if not r["is_result"]:
             continue
         p = cache / f"{rid}.json"
         if p.exists():
@@ -86,10 +89,17 @@ def day_races(f: Fetcher, race_id: str, listed: list[dict], card: dict) -> list[
             res = nk.parse_result_page(fetch_text(f, nk.url_result(rid)), rid)
             bias = nk.day_bias_of_result(res) if res else None
             if res is None or bias is None or res.get("surface") not in ("芝", "ダ"):
+                why = ("no payouts on the page" if res is None else f"surface {res.get('surface')}"
+                       if res.get("surface") not in ("芝", "ダ") else f"order rows {len(res['order'])}, "
+                       f"first {res['order'][:1]}")
+                print(f"  day race {rid}: skipped ({why})", flush=True)
                 continue
+            if bias["front"] is None:
+                print(f"  day race {rid}: no corner calls yet (first row {res['order'][:1]})", flush=True)
             row = {"race_id": rid, "date": card["race"]["date"], "place": card["race"]["place"],
                    "surface": res["surface"], "race_no": int(rid[10:]), **bias}
-            p.write_text(json.dumps(row, ensure_ascii=False))
+            if bias["front"] is not None:     # complete: no need to read this race again
+                p.write_text(json.dumps(row, ensure_ascii=False))
         out.append(row)
     return out
 

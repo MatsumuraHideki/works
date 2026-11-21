@@ -380,12 +380,15 @@ def day_bias(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.Data
     if day_races is not None and len(day_races):
         extra = day_races.copy()
         extra["date"] = pd.to_datetime(extra["date"])
+        for c in ("race_no", "inner", "front"):      # front can be None (no corner calls yet)
+            extra[c] = pd.to_numeric(extra[c], errors="coerce").astype(float)
         extra["race_id"] = [f"day{i}" for i in range(len(extra))]
         done = s[s["inner"].notna()]
         known = set(zip(done["date"], done["place"], done["race_no"]))
         extra = extra[[k not in known for k in zip(extra["date"], extra["place"], extra["race_no"])]]
         s = pd.concat([s, extra[list(s.columns)]], ignore_index=True)
     s = s.sort_values(["date", "place", "surface", "race_no"]).reset_index(drop=True)
+    s[["inner", "front"]] = s[["inner", "front"]].astype(float)
     g = [s["date"], s["place"], s["surface"]]
     for c, prior in (("inner", 0.5), ("front", 0.42)):
         has = s[c].notna().astype(float)
@@ -393,7 +396,8 @@ def day_bias(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.Data
         n = has.groupby(g).cumsum() - has
         tot = v.groupby(g).cumsum() - v
         s[f"day_{c}"] = ((tot + 2.0 * prior) / (n + 2.0)).where(n > 0)
-        s["day_n"] = n
+        if c == "inner":
+            s["day_n"] = n
     out = df[["race_id"]].merge(s[["race_id", "day_n", "day_inner", "day_front"]], on="race_id", how="left")
     out.index = df.index
     return out[["day_n", "day_inner", "day_front"]]

@@ -545,7 +545,8 @@ def parse_horse_runs(html: str, horse_id: str) -> list[dict[str, Any]] | None:
 
 def day_bias_of_result(res: dict[str, Any]) -> dict[str, float] | None:
     """Where the first three of a finished race were drawn and how far forward they raced
-    early (both 0..1), from a parsed race-day result page. None if it cannot be worked out."""
+    early (both 0..1), from a parsed race-day result page. None if it cannot be worked out;
+    ``front`` alone is None when the page has no corner calls yet."""
     ran = [o for o in res.get("order", []) if not re.search("取|除", str(o.get("finish")))]
     n = len(ran)
     top = [o for o in ran if str(o.get("finish")).isdigit() and int(o["finish"]) <= 3 and o.get("number")]
@@ -557,6 +558,5 @@ def day_bias_of_result(res: dict[str, Any]) -> dict[str, float] | None:
         first = re.match(r"\s*(\d+)", str(o.get("passing") or ""))
         if first:
             front.append(min(1.0, max(0.0, (int(first.group(1)) - 1) / (n - 1))))
-    if not front:
-        return None
-    return {"inner": sum(inner) / len(inner), "front": sum(front) / len(front)}
+    # the corner calls can be missing right after a race: the draw side is still worth having
+    return {"inner": sum(inner) / len(inner), "front": sum(front) / len(front) if front else None}

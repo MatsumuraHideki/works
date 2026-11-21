@@ -131,3 +131,16 @@ def test_pre_draw_card_without_weights_or_numbers_stays_numeric():
     bad = [c for c in cols if df[c].dtype.kind not in "fiub"]
     assert bad == [], f"non-numeric feature columns: {bad}"
     assert df["is_card"].sum() == len(card_x)
+
+
+def test_day_races_without_corner_calls_are_accepted():
+    """Race day: a finished race whose corner calls are not posted yet still counts for the draw."""
+    races, results, ped = _toy()
+    last = races["date"].max()
+    day = pd.DataFrame([{"race_id": "x", "date": last, "place": "東京", "surface": "芝", "race_no": 0,
+                         "inner": 0.2, "front": None}])
+    out = features.add_features(features.build_frame(races, results, ped), day)
+    first = out[(out["date"] == last) & (out["place"] == "東京") & (out["surface"] == "芝")].sort_values("race_id")
+    row = first.iloc[0]
+    assert row["day_n"] == 1 and abs(row["day_inner"] - ((0.2 + 2 * 0.5) / 3 - 0.5)) < 1e-9
+    assert np.isnan(row["day_front"])
