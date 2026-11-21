@@ -119,10 +119,41 @@
   "race_id": "202603030511",
   "race": "福島記念",
   "grade": "G3",
-  "odds_time": "2026-11-21 11:36:01",
-  "tickets": 17,
+  "odds_time": "2026-11-21 15:04:15",
+  "tickets": 16,
   "stake": 5000,
-  "settled": false
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [
+   {
+    "number": 14,
+    "horse": "サヴォーナ",
+    "odds": 15.0,
+    "final": 13.1,
+    "ev": 1.006,
+    "ev_final": 0.878
+   },
+   {
+    "number": 7,
+    "horse": "シリウスコルト",
+    "odds": 25.8,
+    "final": 24.6,
+    "ev": 1.022,
+    "ev_final": 0.974
+   }
+  ],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "13 マリアイリダータ",
+   "3 ゼンダンハヤブサ",
+   "1 カラマティアノス"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "13 マリアイリダータ"
  },
  {
   "date": "2026-11-22",

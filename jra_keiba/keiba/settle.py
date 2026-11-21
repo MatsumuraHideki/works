@@ -140,7 +140,7 @@ def write_record(rows: list[dict]) -> str:
             for r in sorted(a, key=lambda r: (r["date"], r["race_id"]), reverse=True):
                 out.append(f"| {r['date']} | {r['race']} | {'、'.join(r['a_picks'])} | {r['a_stake']:,}円 | {r['a_return']:,}円 |")
             out.append("")
-        out.append("買い目 B（単勝＋馬連・ワイド・三連複）:\n")
+        out.append("買い目 B（高配当も狙う買い目。11/15 までは単勝＋馬連・ワイド・三連複の 50 点、11/21 からは単勝＋馬連・三連複の最大 20 点）:\n")
         out.append("| 日付 | レース | 点数 | 購入 | 払戻 | 収支 | 当たった買い目 | 1〜3着 |")
         out.append("|---|---|---|---|---|---|---|---|")
         for r in sorted(done, key=lambda r: (r["date"], r["race_id"]), reverse=True):
