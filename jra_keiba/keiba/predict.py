@@ -482,12 +482,13 @@ def main(argv: list[str] | None = None) -> int:
     df = features.build_features(card_races=races, card_runners=runners, pedigree_extra=ped,
                                  use_pedigree=bool(art.get("pedigree", False)), day_races=day_races_frame(cards))
     missing = [f for f in art["feats"] if f not in df.columns]
-    if missing:   # a restored model from older code: train a fresh one rather than fail
-        print(f"model/feature mismatch ({missing[:5]}), retraining")
-        res = pipeline.fit_all()
-        art = res["art"]
-        pipeline.save_artifacts(art)
-        boosters = pipeline.boosters(art)
+    if missing:
+        # The stored model was trained on columns the code no longer builds. Retraining takes
+        # an hour and a race-day prediction has minutes, so predict with those inputs unknown
+        # (the model handles missing values) and say so; retrain separately.
+        print(f"WARNING: model inputs not built by this code, treated as unknown: {missing}")
+        for f in missing:
+            df[f] = np.nan
     OUT.mkdir(parents=True, exist_ok=True)
     sections = []
     for c in sorted(cards, key=lambda c: (c["race"]["date"], c["race"].get("start_time") or "", c["race"]["race_id"])):
