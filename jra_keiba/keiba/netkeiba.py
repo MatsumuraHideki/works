@@ -488,12 +488,14 @@ def parse_result_page(html: str, race_id: str) -> dict[str, Any] | None:
     table = soup.select_one("table#All_Result_Table")
     heads = [_txt(th) for th in table.find_all("th")] if table is not None else []
     i_pass = next((i for i, h in enumerate(heads) if "通過" in h), None)
+    i_l3f = next((i for i, h in enumerate(heads) if "3F" in h or "上り" in h), None)
     for tr in soup.select("table#All_Result_Table tr.HorseList"):
         tds = tr.find_all("td")
         if len(tds) < 4:
             continue
         order.append({"finish": _txt(tds[0]), "number": _num(_txt(tds[2])), "horse_name": _txt(tds[3]),
-                      "passing": _txt(tds[i_pass]) if i_pass is not None and i_pass < len(tds) else None})
+                      "passing": _txt(tds[i_pass]) if i_pass is not None and i_pass < len(tds) else None,
+                      "last3f": _num(_txt(tds[i_l3f])) if i_l3f is not None and i_l3f < len(tds) else None})
     m = re.search(r"(芝|ダ|障)\D{0,3}(\d{3,4})m", _txt(soup.select_one(".RaceData01")) or "")
     return {"race_id": race_id, "payouts": payouts, "order": order,
             "surface": m.group(1) if m else None, "distance": int(m.group(2)) if m else None}
