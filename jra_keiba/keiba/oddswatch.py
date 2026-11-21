@@ -25,9 +25,25 @@ OUT = RAW / "odds_snapshots"
 COLS = ["race_id", "start_time", "number", "odds", "odds_time", "fetched_at", "minutes_to_post", "status"]
 
 
-def snapshot(f: Fetcher, race_id: str, post: dt.datetime) -> list[dict]:
-    url = nk.url_odds(race_id, 1).replace("action=init", "action=update")
-    o = nk.parse_odds(fetch_text(f, url, referer=nk.url_shutuba(race_id)), 1)
+def snapshot(interval: float, race_id: str, post: dt.datetime) -> list[dict]:
+    """The board of one race. A new HTTP session is opened for every race: on the first day
+    the watcher ran, every request made more than about an hour after its session started
+    came back without odds. An empty answer is logged and tried once more with the other
+    API action."""
+    from .http import decode
+    base = nk.url_odds(race_id, 1)
+    o = {"odds": {}, "time": None, "status": None}
+    for action in ("update", "init"):
+        f = Fetcher(min_interval=interval)
+        status, body = f.get_bytes(base.replace("action=init", f"action={action}"), referer=nk.url_shutuba(race_id))
+        if status in (400, 403, 429):
+            raise Blocked(f"HTTP {status} for odds of {race_id}")
+        text = decode(body) if status == 200 else ""
+        o = nk.parse_odds(text, 1)
+        if o["odds"]:
+            break
+        print(f"  {race_id}: no odds with action={action} (HTTP {status}, status={o['status']}, "
+              f"body starts {text[:160]!r})", flush=True)
     now = dt.datetime.now(JST)
     return [{"race_id": race_id, "start_time": post.strftime("%H:%M"), "number": k[0], "odds": v[0],
              "odds_time": o["time"], "fetched_at": now.isoformat(timespec="seconds"),
@@ -78,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             if wait > 0:
                 time.sleep(wait)
-            got = snapshot(f, rid, post)
+            got = snapshot(args.interval, rid, post)
             rows += got
             print(f"{rid} post {post:%H:%M}: {len(got)} runners", flush=True)
             save(push=time.monotonic() - last_push > 3600)
