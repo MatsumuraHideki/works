@@ -94,11 +94,11 @@ def day_races(f: Fetcher, race_id: str, listed: list[dict], card: dict) -> list[
                        f"first {res['order'][:1]}")
                 print(f"  day race {rid}: skipped ({why})", flush=True)
                 continue
-            if bias["front"] is None:
-                print(f"  day race {rid}: no corner calls yet (first row {res['order'][:1]})", flush=True)
+            if bias["closer"] is None:
+                print(f"  day race {rid}: no last-3F times yet (first row {res['order'][:1]})", flush=True)
             row = {"race_id": rid, "date": card["race"]["date"], "place": card["race"]["place"],
                    "surface": res["surface"], "race_no": int(rid[10:]), **bias}
-            if bias["front"] is not None:     # complete: no need to read this race again
+            if bias["closer"] is not None:    # complete: no need to read this race again
                 p.write_text(json.dumps(row, ensure_ascii=False))
         out.append(row)
     return out

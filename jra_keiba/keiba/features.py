@@ -366,21 +366,33 @@ def add_pace(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+CLOSER_PRIOR = 0.30      # usual mean last-3F rank (0 = fastest in the race) of the first three
+
+
 def day_bias(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.DataFrame:
     """How the track has played today: where the first three of the *earlier* races of the
-    same day, course and surface were drawn and how far forward they raced.
+    same day, course and surface were drawn, and whether they were the fast finishers.
 
+    Both are read from what the race-day result page shows at once: the draw, and the
+    last-3F times (corner calls are posted only later, so they are not used here).
     ``day_races`` adds races that are not in the results yet (race day): columns date, place,
-    surface, race_no, inner, front, with inner / front the means over the first three.
-    Returns per-runner columns day_n, day_inner, day_front (NaN before the first race)."""
-    top = df[(df["finish"] <= 3) & (df["ran"] == 1)]
-    s = top.groupby("race_id").agg(inner=("rel_number", "mean"), front=("early_pos", "mean"))
+    surface, race_no, inner, closer - means over the first three of (number - 1) / (n - 1)
+    and of the last-3F rank scaled to 0..1 (0 = fastest).
+    Returns per-runner columns day_n, day_inner, day_closer (NaN before the first race)."""
+    ran = df[(df["ran"] == 1) & df["last3f"].notna()]
+    rk = ran.groupby("race_id")["last3f"].rank(method="average")
+    cnt = ran.groupby("race_id")["last3f"].transform("size")
+    frac = ((rk - 1) / (cnt - 1).clip(lower=1)).reindex(df.index)
+    top = df.assign(_l3f_rank=frac)[(df["finish"] <= 3) & (df["ran"] == 1)]
+    s = top.groupby("race_id").agg(inner=("rel_number", "mean"), closer=("_l3f_rank", "mean"))
     meta = df.drop_duplicates("race_id").set_index("race_id")[["date", "place", "surface", "_race_no"]]
     s = meta.join(s, how="left").reset_index().rename(columns={"_race_no": "race_no"})
     if day_races is not None and len(day_races):
         extra = day_races.copy()
         extra["date"] = pd.to_datetime(extra["date"])
-        for c in ("race_no", "inner", "front"):      # front can be None (no corner calls yet)
+        if "closer" not in extra.columns:
+            extra["closer"] = np.nan
+        for c in ("race_no", "inner", "closer"):      # closer can be None (no times posted yet)
             extra[c] = pd.to_numeric(extra[c], errors="coerce").astype(float)
         extra["race_id"] = [f"day{i}" for i in range(len(extra))]
         done = s[s["inner"].notna()]
@@ -388,9 +400,9 @@ def day_bias(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.Data
         extra = extra[[k not in known for k in zip(extra["date"], extra["place"], extra["race_no"])]]
         s = pd.concat([s, extra[list(s.columns)]], ignore_index=True)
     s = s.sort_values(["date", "place", "surface", "race_no"]).reset_index(drop=True)
-    s[["inner", "front"]] = s[["inner", "front"]].astype(float)
+    s[["inner", "closer"]] = s[["inner", "closer"]].astype(float)
     g = [s["date"], s["place"], s["surface"]]
-    for c, prior in (("inner", 0.5), ("front", 0.42)):
+    for c, prior in (("inner", 0.5), ("closer", CLOSER_PRIOR)):
         has = s[c].notna().astype(float)
         v = s[c].fillna(0.0)
         n = has.groupby(g).cumsum() - has
@@ -398,9 +410,9 @@ def day_bias(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.Data
         s[f"day_{c}"] = ((tot + 2.0 * prior) / (n + 2.0)).where(n > 0)
         if c == "inner":
             s["day_n"] = n
-    out = df[["race_id"]].merge(s[["race_id", "day_n", "day_inner", "day_front"]], on="race_id", how="left")
+    out = df[["race_id"]].merge(s[["race_id", "day_n", "day_inner", "day_closer"]], on="race_id", how="left")
     out.index = df.index
-    return out[["day_n", "day_inner", "day_front"]]
+    return out[["day_n", "day_inner", "day_closer"]]
 
 
 def add_features(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.DataFrame:
@@ -665,13 +677,16 @@ def add_features(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.
     _reg("race", ["pace_dev_l1", "pace_dev_mean3", "apt_fast_n", "apt_fast_top3", "apt_slow_n", "apt_slow_top3",
                   "pace_fit", "weather_code"])
 
-    # ---------- today's track: where the first three of the earlier races were drawn and raced
+    # ---------- today's track: where the first three of the earlier races were drawn, and
+    # whether they were the fast finishers
     df["_race_no"] = pd.to_numeric(df["race_id"].str[-2:], errors="coerce")
     b = day_bias(df, day_races)
-    df["day_n"], df["day_inner"], df["day_front"] = b["day_n"], b["day_inner"] - 0.5, b["day_front"] - 0.42
+    df["day_n"], df["day_inner"] = b["day_n"], b["day_inner"] - 0.5
+    df["day_closer"] = CLOSER_PRIOR - b["day_closer"]                  # positive: fast finishers are winning today
     df["day_inner_x"] = (df["rel_number"] - 0.5) * df["day_inner"]     # positive: drawn on the side that is winning
-    df["day_front_x"] = (df["style"] - 0.42) * df["day_front"]         # positive: runs the way that is winning
-    _reg("day", ["day_n", "day_inner", "day_front", "day_inner_x", "day_front_x"])
+    df["day_closer_x"] = (df["style"] - 0.42) * df["day_closer"]       # positive: runs the way that is winning
+    df["day_l3f_x"] = df["l3f_mean3"] * df["day_closer"]               # a strong finisher on a finishers' day
+    _reg("day", ["day_n", "day_inner", "day_closer", "day_inner_x", "day_closer_x", "day_l3f_x"])
 
     # ---------- relative-to-field versions of the strongest absolute features
     rel = ["elo_h", "elo_hs", "fig_max5", "fig_mean3", "l3f_mean3", "form_class5", "h_prize_per_start",

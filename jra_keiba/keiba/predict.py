@@ -270,7 +270,9 @@ def render(res: dict, art: dict, bankroll: int, min_ev: float) -> str:
     if "day_n" in rows.columns and rows["day_n"].max() >= 1:
         x = rows.iloc[0]
         draw = "内枠の馬が上位に多い" if x["day_inner"] <= -0.05 else "外枠の馬が上位に多い" if x["day_inner"] >= 0.05 else "枠の内外に偏りなし"
-        pace = "位置取りはまだ集計できていません" if pd.isna(x["day_front"]) else "前に行った馬が上位に多い" if x["day_front"] <= -0.10 else "後ろから来た馬が上位に多い" if x["day_front"] >= -0.02 else "脚質の偏りはふつう"
+        pace = ("上がりのタイムはまだ集計できていません" if pd.isna(x["day_closer"])
+                else "上がりの速い馬が上位に多い（差しが届く）" if x["day_closer"] >= 0.10
+                else "上がりが速くなくても残っている（前が止まらない）" if x["day_closer"] <= 0.02 else "差し・前残りの偏りなし")
         out.append(f"- 当日の馬場の傾向（同じコースの前の {int(x['day_n'])} レース）: {draw}、{pace}")
     elif "day_n" in rows.columns:
         out.append("- 当日の馬場の傾向: まだ前のレースの結果がないため、この観点は使っていません。")

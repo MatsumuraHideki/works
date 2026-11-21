@@ -59,16 +59,16 @@ def test_settlement_scores_only_pre_race_predictions(tmp_path, monkeypatch):
     assert settle.settle_all(log=lambda *a: None) == []
 
 
-def test_day_bias_of_result_uses_draw_and_first_call():
-    """Race-day track bias: mean draw and early position of the first three, scratches left out."""
+def test_day_bias_of_result_uses_draw_and_last3f_rank():
+    """Race-day track bias: mean draw and last-3F rank of the first three, scratches left out."""
     from keiba import netkeiba as nk
-    order = [{"finish": "1", "number": 1.0, "passing": "1-1"}, {"finish": "2", "number": 5.0, "passing": "3-2"},
-             {"finish": "3", "number": 3.0, "passing": "5-5"}, {"finish": "4", "number": 2.0, "passing": "2-3"},
-             {"finish": "5", "number": 4.0, "passing": "4-4"}, {"finish": "取消", "number": 6.0, "passing": ""}]
+    order = [{"finish": "1", "number": 1.0, "last3f": 34.0}, {"finish": "2", "number": 5.0, "last3f": 35.0},
+             {"finish": "3", "number": 3.0, "last3f": 36.0}, {"finish": "4", "number": 2.0, "last3f": 34.5},
+             {"finish": "5", "number": 4.0, "last3f": 37.0}, {"finish": "取消", "number": 6.0, "last3f": None}]
     b = nk.day_bias_of_result({"order": order})
     assert abs(b["inner"] - (0 + 4 + 2) / 3 / 4) < 1e-9          # five starters: (number - 1) / 4
-    assert abs(b["front"] - (0 + 2 + 4) / 3 / 4) < 1e-9
+    assert abs(b["closer"] - (0 + 2 + 3) / 3 / 4) < 1e-9         # last-3F ranks 1, 3, 4 of 5
     assert nk.day_bias_of_result({"order": order[:3]}) is None   # too few starters to mean anything
-    bare = [{**o, "passing": ""} for o in order]                   # corner calls not posted yet
+    bare = [{**o, "last3f": None} for o in order]                 # times not posted yet
     b = nk.day_bias_of_result({"order": bare})
-    assert b["front"] is None and abs(b["inner"] - 0.5) < 1e-9
+    assert b["closer"] is None and abs(b["inner"] - 0.5) < 1e-9

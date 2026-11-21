@@ -545,20 +545,22 @@ def parse_horse_runs(html: str, horse_id: str) -> list[dict[str, Any]] | None:
     return out
 
 
-def day_bias_of_result(res: dict[str, Any]) -> dict[str, float] | None:
-    """Where the first three of a finished race were drawn and how far forward they raced
-    early (both 0..1), from a parsed race-day result page. None if it cannot be worked out;
-    ``front`` alone is None when the page has no corner calls yet."""
+def day_bias_of_result(res: dict[str, Any]) -> dict[str, float | None] | None:
+    """Where the first three of a finished race were drawn (0 = inside) and how their last-3F
+    times ranked in the race (0 = fastest), from a parsed race-day result page. None if it
+    cannot be worked out; ``closer`` alone is None when no times are posted."""
     ran = [o for o in res.get("order", []) if not re.search("取|除", str(o.get("finish")))]
     n = len(ran)
     top = [o for o in ran if str(o.get("finish")).isdigit() and int(o["finish"]) <= 3 and o.get("number")]
     if n < 4 or not top:
         return None
     inner = [(o["number"] - 1) / (n - 1) for o in top]
-    front = []
-    for o in top:
-        first = re.match(r"\s*(\d+)", str(o.get("passing") or ""))
-        if first:
-            front.append(min(1.0, max(0.0, (int(first.group(1)) - 1) / (n - 1))))
-    # the corner calls can be missing right after a race: the draw side is still worth having
-    return {"inner": sum(inner) / len(inner), "front": sum(front) / len(front) if front else None}
+    times = sorted(o["last3f"] for o in ran if o.get("last3f"))
+    closer = None
+    if len(times) >= 4 and all(o.get("last3f") for o in top):
+        def rank(t: float) -> float:          # average rank, like pandas rank(method="average")
+            lo = sum(1 for x in times if x < t)
+            eq = sum(1 for x in times if x == t)
+            return lo + (eq + 1) / 2.0
+        closer = sum((rank(o["last3f"]) - 1) / (len(times) - 1) for o in top) / len(top)
+    return {"inner": sum(inner) / len(inner), "closer": closer}
