@@ -1,0 +1,141 @@
+{
+ "race": {
+  "race_id": "202605050611",
+  "name": "東スポ杯2歳S",
+  "grade": "G2",
+  "race_no": 11,
+  "place": "東京",
+  "date": "2026-11-23",
+  "start_time": "15:30",
+  "surface": "芝",
+  "distance": 1800,
+  "direction": "左",
+  "inout": null,
+  "weather": null,
+  "going": null,
+  "kai": 5,
+  "day": 6,
+  "cond": "サラ系2歳 オープン (国際)(指) 馬齢",
+  "class": "OP",
+  "course_raw": "15:30発走 / 芝1800m 左 C",
+  "n_runners": 12
+ },
+ "odds_kind": "yoso",
+ "odds_time": "2026-11-20 20:46:26",
+ "fetched_at": "2026-11-20T20:49:37+09:00",
+ "runners": [
+  {
+   "number": null,
+   "horse": "ショウナンガレオン",
+   "horse_id": "2024106438",
+   "p": 0.3376,
+   "p_fundamental": 0.2169,
+   "win_odds": 2.2,
+   "ev": 0.743
+  },
+  {
+   "number": null,
+   "horse": "ダノンダックス",
+   "horse_id": "2024106662",
+   "p": 0.1309,
+   "p_fundamental": 0.1811,
+   "win_odds": 5.5,
+   "ev": 0.72
+  },
+  {
+   "number": null,
+   "horse": "ジョドレルバンク",
+   "horse_id": "2024106161",
+   "p": 0.11,
+   "p_fundamental": 0.1396,
+   "win_odds": 7.2,
+   "ev": 0.792
+  },
+  {
+   "number": null,
+   "horse": "キングリア",
+   "horse_id": "2024106684",
+   "p": 0.0923,
+   "p_fundamental": 0.1218,
+   "win_odds": 7.9,
+   "ev": 0.729
+  },
+  {
+   "number": null,
+   "horse": "コラリオン",
+   "horse_id": "2024106471",
+   "p": 0.0771,
+   "p_fundamental": 0.093,
+   "win_odds": 10.3,
+   "ev": 0.794
+  },
+  {
+   "number": null,
+   "horse": "オンユアマークス",
+   "horse_id": "2024104698",
+   "p": 0.0674,
+   "p_fundamental": 0.0427,
+   "win_odds": 10.4,
+   "ev": 0.7
+  },
+  {
+   "number": null,
+   "horse": "シルヴァノーブル",
+   "horse_id": "2024101851",
+   "p": 0.06,
+   "p_fundamental": 0.0299,
+   "win_odds": 12.4,
+   "ev": 0.744
+  },
+  {
+   "number": null,
+   "horse": "ビンドゥング",
+   "horse_id": "2024107180",
+   "p": 0.0523,
+   "p_fundamental": 0.1024,
+   "win_odds": 14.5,
+   "ev": 0.759
+  },
+  {
+   "number": null,
+   "horse": "スローブギ",
+   "horse_id": "2024105964",
+   "p": 0.0377,
+   "p_fundamental": 0.0377,
+   "win_odds": 19.6,
+   "ev": 0.738
+  },
+  {
+   "number": null,
+   "horse": "ティフォシ",
+   "horse_id": "2024103816",
+   "p": 0.0257,
+   "p_fundamental": 0.0163,
+   "win_odds": 29.5,
+   "ev": 0.759
+  },
+  {
+   "number": null,
+   "horse": "ニースケンス",
+   "horse_id": "2024107189",
+   "p": 0.0065,
+   "p_fundamental": 0.0093,
+   "win_odds": 87.7,
+   "ev": 0.573
+  },
+  {
+   "number": null,
+   "horse": "テンカタイヘイ",
+   "horse_id": "2024106851",
+   "p": 0.0025,
+   "p_fundamental": 0.0094,
+   "win_odds": 170.6,
+   "ev": 0.43
+  }
+ ],
+ "validated_strategies": [],
+ "budget": 5000,
+ "win_slip": [],
+ "slip": [],
+ "bets": []
+}

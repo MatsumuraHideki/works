@@ -1,0 +1,11 @@
+{
+ "note": "Chunks run one after another. Results / odds / pedigree chunks each resume where the previous one stopped, so repeating a chunk simply continues further back in time.",
+ "chunks": [
+  {
+   "cmd": "horses",
+   "from": "2026-11",
+   "to": "2010-01",
+   "max_minutes": 4
+  }
+ ]
+}
