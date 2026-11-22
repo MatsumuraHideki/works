@@ -160,10 +160,24 @@
   "race_id": "202608050611",
   "race": "マイルCS",
   "grade": "G1",
-  "odds_time": "2026-11-20 20:35:34",
-  "tickets": 19,
+  "odds_time": "2026-11-22 15:24:06",
+  "tickets": 13,
   "stake": 5000,
-  "settled": false
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "1 エルデナリ",
+   "2 エンブロイダリー",
+   "14 スターアニス"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "14 スターアニス"
  },
  {
   "date": "2026-11-23",
