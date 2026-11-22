@@ -97,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
             got = snapshot(args.interval, rid, post)
             rows += got
             print(f"{rid} post {post:%H:%M}: {len(got)} runners", flush=True)
-            save(push=time.monotonic() - last_push > 3600)
+            save(push=time.monotonic() - last_push > 1200)     # at most 20 minutes of snapshots at risk
     except Blocked as exc:
         print(f"BLOCKED: {exc}", flush=True)
         save(push=True)
