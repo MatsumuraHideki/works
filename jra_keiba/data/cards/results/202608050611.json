@@ -1,0 +1,249 @@
+{
+ "race_id": "202608050611",
+ "payouts": [
+  {
+   "bet_type": "単勝",
+   "combo": [
+    1
+   ],
+   "payout": 740.0
+  },
+  {
+   "bet_type": "複勝",
+   "combo": [
+    1
+   ],
+   "payout": 280.0
+  },
+  {
+   "bet_type": "複勝",
+   "combo": [
+    2
+   ],
+   "payout": 190.0
+  },
+  {
+   "bet_type": "複勝",
+   "combo": [
+    14
+   ],
+   "payout": 170.0
+  },
+  {
+   "bet_type": "枠連",
+   "combo": [
+    1,
+    1
+   ],
+   "payout": 2490.0
+  },
+  {
+   "bet_type": "馬連",
+   "combo": [
+    1,
+    2
+   ],
+   "payout": 2690.0
+  },
+  {
+   "bet_type": "ワイド",
+   "combo": [
+    1,
+    2
+   ],
+   "payout": 1340.0
+  },
+  {
+   "bet_type": "ワイド",
+   "combo": [
+    1,
+    14
+   ],
+   "payout": 890.0
+  },
+  {
+   "bet_type": "ワイド",
+   "combo": [
+    2,
+    14
+   ],
+   "payout": 640.0
+  },
+  {
+   "bet_type": "馬単",
+   "combo": [
+    1,
+    2
+   ],
+   "payout": 4760.0
+  },
+  {
+   "bet_type": "三連複",
+   "combo": [
+    1,
+    2,
+    14
+   ],
+   "payout": 4730.0
+  },
+  {
+   "bet_type": "三連単",
+   "combo": [
+    1,
+    2,
+    14
+   ],
+   "payout": 24610.0
+  }
+ ],
+ "order": [
+  {
+   "finish": "1",
+   "number": 1.0,
+   "horse_name": "エルデナリ",
+   "passing": "",
+   "last3f": 33.2
+  },
+  {
+   "finish": "2",
+   "number": 2.0,
+   "horse_name": "エンブロイダリー",
+   "passing": "",
+   "last3f": 33.6
+  },
+  {
+   "finish": "3",
+   "number": 14.0,
+   "horse_name": "スターアニス",
+   "passing": "",
+   "last3f": 33.5
+  },
+  {
+   "finish": "4",
+   "number": 18.0,
+   "horse_name": "オフトレイル",
+   "passing": "",
+   "last3f": 32.8
+  },
+  {
+   "finish": "5",
+   "number": 16.0,
+   "horse_name": "スズハローム",
+   "passing": "",
+   "last3f": 32.6
+  },
+  {
+   "finish": "6",
+   "number": 11.0,
+   "horse_name": "ガイアフォース",
+   "passing": "",
+   "last3f": 33.5
+  },
+  {
+   "finish": "7",
+   "number": 8.0,
+   "horse_name": "ロデオドライブ",
+   "passing": "",
+   "last3f": 33.9
+  },
+  {
+   "finish": "8",
+   "number": 10.0,
+   "horse_name": "ウォーターリヒト",
+   "passing": "",
+   "last3f": 33.5
+  },
+  {
+   "finish": "9",
+   "number": 9.0,
+   "horse_name": "ジューンテイク",
+   "passing": "",
+   "last3f": 33.6
+  },
+  {
+   "finish": "10",
+   "number": 13.0,
+   "horse_name": "レザベーション",
+   "passing": "",
+   "last3f": 33.6
+  },
+  {
+   "finish": "11",
+   "number": 3.0,
+   "horse_name": "ドラゴンブースト",
+   "passing": "",
+   "last3f": 34.3
+  },
+  {
+   "finish": "12",
+   "number": 15.0,
+   "horse_name": "エコロブルーム",
+   "passing": "",
+   "last3f": 33.8
+  },
+  {
+   "finish": "13",
+   "number": 7.0,
+   "horse_name": "ココナッツブラウン",
+   "passing": "",
+   "last3f": 33.6
+  },
+  {
+   "finish": "14",
+   "number": 6.0,
+   "horse_name": "ピコローズ",
+   "passing": "",
+   "last3f": 34.1
+  },
+  {
+   "finish": "15",
+   "number": 12.0,
+   "horse_name": "ワールズエンド",
+   "passing": "",
+   "last3f": 34.4
+  },
+  {
+   "finish": "16",
+   "number": 5.0,
+   "horse_name": "アドマイヤズーム",
+   "passing": "",
+   "last3f": 34.2
+  },
+  {
+   "finish": "17",
+   "number": 17.0,
+   "horse_name": "アンパドゥ",
+   "passing": "",
+   "last3f": 34.1
+  },
+  {
+   "finish": "18",
+   "number": 4.0,
+   "horse_name": "シックスペンス",
+   "passing": "",
+   "last3f": 35.3
+  }
+ ],
+ "surface": "芝",
+ "distance": 1600,
+ "final_win_odds": {
+  "1": 7.4,
+  "2": 5.7,
+  "3": 115.0,
+  "4": 36.5,
+  "5": 8.3,
+  "6": 120.6,
+  "7": 41.4,
+  "8": 5.6,
+  "9": 74.1,
+  "10": 86.5,
+  "11": 10.4,
+  "12": 11.4,
+  "13": 83.3,
+  "14": 4.2,
+  "15": 80.5,
+  "16": 40.1,
+  "17": 18.7,
+  "18": 28.1
+ }
+}
