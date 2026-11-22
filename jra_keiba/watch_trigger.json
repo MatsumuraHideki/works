@@ -1,6 +1,6 @@
 {
  "date": "",
  "lead": 15,
- "requested_at": "2026-11-21T00:15:59Z",
+ "requested_at": "2026-11-22T00:15:33Z",
  "note": "Pushing a change to this file starts jra-odds-watch: the win odds of every race of the day (empty date = today in Japan) are recorded about `lead` minutes before post time."
 }
