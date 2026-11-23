@@ -12,130 +12,696 @@
   "direction": "左",
   "inout": null,
   "weather": null,
-  "going": null,
+  "going": "良",
   "kai": 5,
   "day": 6,
   "cond": "サラ系2歳 オープン (国際)(指) 馬齢",
   "class": "OP",
-  "course_raw": "15:30発走 / 芝1800m 左 C",
+  "course_raw": "15:30発走 / 芝1800m 左 C\n\n/ 予報 良 / 直線:弱横風",
   "n_runners": 12
  },
- "odds_kind": "yoso",
- "odds_time": "2026-11-20 20:46:26",
- "fetched_at": "2026-11-20T20:49:37+09:00",
+ "odds_kind": "real",
+ "odds_time": "2026-11-23 15:14:07",
+ "fetched_at": "2026-11-23T15:14:41+09:00",
  "runners": [
   {
-   "number": null,
+   "number": 10,
    "horse": "ショウナンガレオン",
    "horse_id": "2024106438",
-   "p": 0.3376,
-   "p_fundamental": 0.2169,
+   "p": 0.3552,
+   "p_fundamental": 0.2087,
    "win_odds": 2.2,
-   "ev": 0.743
+   "ev": 0.781
   },
   {
-   "number": null,
+   "number": 1,
    "horse": "ダノンダックス",
    "horse_id": "2024106662",
-   "p": 0.1309,
-   "p_fundamental": 0.1811,
-   "win_odds": 5.5,
-   "ev": 0.72
+   "p": 0.1675,
+   "p_fundamental": 0.179,
+   "win_odds": 4.7,
+   "ev": 0.787
   },
   {
-   "number": null,
+   "number": 5,
    "horse": "ジョドレルバンク",
    "horse_id": "2024106161",
-   "p": 0.11,
-   "p_fundamental": 0.1396,
+   "p": 0.1221,
+   "p_fundamental": 0.1314,
    "win_odds": 7.2,
-   "ev": 0.792
+   "ev": 0.879
   },
   {
-   "number": null,
-   "horse": "キングリア",
-   "horse_id": "2024106684",
-   "p": 0.0923,
-   "p_fundamental": 0.1218,
-   "win_odds": 7.9,
-   "ev": 0.729
-  },
-  {
-   "number": null,
+   "number": 8,
    "horse": "コラリオン",
    "horse_id": "2024106471",
-   "p": 0.0771,
-   "p_fundamental": 0.093,
-   "win_odds": 10.3,
-   "ev": 0.794
+   "p": 0.1094,
+   "p_fundamental": 0.0946,
+   "win_odds": 7.4,
+   "ev": 0.809
   },
   {
-   "number": null,
+   "number": 4,
+   "horse": "キングリア",
+   "horse_id": "2024106684",
+   "p": 0.1,
+   "p_fundamental": 0.1306,
+   "win_odds": 7.9,
+   "ev": 0.79
+  },
+  {
+   "number": 12,
    "horse": "オンユアマークス",
    "horse_id": "2024104698",
-   "p": 0.0674,
-   "p_fundamental": 0.0427,
-   "win_odds": 10.4,
-   "ev": 0.7
+   "p": 0.054,
+   "p_fundamental": 0.0384,
+   "win_odds": 14.4,
+   "ev": 0.777
   },
   {
-   "number": null,
-   "horse": "シルヴァノーブル",
-   "horse_id": "2024101851",
-   "p": 0.06,
-   "p_fundamental": 0.0299,
-   "win_odds": 12.4,
+   "number": 11,
+   "horse": "ビンドゥング",
+   "horse_id": "2024107180",
+   "p": 0.0313,
+   "p_fundamental": 0.0997,
+   "win_odds": 23.8,
    "ev": 0.744
   },
   {
-   "number": null,
-   "horse": "ビンドゥング",
-   "horse_id": "2024107180",
-   "p": 0.0523,
-   "p_fundamental": 0.1024,
-   "win_odds": 14.5,
-   "ev": 0.759
+   "number": 2,
+   "horse": "シルヴァノーブル",
+   "horse_id": "2024101851",
+   "p": 0.0246,
+   "p_fundamental": 0.035,
+   "win_odds": 31.1,
+   "ev": 0.766
   },
   {
-   "number": null,
+   "number": 7,
    "horse": "スローブギ",
    "horse_id": "2024105964",
-   "p": 0.0377,
-   "p_fundamental": 0.0377,
-   "win_odds": 19.6,
-   "ev": 0.738
+   "p": 0.0123,
+   "p_fundamental": 0.042,
+   "win_odds": 60.4,
+   "ev": 0.743
   },
   {
-   "number": null,
+   "number": 6,
    "horse": "ティフォシ",
    "horse_id": "2024103816",
-   "p": 0.0257,
-   "p_fundamental": 0.0163,
-   "win_odds": 29.5,
-   "ev": 0.759
+   "p": 0.0103,
+   "p_fundamental": 0.02,
+   "win_odds": 74.5,
+   "ev": 0.768
   },
   {
-   "number": null,
+   "number": 9,
    "horse": "ニースケンス",
    "horse_id": "2024107189",
-   "p": 0.0065,
-   "p_fundamental": 0.0093,
-   "win_odds": 87.7,
-   "ev": 0.573
+   "p": 0.0101,
+   "p_fundamental": 0.01,
+   "win_odds": 62.9,
+   "ev": 0.637
   },
   {
-   "number": null,
+   "number": 3,
    "horse": "テンカタイヘイ",
    "horse_id": "2024106851",
-   "p": 0.0025,
-   "p_fundamental": 0.0094,
-   "win_odds": 170.6,
-   "ev": 0.43
+   "p": 0.0033,
+   "p_fundamental": 0.0104,
+   "win_odds": 141.0,
+   "ev": 0.471
   }
  ],
  "validated_strategies": [],
  "budget": 5000,
  "win_slip": [],
- "slip": [],
- "bets": []
+ "slip": [
+  {
+   "type": "馬連",
+   "combo": [
+    5,
+    10
+   ],
+   "stake": 100,
+   "odds": 10.0,
+   "prob": 0.10066
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    4,
+    10
+   ],
+   "stake": 500,
+   "odds": 12.5,
+   "prob": 0.08494
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    10,
+    12
+   ],
+   "stake": 600,
+   "odds": 24.7,
+   "prob": 0.04705
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    5,
+    10
+   ],
+   "stake": 200,
+   "odds": 24.7,
+   "prob": 0.04235
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    10,
+    11
+   ],
+   "stake": 700,
+   "odds": 40.0,
+   "prob": 0.03238
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    2,
+    10
+   ],
+   "stake": 200,
+   "odds": 45.6,
+   "prob": 0.0241
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    5,
+    10,
+    12
+   ],
+   "stake": 300,
+   "odds": 47.9,
+   "prob": 0.02374
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    8,
+    10,
+    12
+   ],
+   "stake": 100,
+   "odds": 47.2,
+   "prob": 0.02222
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    10,
+    12
+   ],
+   "stake": 200,
+   "odds": 54.0,
+   "prob": 0.02013
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    5,
+    10,
+    11
+   ],
+   "stake": 300,
+   "odds": 69.3,
+   "prob": 0.01767
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    8,
+    10,
+    11
+   ],
+   "stake": 200,
+   "odds": 68.0,
+   "prob": 0.0165
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    10,
+    11
+   ],
+   "stake": 400,
+   "odds": 91.4,
+   "prob": 0.01494
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    7,
+    10
+   ],
+   "stake": 400,
+   "odds": 101.1,
+   "prob": 0.01416
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    1,
+    7,
+    10
+   ],
+   "stake": 100,
+   "odds": 98.5,
+   "prob": 0.01165
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    6,
+    10
+   ],
+   "stake": 400,
+   "odds": 138.0,
+   "prob": 0.01148
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    2,
+    4,
+    10
+   ],
+   "stake": 100,
+   "odds": 105.5,
+   "prob": 0.01096
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    5,
+    7,
+    10
+   ],
+   "stake": 200,
+   "odds": 154.7,
+   "prob": 0.00828
+  }
+ ],
+ "bets": [
+  {
+   "type": "馬連",
+   "combo": [
+    6,
+    10
+   ],
+   "prob": 0.01148,
+   "odds": 138.0,
+   "ev": 1.585,
+   "stake": 100
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    7,
+    10
+   ],
+   "prob": 0.01416,
+   "odds": 101.1,
+   "ev": 1.432,
+   "stake": 100
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    10,
+    11
+   ],
+   "prob": 0.03238,
+   "odds": 40.0,
+   "ev": 1.295,
+   "stake": 100
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    10,
+    12
+   ],
+   "prob": 0.04705,
+   "odds": 24.7,
+   "ev": 1.162,
+   "stake": 100
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    2,
+    10
+   ],
+   "prob": 0.0241,
+   "odds": 45.6,
+   "ev": 1.099,
+   "stake": 100
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    4,
+    10
+   ],
+   "prob": 0.08494,
+   "odds": 12.5,
+   "ev": 1.062,
+   "stake": 100
+  },
+  {
+   "type": "馬連",
+   "combo": [
+    5,
+    10
+   ],
+   "prob": 0.10066,
+   "odds": 10.0,
+   "ev": 1.007,
+   "stake": 100
+  },
+  {
+   "type": "ワイド",
+   "combo": [
+    7,
+    10
+   ],
+   "prob": 0.04569,
+   "odds": 28.0,
+   "ev": 1.279,
+   "stake": 100
+  },
+  {
+   "type": "ワイド",
+   "combo": [
+    10,
+    11
+   ],
+   "prob": 0.09466,
+   "odds": 12.2,
+   "ev": 1.155,
+   "stake": 100
+  },
+  {
+   "type": "ワイド",
+   "combo": [
+    6,
+    10
+   ],
+   "prob": 0.0371,
+   "odds": 30.1,
+   "ev": 1.117,
+   "stake": 100
+  },
+  {
+   "type": "ワイド",
+   "combo": [
+    10,
+    12
+   ],
+   "prob": 0.12469,
+   "odds": 8.3,
+   "ev": 1.035,
+   "stake": 100
+  },
+  {
+   "type": "ワイド",
+   "combo": [
+    5,
+    12
+   ],
+   "prob": 0.05654,
+   "odds": 18.2,
+   "ev": 1.029,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    7,
+    8,
+    10
+   ],
+   "prob": 0.00771,
+   "odds": 190.2,
+   "ev": 1.467,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    7,
+    10
+   ],
+   "prob": 0.00698,
+   "odds": 204.1,
+   "ev": 1.424,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    6,
+    10
+   ],
+   "prob": 0.00564,
+   "odds": 246.1,
+   "ev": 1.387,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    10,
+    11
+   ],
+   "prob": 0.01494,
+   "odds": 91.4,
+   "ev": 1.366,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    5,
+    7,
+    10
+   ],
+   "prob": 0.00828,
+   "odds": 154.7,
+   "ev": 1.28,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    5,
+    9,
+    10
+   ],
+   "prob": 0.00621,
+   "odds": 197.4,
+   "ev": 1.226,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    5,
+    10,
+    11
+   ],
+   "prob": 0.01767,
+   "odds": 69.3,
+   "ev": 1.225,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    5,
+    6,
+    10
+   ],
+   "prob": 0.00668,
+   "odds": 179.8,
+   "ev": 1.202,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    6,
+    8,
+    10
+   ],
+   "prob": 0.00623,
+   "odds": 191.0,
+   "ev": 1.19,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    9,
+    10
+   ],
+   "prob": 0.00524,
+   "odds": 220.8,
+   "ev": 1.157,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    2,
+    4,
+    10
+   ],
+   "prob": 0.01096,
+   "odds": 105.5,
+   "ev": 1.156,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    1,
+    7,
+    10
+   ],
+   "prob": 0.01165,
+   "odds": 98.5,
+   "ev": 1.148,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    5,
+    10,
+    12
+   ],
+   "prob": 0.02374,
+   "odds": 47.9,
+   "ev": 1.137,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    8,
+    10,
+    11
+   ],
+   "prob": 0.0165,
+   "odds": 68.0,
+   "ev": 1.122,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    10,
+    12
+   ],
+   "prob": 0.02013,
+   "odds": 54.0,
+   "ev": 1.087,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    8,
+    10,
+    12
+   ],
+   "prob": 0.02222,
+   "odds": 47.2,
+   "ev": 1.049,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    5,
+    10
+   ],
+   "prob": 0.04235,
+   "odds": 24.7,
+   "ev": 1.046,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    2,
+    8,
+    10
+   ],
+   "prob": 0.0121,
+   "odds": 85.5,
+   "ev": 1.035,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    8,
+    9,
+    10
+   ],
+   "prob": 0.00579,
+   "odds": 177.3,
+   "ev": 1.027,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    10,
+    11,
+    12
+   ],
+   "prob": 0.00826,
+   "odds": 122.7,
+   "ev": 1.013,
+   "stake": 100
+  },
+  {
+   "type": "三連複",
+   "combo": [
+    4,
+    8,
+    10
+   ],
+   "prob": 0.0397,
+   "odds": 25.4,
+   "ev": 1.008,
+   "stake": 100
+  }
+ ]
 }
