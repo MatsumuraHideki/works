@@ -144,3 +144,46 @@ def test_day_races_without_times_are_accepted():
     row = first.iloc[0]
     assert row["day_n"] == 1 and abs(row["day_inner"] - ((0.2 + 2 * 0.5) / 3 - 0.5)) < 1e-9
     assert np.isnan(row["day_closer"])
+
+
+def _ext(races, results, seed=5):
+    """Toy runs outside JRA: a few per horse, on days between the meetings."""
+    rng = np.random.default_rng(seed)
+    days = sorted(races["date"].unique())
+    rows = []
+    for h in results["horse_id"].unique()[::3]:
+        for d in rng.choice(len(days) - 1, size=3, replace=False):
+            rows.append(dict(horse_id=h, date=(pd.Timestamp(days[d]) + pd.Timedelta(days=3)).strftime("%Y-%m-%d"),
+                             venue=rng.choice(["大井", "園田", "シャティン"]), n_runners=12.0,
+                             finish=float(rng.integers(1, 13)), popularity=float(rng.integers(1, 13))))
+    return pd.DataFrame(rows)
+
+
+def test_outside_runs_are_read_only_before_the_race():
+    """Runs outside JRA on or after a race date must not move that race's features, and an
+    earlier one must show up in the counts and in the true days since the last run."""
+    races, results, ped = _toy()
+    ext = _ext(races, results)
+    frame = features.build_frame(races, results, ped)
+    base = features.add_features(frame.copy(), None, ext)
+    cols = features.FEATURE_GROUPS["form"]
+    cutoff = pd.Timestamp(races["date"].sort_values().unique()[-6])
+    changed = ext.copy()
+    late = pd.to_datetime(changed["date"]) >= cutoff
+    changed.loc[late, ["finish", "popularity"]] = 1.0
+    changed = pd.concat([changed, changed[late].assign(date=cutoff.strftime("%Y-%m-%d"), venue="香港")])
+    alt = features.add_features(frame.copy(), None, changed)
+    a = base[base["date"] <= cutoff].set_index(["race_id", "horse_id"])[cols].sort_index()
+    b = alt[alt["date"] <= cutoff].set_index(["race_id", "horse_id"])[cols].sort_index()
+    diff = [c for c in cols if not np.allclose(a[c].astype(float), b[c].astype(float), equal_nan=True, atol=1e-9)]
+    assert diff == [], f"features reading later outside runs: {diff}"
+    # one horse checked by hand
+    h = ext["horse_id"].iloc[0]
+    row = base[base["horse_id"] == h].sort_values("date").iloc[-1]
+    before = ext[(ext["horse_id"] == h) & (pd.to_datetime(ext["date"]) < row["date"])]
+    assert row["x_n"] == len(before)
+    if len(before):
+        gap = (row["date"] - pd.to_datetime(before["date"]).max()).days
+        assert row["days_since_any"] <= gap
+    none = features.add_features(frame.copy(), None, None)
+    assert none["x_n"].isna().all()

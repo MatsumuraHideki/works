@@ -69,6 +69,37 @@ def fetch_card(f: Fetcher, race_id: str, listed: dict | None = None) -> dict | N
     return card
 
 
+HORSE_CACHE_DAYS = 3
+
+
+def horse_runs(f: Fetcher, card: dict) -> list[dict]:
+    """Runs outside JRA of the card's horses, read from each horse's result page so that a
+    recent local or overseas run is known on race day. One request per horse, cached for a
+    few days in data/cards/horses/ (the first fetch of a card takes about a minute)."""
+    cache = CARDS / "horses"
+    cache.mkdir(parents=True, exist_ok=True)
+    today = today_jst()
+    out = []
+    for r in card["runners"]:
+        hid = r.get("horse_id")
+        if not hid or r.get("cancelled"):
+            continue
+        p = cache / f"{hid}.json"
+        if p.exists():
+            saved = json.loads(p.read_text())
+            if (today - dt.date.fromisoformat(saved["fetched"])).days <= HORSE_CACHE_DAYS:
+                out += saved["runs"]
+                continue
+        runs = nk.parse_horse_runs(fetch_text(f, nk.url_horse_result(hid)), hid)
+        if runs is None:
+            continue
+        keep = [{k: g[k] for k in ("horse_id", "date", "venue", "n_runners", "finish", "popularity")}
+                for g in runs if not g["jra"]]
+        p.write_text(json.dumps({"fetched": today.isoformat(), "runs": keep}, ensure_ascii=False))
+        out += keep
+    return out
+
+
 def day_races(f: Fetcher, race_id: str, listed: list[dict], card: dict) -> list[dict]:
     """Track-bias summaries of the races already run today at this course (for the model's
     "today's track" features). One request per finished race, cached in data/cards/day/."""
@@ -150,6 +181,13 @@ def main(argv: list[str] | None = None) -> int:
                 except Exception as exc:
                     print(f"card {r['race_id']}: earlier races of the day not read ({exc})", flush=True)
                     card["day_races"] = []
+                try:        # recent runs outside JRA of the runners
+                    card["horse_runs"] = horse_runs(f, card)
+                except Blocked:
+                    raise
+                except Exception as exc:
+                    print(f"card {r['race_id']}: runs outside JRA not read ({exc})", flush=True)
+                    card["horse_runs"] = []
                 (CARDS / f"{r['race_id']}.json").write_text(json.dumps(card, ensure_ascii=False, indent=1))
                 n += 1
                 print(f"card {r['race_id']} {card['race']['date']} {card['race']['name']} "

@@ -88,6 +88,12 @@ def cards_to_frames(cards: list[dict]) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
     return races, runners, ped
 
 
+def horse_runs_frame(cards: list[dict]) -> pd.DataFrame | None:
+    """Runs outside JRA read with the cards (fresher than the weekly collection)."""
+    rows = [r for c in cards for r in c.get("horse_runs") or []]
+    return pd.DataFrame(rows) if rows else None
+
+
 def day_races_frame(cards: list[dict]) -> pd.DataFrame | None:
     """Earlier races of the day saved with the cards (for the "today's track" features)."""
     rows = {d["race_id"]: d for c in cards for d in c.get("day_races") or []}
@@ -480,7 +486,9 @@ def main(argv: list[str] | None = None) -> int:
     boosters = pipeline.boosters(art)
     races, runners, ped = cards_to_frames(cards)
     df = features.build_features(card_races=races, card_runners=runners, pedigree_extra=ped,
-                                 use_pedigree=bool(art.get("pedigree", False)), day_races=day_races_frame(cards))
+                                 use_pedigree=bool(art.get("pedigree", False)), day_races=day_races_frame(cards),
+                                 use_horse_runs=bool(art.get("horse_runs", False)),
+                                 horse_runs_extra=horse_runs_frame(cards))
     missing = [f for f in art["feats"] if f not in df.columns]
     if missing:
         # The stored model was trained on columns the code no longer builds. Retraining takes

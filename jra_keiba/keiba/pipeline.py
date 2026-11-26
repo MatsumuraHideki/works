@@ -105,6 +105,7 @@ def fit_all(raw: Path = features.RAW, oof_years: int | None = None, fold_months:
         "feats": feats, "groups": groups, "rounds": rounds,
         "s2_fund": s2_fund.coef, "s2_full": s2_full.coef, "lam2": lam2, "lam3": lam3,
         "pedigree": bool(df.attrs.get("pedigree", False)),
+        "horse_runs": bool(df.attrs.get("horse_runs", False)),
         "trained_through": str(hist["date"].max().date()), "n_races": int(hist["race_id"].nunique()),
         "years": [int(y) for y in years], "oos_years": [int(y) for y in test_years[1:]],
         "fold_months": fold_months, "data_from": str(hist["date"].min().date()),

@@ -23,6 +23,8 @@ from __future__ import annotations
 import warnings
 from pathlib import Path
 
+import json
+
 import numpy as np
 import pandas as pd
 
@@ -305,6 +307,86 @@ def dist_band(d: pd.Series) -> pd.Series:
     return pd.cut(d, [0, 1300, 1650, 2050, 2500, 9999], labels=False).astype(float)
 
 
+# ------------------------------------------------------------------ runs outside JRA
+
+NAR_TRACKS = {"門別", "盛岡", "水沢", "浦和", "船橋", "大井", "川崎", "金沢", "笠松", "名古屋", "園田", "姫路", "高知",
+              "佐賀", "帯広", "旭川", "北見", "岩見沢", "上山", "三条", "足利", "宇都宮", "高崎", "益田", "福山", "荒尾",
+              "中津"}
+HORSE_RUNS_MIN_COVERAGE = 0.995
+
+
+def load_horse_runs(raw: Path = RAW) -> pd.DataFrame:
+    """Local-track and overseas runs (keiba.scrape horses). Empty frame if not collected."""
+    p = raw / "horse_runs.csv.gz"
+    cols = ["horse_id", "date", "venue", "n_runners", "finish", "popularity"]
+    if not p.exists():
+        return pd.DataFrame(columns=cols)
+    return pd.read_csv(p, dtype={"horse_id": str}, usecols=cols)
+
+
+def horse_runs_usable(results: pd.DataFrame, raw: Path = RAW) -> tuple[bool, float]:
+    """Outside runs may be used only when (almost) every horse has been read: horses are read
+    newest first, so with partial coverage "has no outside runs" would partly mean "raced
+    long ago" - the same trap as partial pedigree."""
+    p = raw / "state.json"
+    horses = results["horse_id"].dropna().unique()
+    if not p.exists() or not len(horses):
+        return False, 0.0
+    done = set(json.loads(p.read_text()).get("horse_runs_done", []))
+    cov = float(pd.Series(horses).isin(done).mean())
+    return cov >= HORSE_RUNS_MIN_COVERAGE, cov
+
+
+def add_outside_runs(df: pd.DataFrame, ext: pd.DataFrame | None) -> pd.DataFrame:
+    """Features from a horse's runs outside JRA meetings *before* the race date: how many,
+    how they went, whether the last one was abroad, and the true time since its last run.
+    Without data every column is NaN."""
+    cols = ["x_n", "x_n_since", "x_top3", "x_win", "x_over_n", "x_recent", "x_last_pos", "x_last_pop",
+            "x_last_over", "days_since_any"]
+    if ext is None or not len(ext):
+        for c in cols:
+            df[c] = np.nan
+        return df
+    e = ext.dropna(subset=["horse_id", "date"]).copy()
+    e["date"] = pd.to_datetime(e["date"]).astype("datetime64[ns]")
+    e = e[e["horse_id"].isin(set(df["horse_id"]))].sort_values(["horse_id", "date"], kind="stable")
+    fin, n = pd.to_numeric(e["finish"], errors="coerce"), pd.to_numeric(e["n_runners"], errors="coerce")
+    e["_pos"] = (fin - 1) / (n - 1).clip(lower=1)
+    e["_top3"] = (fin <= 3).astype(float)
+    e["_win"] = (fin == 1).astype(float)
+    venue = e["venue"].astype(str)
+    e["_over"] = (~venue.isin(NAR_TRACKS) & ~venue.str.contains("(地)", regex=False)).astype(float)
+    g = e.groupby("horse_id", sort=False)
+    e["_c_n"] = g.cumcount() + 1.0
+    for c in ("_top3", "_win", "_over"):
+        e[f"_c{c}"] = g[c].cumsum()
+    e["_x_date"] = e["date"]
+    e["_pop"] = pd.to_numeric(e["popularity"], errors="coerce")
+    right = e[["horse_id", "date", "_x_date", "_c_n", "_c_top3", "_c_win", "_c_over", "_pos", "_pop", "_over"]] \
+        .sort_values("date", kind="stable")
+    left = df[["horse_id", "date"]].copy()
+    left["date"] = left["date"].astype("datetime64[ns]")
+    left["_row"] = np.arange(len(left))
+    m = pd.merge_asof(left.sort_values("date", kind="stable"), right, on="date", by="horse_id",
+                      allow_exact_matches=False, direction="backward").sort_values("_row")
+    m.index = df.index
+    df["x_n"] = m["_c_n"].fillna(0.0)
+    df["x_top3"] = _rate(m["_c_top3"].fillna(0.0), df["x_n"], 0.30, 3.0)
+    df["x_win"] = _rate(m["_c_win"].fillna(0.0), df["x_n"], 0.10, 3.0)
+    df["x_over_n"] = m["_c_over"].fillna(0.0)
+    since_x = (left["date"].set_axis(df.index) - m["_x_date"]).dt.days.astype(float)
+    # the last outside run counts as "recent" when it came after the horse's last JRA run
+    recent = (since_x < df["days_since"]) | (df["days_since"].isna() & (df["x_n"] > 0))
+    df["x_recent"] = recent.astype(float)
+    df["x_last_pos"] = m["_pos"].where(recent)
+    df["x_last_pop"] = m["_pop"].where(recent)
+    df["x_last_over"] = m["_over"].where(recent)
+    df["days_since_any"] = np.fmin(df["days_since"], since_x)
+    prev = df.groupby("horse_id", sort=False)["x_n"].shift(1).fillna(0.0)
+    df["x_n_since"] = (df["x_n"] - prev).clip(lower=0.0)
+    return df
+
+
 # ------------------------------------------------------------------ main feature builder
 
 FEATURE_GROUPS: dict[str, list[str]] = {}
@@ -415,7 +497,8 @@ def day_bias(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.Data
     return out[["day_n", "day_inner", "day_closer"]]
 
 
-def add_features(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.DataFrame:
+def add_features(df: pd.DataFrame, day_races: pd.DataFrame | None = None,
+                 horse_runs: pd.DataFrame | None = None) -> pd.DataFrame:
     df = add_speed_figures(df)
     df = add_pace(df)
     df = add_elo(df)
@@ -677,6 +760,11 @@ def add_features(df: pd.DataFrame, day_races: pd.DataFrame | None = None) -> pd.
     _reg("race", ["pace_dev_l1", "pace_dev_mean3", "apt_fast_n", "apt_fast_top3", "apt_slow_n", "apt_slow_top3",
                   "pace_fit", "weather_code"])
 
+    # ---------- runs outside JRA (local tracks, abroad) before this race
+    df = add_outside_runs(df, horse_runs)
+    _reg("form", ["x_n", "x_n_since", "x_top3", "x_win", "x_over_n", "x_recent", "x_last_pos", "x_last_pop",
+                  "x_last_over", "days_since_any"])
+
     # ---------- today's track: where the first three of the earlier races were drawn, and
     # whether they were the fast finishers
     df["_race_no"] = pd.to_numeric(df["race_id"].str[-2:], errors="coerce")
@@ -746,10 +834,12 @@ def pedigree_usable(results: pd.DataFrame, ped: pd.DataFrame) -> tuple[bool, flo
 def build_features(raw: Path = RAW, card_races: pd.DataFrame | None = None,
                    card_runners: pd.DataFrame | None = None, pedigree_extra: pd.DataFrame | None = None,
                    log=print, use_pedigree: bool | None = None,
-                   day_races: pd.DataFrame | None = None) -> pd.DataFrame:
+                   day_races: pd.DataFrame | None = None, use_horse_runs: bool | None = None,
+                   horse_runs_extra: pd.DataFrame | None = None) -> pd.DataFrame:
     """``use_pedigree=False`` keeps pedigree out even when coverage would allow it: a model
     trained without pedigree must be fed features built without it. ``df.attrs['pedigree']``
-    records what was done."""
+    records what was done. ``use_horse_runs`` / ``df.attrs['horse_runs']`` do the same for
+    the runs outside JRA; ``horse_runs_extra`` adds freshly read runs of the card's horses."""
     races, results, _ = load_raw(raw)
     ped = load_pedigree(raw)
     ok, cov = pedigree_usable(results, ped)
@@ -761,6 +851,20 @@ def build_features(raw: Path = RAW, card_races: pd.DataFrame | None = None,
         ped = None
     elif pedigree_extra is not None and len(pedigree_extra):
         ped = pd.concat([ped, pedigree_extra], ignore_index=True).drop_duplicates("horse_id")
-    out = add_features(build_frame(races, results, ped, card_races, card_runners), day_races)
+    hr = load_horse_runs(raw)
+    ok, cov = horse_runs_usable(results, raw)
+    if use_horse_runs is False:
+        hr = None
+    elif not ok:
+        if len(hr):
+            log(f"runs outside JRA are read for only {cov:.1%} of horses -> not used")
+        hr = None
+    elif horse_runs_extra is not None and len(horse_runs_extra):
+        hr = pd.concat([hr, horse_runs_extra[[c for c in hr.columns if c in horse_runs_extra.columns]]],
+                       ignore_index=True)
+        hr["date"] = pd.to_datetime(hr["date"]).dt.strftime("%Y-%m-%d")
+        hr = hr.drop_duplicates(["horse_id", "date"], keep="last")
+    out = add_features(build_frame(races, results, ped, card_races, card_runners), day_races, hr)
     out.attrs["pedigree"] = ped is not None
+    out.attrs["horse_runs"] = hr is not None
     return out

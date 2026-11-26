@@ -335,13 +335,17 @@ def cmd_pedigree(args) -> int:
     return rc
 
 
+HORSES_FIRST_READ = "2026-11-23"     # horses read before read dates were kept
+
+
 def cmd_horses(args) -> int:
     """Runs outside JRA meetings (local tracks, overseas), from each horse's result page.
 
     The race-by-race collection only sees JRA meetings, so a horse that came from a local
-    track or raced abroad has holes in its history. Horses are taken newest first; one
-    request per horse. Only the non-JRA runs are stored (data/raw/horse_runs.csv.gz); the
-    horses already read are remembered in state.json."""
+    track or raced abroad has holes in its history. One request per horse; only the non-JRA
+    runs are stored (data/raw/horse_runs.csv.gz). state.json remembers which horses were
+    read and when: a horse is read again once it has run at a JRA meeting after that date,
+    because it may have raced elsewhere in between. Unread horses come first, newest first."""
     f = Fetcher(min_interval=args.interval)
     deadline = time.monotonic() + args.max_minutes * 60
     path = RAW / "horse_runs.csv.gz"
@@ -350,24 +354,33 @@ def cmd_horses(args) -> int:
     runs = pd.read_csv(path, dtype={"horse_id": str}) if path.exists() else pd.DataFrame(columns=cols)
     state = load_state()
     done = set(state.get("horse_runs_done", []))
+    read = dict(state.get("horse_runs_read", {}))
     frames = [read_month("results", p.name[:6])[["race_id", "horse_id"]]
               for p in sorted((RAW / "results").glob("*.csv.gz"), reverse=True)]
-    if not frames:
+    race_frames = [read_month("races", p.name[:6])[["race_id", "date"]]
+                   for p in sorted((RAW / "races").glob("*.csv.gz"), reverse=True)]
+    if not frames or not race_frames:
         return 0
-    res = pd.concat(frames, ignore_index=True)
+    res = pd.concat(frames, ignore_index=True).merge(pd.concat(race_frames, ignore_index=True), on="race_id")
     res = res[res["race_id"].str[:4] >= str(args.since)]
-    todo = [h for h in res.sort_values("race_id", ascending=False)["horse_id"].drop_duplicates()
-            if isinstance(h, str) and h not in done]
-    rows, n, rc = [], 0, 0
+    last = res.groupby("horse_id")["date"].max().astype(str).str[:10].sort_values(ascending=False)
+    unread = [h for h in last.index if isinstance(h, str) and h not in done]
+    stale = [h for h, d in last.items() if isinstance(h, str) and h in done and d > read.get(h, HORSES_FIRST_READ)]
+    todo = unread + stale
+    print(f"horses: {len(unread)} unread, {len(stale)} to read again", flush=True)
+    rows, reread, n, rc = [], set(), 0, 0
     last_push = time.monotonic()
+    today = today_jst().isoformat()
 
     def flush() -> None:
-        nonlocal runs, rows
-        if rows:
-            runs = pd.concat([runs, pd.DataFrame(rows, columns=cols)], ignore_index=True)
+        nonlocal runs, rows, reread
+        if rows or reread:
+            runs = pd.concat([runs[~runs["horse_id"].isin(reread)], pd.DataFrame(rows, columns=cols)],
+                             ignore_index=True)
             runs.sort_values(["horse_id", "date"]).to_csv(path, index=False, compression={"method": "gzip", "mtime": 0})
-            rows = []
+            rows, reread = [], set()
         state["horse_runs_done"] = sorted(done)
+        state["horse_runs_read"] = read
         save_state(state)
 
     try:
@@ -378,11 +391,13 @@ def cmd_horses(args) -> int:
             n += 1
             if got is None:            # no table: leave the horse for a later run
                 continue
+            if hid in done:
+                reread.add(hid)        # its stored runs are replaced by what the page says now
             done.add(hid)
+            read[hid] = today
             rows += [{k: g[k] for k in cols} for g in got if not g["jra"]]
             if n % 500 == 0:
-                print(f"horses: {n} read, {len(done)} done, {len(runs) + len(rows)} non-JRA runs, "
-                      f"requests={f.n_requests}", flush=True)
+                print(f"horses: {n} read, {len(done)} done, requests={f.n_requests}", flush=True)
                 flush()
                 if args.push and time.monotonic() - last_push > args.push_every * 60:
                     git_push("Add runs outside JRA")
@@ -391,7 +406,7 @@ def cmd_horses(args) -> int:
         print(f"BLOCKED: {exc}", flush=True)
         rc = 2
     flush()
-    print(f"horses: done {n} read, {len(done)} of {len(done) + len(todo) - n} horses", flush=True)
+    print(f"horses: done {n} read this run, {len(done)} horses read in all", flush=True)
     if args.push:
         git_push("Add runs outside JRA")
     return rc
