@@ -17,7 +17,7 @@ USER_AGENT = (
 
 
 class Fetcher:
-    def __init__(self, min_interval: float = 3.0, timeout: float = 30.0, retries: int = 4):
+    def __init__(self, min_interval: float = 3.0, timeout: float = 30.0, retries: int = 6):
         self.min_interval = min_interval
         self.timeout = timeout
         self.retries = retries
@@ -27,6 +27,12 @@ class Fetcher:
         )
         self._last = 0.0
         self.n_requests = 0
+
+    @staticmethod
+    def backoff(attempt: int) -> float:
+        """Seconds to wait after a failed attempt: 10, 20, 40, 80, 160 (about five minutes over
+        six tries). A site that stops answering for a minute or two must not end a long run."""
+        return 10.0 * 2 ** attempt
 
     def _wait(self) -> None:
         gap = self.min_interval * random.uniform(1.0, 1.5) - (time.monotonic() - self._last)
@@ -48,12 +54,12 @@ class Fetcher:
                 r = self.session.get(url, timeout=self.timeout, headers=headers)
                 self.n_requests += 1
                 if r.status_code >= 500:
-                    time.sleep(5 * (attempt + 1))
+                    time.sleep(self.backoff(attempt))
                     continue
                 return r.status_code, r.content
             except requests.RequestException as exc:  # network hiccup
                 last_exc = exc
-                time.sleep(5 * (attempt + 1))
+                time.sleep(self.backoff(attempt))
         if last_exc:
             raise last_exc
         return 599, b""

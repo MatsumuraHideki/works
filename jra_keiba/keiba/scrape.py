@@ -24,6 +24,7 @@ import time
 from pathlib import Path
 
 import pandas as pd
+import requests
 
 from . import netkeiba as nk
 from .http import Fetcher, decode
@@ -368,7 +369,7 @@ def cmd_horses(args) -> int:
     stale = [h for h, d in last.items() if isinstance(h, str) and h in done and d > read.get(h, HORSES_FIRST_READ)]
     todo = unread + stale
     print(f"horses: {len(unread)} unread, {len(stale)} to read again", flush=True)
-    rows, reread, n, rc = [], set(), 0, 0
+    rows, reread, n, rc, failures = [], set(), 0, 0, 0
     last_push = time.monotonic()
     today = today_jst().isoformat()
 
@@ -387,7 +388,21 @@ def cmd_horses(args) -> int:
         for hid in todo:
             if time.monotonic() > deadline:
                 break
-            got = nk.parse_horse_runs(fetch_text(f, nk.url_horse_result(hid)), hid)
+            try:
+                got = nk.parse_horse_runs(fetch_text(f, nk.url_horse_result(hid)), hid)
+            except requests.RequestException as exc:
+                # The site did not answer even after the fetcher's retries. Keep what has been
+                # read, leave this horse for a later run and go on; give up (cleanly) only when
+                # it keeps happening.
+                failures += 1
+                print(f"horses: {hid} not read ({type(exc).__name__}); {failures} in a row", flush=True)
+                flush()
+                if failures >= 5:
+                    print("horses: the site is not answering, stopping", flush=True)
+                    rc = 3
+                    break
+                continue
+            failures = 0
             n += 1
             if got is None:            # no table: leave the horse for a later run
                 continue

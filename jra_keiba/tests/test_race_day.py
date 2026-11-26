@@ -72,3 +72,37 @@ def test_day_bias_of_result_uses_draw_and_last3f_rank():
     bare = [{**o, "last3f": None} for o in order]                 # times not posted yet
     b = nk.day_bias_of_result({"order": bare})
     assert b["closer"] is None and abs(b["inner"] - 0.5) < 1e-9
+
+
+def test_horse_collection_survives_a_site_timeout(tmp_path, monkeypatch):
+    """A request that times out must not end the collection or lose what was already read."""
+    import argparse
+    import pandas as pd
+    import requests
+    from keiba import netkeiba as nk
+    from keiba import scrape
+
+    raw = tmp_path / "raw"
+    (raw / "results").mkdir(parents=True)
+    (raw / "races").mkdir(parents=True)
+    pd.DataFrame({"race_id": ["202605050101"] * 3, "horse_id": ["h1", "h2", "h3"]}).to_csv(
+        raw / "results" / "202611.csv.gz", index=False)
+    pd.DataFrame({"race_id": ["202605050101"], "date": ["2026-11-01"]}).to_csv(raw / "races" / "202611.csv.gz", index=False)
+    monkeypatch.setattr(scrape, "RAW", raw)
+
+    def fake_fetch(f, url, referer=None):
+        if "h2" in url:
+            raise requests.exceptions.ReadTimeout("read timed out")
+        return url
+
+    run = {"horse_id": None, "date": "2026-10-01", "venue": "大井", "jra": False, "race_name": "x", "n_runners": 10.0,
+           "number": 1.0, "win_odds": 2.0, "popularity": 1.0, "finish": 1.0, "finish_raw": "1", "surface": "ダ",
+           "distance": 1600, "going": "良", "time_sec": 100.0, "passing": "1-1", "last3f": 38.0}
+    monkeypatch.setattr(scrape, "fetch_text", fake_fetch)
+    monkeypatch.setattr(nk, "parse_horse_runs", lambda html, hid: [dict(run, horse_id=hid)])
+    args = argparse.Namespace(interval=0.0, max_minutes=1.0, since=2000, push=False, push_every=40)
+    assert scrape.cmd_horses(args) == 0
+    state = scrape.load_state()
+    assert set(state["horse_runs_done"]) == {"h1", "h3"}            # h2 is left for a later run
+    saved = pd.read_csv(raw / "horse_runs.csv.gz", dtype={"horse_id": str})
+    assert set(saved["horse_id"]) == {"h1", "h3"}
