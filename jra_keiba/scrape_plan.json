@@ -2,19 +2,6 @@
  "note": "Chunks run one after another. Results / odds / pedigree chunks each resume where the previous one stopped, so repeating a chunk simply continues further back in time.",
  "chunks": [
   {
-   "cmd": "results",
-   "from": "2026-11",
-   "to": "2026-10",
-   "max_minutes": 60
-  },
-  {
-   "cmd": "odds",
-   "from": "2026-11",
-   "to": "2026-10",
-   "max_minutes": 60,
-   "args": "--op-class --types 1,4,5,7"
-  },
-  {
    "cmd": "horses",
    "from": "2026-11",
    "to": "2010-01",
@@ -25,97 +12,6 @@
    "from": "2026-11",
    "to": "2010-01",
    "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "horses",
-   "from": "2026-11",
-   "to": "2010-01",
-   "max_minutes": 330
-  },
-  {
-   "cmd": "results",
-   "from": "2026-11",
-   "to": "2026-10",
-   "max_minutes": 60
-  },
-  {
-   "cmd": "odds",
-   "from": "2026-11",
-   "to": "2026-10",
-   "max_minutes": 60,
-   "args": "--op-class --types 1,4,5,7"
   }
  ]
 }
