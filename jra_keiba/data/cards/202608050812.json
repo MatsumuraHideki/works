@@ -1,0 +1,576 @@
+{
+ "race": {
+  "race_id": "202608050812",
+  "name": "京阪杯",
+  "grade": "G3",
+  "race_no": 12,
+  "place": "京都",
+  "date": "2026-11-29",
+  "start_time": "16:15",
+  "surface": "芝",
+  "distance": 1200,
+  "direction": "右",
+  "inout": null,
+  "weather": null,
+  "going": null,
+  "kai": 5,
+  "day": 8,
+  "cond": "サラ系3歳以上 オープン (国際)(特指) 別定",
+  "class": "OP",
+  "course_raw": "16:15発走 / 芝1200m 右 C\n\n/ 予報 / 直線:弱横風",
+  "n_runners": 18
+ },
+ "runners": [
+  {
+   "race_id": "202608050812",
+   "row_id": "9",
+   "bracket": 1.0,
+   "number": 1.0,
+   "horse_id": "2021103932",
+   "horse_name": "ジェニファー",
+   "sex": "牝",
+   "age": 5.0,
+   "weight_carried": 55.0,
+   "jockey_id": "01126",
+   "jockey_name": "松山",
+   "trainer_id": "01138",
+   "trainer_name": "浜田",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "13",
+   "bracket": 1.0,
+   "number": 2.0,
+   "horse_id": "2022100490",
+   "horse_name": "モズナナスター",
+   "sex": "牝",
+   "age": 4.0,
+   "weight_carried": 55.0,
+   "jockey_id": "01095",
+   "jockey_name": "吉田隼",
+   "trainer_id": "01075",
+   "trainer_name": "矢作",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "8",
+   "bracket": 2.0,
+   "number": 3.0,
+   "horse_id": "2021103116",
+   "horse_name": "ヤブサメ",
+   "sex": "牡",
+   "age": 5.0,
+   "weight_carried": 57.0,
+   "jockey_id": "01220",
+   "jockey_name": "田山",
+   "trainer_id": "01140",
+   "trainer_name": "石橋",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "4",
+   "bracket": 2.0,
+   "number": 4.0,
+   "horse_id": "2019105658",
+   "horse_name": "オタルエバー",
+   "sex": "牡",
+   "age": 7.0,
+   "weight_carried": 57.0,
+   "jockey_id": "05203",
+   "jockey_name": "岩田康",
+   "trainer_id": "01039",
+   "trainer_name": "中竹",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "16",
+   "bracket": 3.0,
+   "number": 5.0,
+   "horse_id": "2022103066",
+   "horse_name": "レイピア",
+   "sex": "牡",
+   "age": 4.0,
+   "weight_carried": 57.0,
+   "jockey_id": "01197",
+   "jockey_name": "佐々木",
+   "trainer_id": "01039",
+   "trainer_name": "中竹",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "14",
+   "bracket": 3.0,
+   "number": 6.0,
+   "horse_id": "2022101686",
+   "horse_name": "インブロリオ",
+   "sex": "牝",
+   "age": 4.0,
+   "weight_carried": 55.0,
+   "jockey_id": "01088",
+   "jockey_name": "川田",
+   "trainer_id": "01130",
+   "trainer_name": "吉村",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "21",
+   "bracket": 4.0,
+   "number": 7.0,
+   "horse_id": "2023105312",
+   "horse_name": "リリージョワ",
+   "sex": "牝",
+   "age": 3.0,
+   "weight_carried": 54.0,
+   "jockey_id": "01115",
+   "jockey_name": "浜中",
+   "trainer_id": "01160",
+   "trainer_name": "武幸",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "1",
+   "bracket": 4.0,
+   "number": 8.0,
+   "horse_id": "2018101343",
+   "horse_name": "ゾンニッヒ",
+   "sex": "牡",
+   "age": 8.0,
+   "weight_carried": 57.0,
+   "jockey_id": "01208",
+   "jockey_name": "田口",
+   "trainer_id": "01071",
+   "trainer_name": "池江",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "3",
+   "bracket": 5.0,
+   "number": 9.0,
+   "horse_id": "2019103714",
+   "horse_name": "メイショウソラフネ",
+   "sex": "牡",
+   "age": 7.0,
+   "weight_carried": 57.0,
+   "jockey_id": "00732",
+   "jockey_name": "幸",
+   "trainer_id": "01140",
+   "trainer_name": "石橋",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "17",
+   "bracket": 5.0,
+   "number": 10.0,
+   "horse_id": "2022103592",
+   "horse_name": "ルシード",
+   "sex": "牡",
+   "age": 4.0,
+   "weight_carried": 57.0,
+   "jockey_id": "01157",
+   "jockey_name": "鮫島駿",
+   "trainer_id": "01112",
+   "trainer_name": "田島",
+   "trainer_region": "東",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "12",
+   "bracket": 6.0,
+   "number": 11.0,
+   "horse_id": "2021110164",
+   "horse_name": "インビンシブルパパ",
+   "sex": "牡",
+   "age": 5.0,
+   "weight_carried": 57.0,
+   "jockey_id": "01185",
+   "jockey_name": "小沢",
+   "trainer_id": "01109",
+   "trainer_name": "伊藤大",
+   "trainer_region": "東",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "22",
+   "bracket": 6.0,
+   "number": 12.0,
+   "horse_id": "2023107264",
+   "horse_name": "デアヴェローチェ",
+   "sex": "牝",
+   "age": 3.0,
+   "weight_carried": 55.0,
+   "jockey_id": "01102",
+   "jockey_name": "北村友",
+   "trainer_id": "01168",
+   "trainer_name": "上村",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "2",
+   "bracket": 7.0,
+   "number": 13.0,
+   "horse_id": "2018106055",
+   "horse_name": "ヨシノイースター",
+   "sex": "牡",
+   "age": 8.0,
+   "weight_carried": 57.0,
+   "jockey_id": "01186",
+   "jockey_name": "角田和",
+   "trainer_id": "01069",
+   "trainer_name": "中尾",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "18",
+   "bracket": 7.0,
+   "number": 14.0,
+   "horse_id": "2022106394",
+   "horse_name": "クラスペディア",
+   "sex": "牡",
+   "age": 4.0,
+   "weight_carried": 57.0,
+   "jockey_id": "01152",
+   "jockey_name": "小崎",
+   "trainer_id": "01198",
+   "trainer_name": "河嶋",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "20",
+   "bracket": 7.0,
+   "number": 15.0,
+   "horse_id": "2023105273",
+   "horse_name": "フォーゲル",
+   "sex": "牡",
+   "age": 3.0,
+   "weight_carried": 56.0,
+   "jockey_id": "01032",
+   "jockey_name": "池添",
+   "trainer_id": "01151",
+   "trainer_name": "斉藤崇",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "6",
+   "bracket": 8.0,
+   "number": 16.0,
+   "horse_id": "2020100896",
+   "horse_name": "ビッグシーザー",
+   "sex": "牡",
+   "age": 6.0,
+   "weight_carried": 57.0,
+   "jockey_id": "01178",
+   "jockey_name": "斎藤",
+   "trainer_id": "01157",
+   "trainer_name": "杉山晴",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "15",
+   "bracket": 8.0,
+   "number": 17.0,
+   "horse_id": "2022102887",
+   "horse_name": "ナムラクララ",
+   "sex": "牝",
+   "age": 4.0,
+   "weight_carried": 55.0,
+   "jockey_id": "01216",
+   "jockey_name": "吉村",
+   "trainer_id": "01173",
+   "trainer_name": "長谷川",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  },
+  {
+   "race_id": "202608050812",
+   "row_id": "5",
+   "bracket": 8.0,
+   "number": 18.0,
+   "horse_id": "2019105859",
+   "horse_name": "エーティーマクフィ",
+   "sex": "牡",
+   "age": 7.0,
+   "weight_carried": 58.0,
+   "jockey_id": "01168",
+   "jockey_name": "富田",
+   "trainer_id": "01161",
+   "trainer_name": "武英",
+   "trainer_region": "西",
+   "body_weight": null,
+   "body_weight_diff": null,
+   "cancelled": false
+  }
+ ],
+ "pedigree": [
+  {
+   "horse_id": "2021103932",
+   "sire": "アニマルキングダム",
+   "dam": "スイングサンデー",
+   "bms": "スペシャルウィーク"
+  },
+  {
+   "horse_id": "2022100490",
+   "sire": "モズアスコット",
+   "dam": "グランプリエンゼル",
+   "bms": "アグネスデジタル"
+  },
+  {
+   "horse_id": "2021103116",
+   "sire": "ファインニードル",
+   "dam": "ステラーホープ",
+   "bms": "グラスワンダー"
+  },
+  {
+   "horse_id": "2019105658",
+   "sire": "リオンディーズ",
+   "dam": "ルージュクール",
+   "bms": "Redoute's Choice"
+  },
+  {
+   "horse_id": "2022103066",
+   "sire": "タワーオブロンドン",
+   "dam": "アンナトルテ",
+   "bms": "エンパイアメーカー"
+  },
+  {
+   "horse_id": "2022101686",
+   "sire": "アドマイヤムーン",
+   "dam": "プリディカメント",
+   "bms": "Hard Spun"
+  },
+  {
+   "horse_id": "2023105312",
+   "sire": "シルバーステート",
+   "dam": "デサフィアンテ",
+   "bms": "キングカメハメハ"
+  },
+  {
+   "horse_id": "2018101343",
+   "sire": "ラブリーデイ",
+   "dam": "エンドレスノット",
+   "bms": "ディープインパクト"
+  },
+  {
+   "horse_id": "2019103714",
+   "sire": "モーリス",
+   "dam": "メイショウデイム",
+   "bms": "マンハッタンカフェ"
+  },
+  {
+   "horse_id": "2022103592",
+   "sire": "スクリーンヒーロー",
+   "dam": "ローゼンタール",
+   "bms": "ロージズインメイ"
+  },
+  {
+   "horse_id": "2021110164",
+   "sire": "Shalaa",
+   "dam": "Shwaimsa",
+   "bms": "Canford Cliffs"
+  },
+  {
+   "horse_id": "2023107264",
+   "sire": "マテラスカイ",
+   "dam": "ミニーアイル",
+   "bms": "ミッキーアイル"
+  },
+  {
+   "horse_id": "2018106055",
+   "sire": "ルーラーシップ",
+   "dam": "アースプレイ",
+   "bms": "ゼンノロブロイ"
+  },
+  {
+   "horse_id": "2022106394",
+   "sire": "ミスターメロディ",
+   "dam": "ウンベラータ",
+   "bms": "アグネスタキオン"
+  },
+  {
+   "horse_id": "2023105273",
+   "sire": "アルアイン",
+   "dam": "エリカポンシャン",
+   "bms": "ロードカナロア"
+  },
+  {
+   "horse_id": "2020100896",
+   "sire": "ビッグアーサー",
+   "dam": "アンナペレンナ",
+   "bms": "Tale of Ekati"
+  },
+  {
+   "horse_id": "2022102887",
+   "sire": "アドマイヤマーズ",
+   "dam": "サンクイーンII",
+   "bms": "Storm Cat"
+  },
+  {
+   "horse_id": "2019105859",
+   "sire": "マクフィ",
+   "dam": "テンシンランマン",
+   "bms": "ハーツクライ"
+  }
+ ],
+ "odds_time": "2026-11-27 20:45:56",
+ "odds_action": "init",
+ "odds_status": "yoso",
+ "odds": {
+  "単勝": {
+   "7": [
+    2.4,
+    2.4
+   ],
+   "5": [
+    7.6,
+    7.6
+   ],
+   "18": [
+    9.5,
+    9.5
+   ],
+   "6": [
+    13.2,
+    13.2
+   ],
+   "15": [
+    13.5,
+    13.5
+   ],
+   "12": [
+    13.8,
+    13.8
+   ],
+   "16": [
+    14.9,
+    14.9
+   ],
+   "17": [
+    19.7,
+    19.7
+   ],
+   "14": [
+    23.8,
+    23.8
+   ],
+   "11": [
+    23.9,
+    23.9
+   ],
+   "1": [
+    25.1,
+    25.1
+   ],
+   "13": [
+    35.5,
+    35.5
+   ],
+   "10": [
+    36.5,
+    36.5
+   ],
+   "3": [
+    36.7,
+    36.7
+   ],
+   "2": [
+    40.7,
+    40.7
+   ],
+   "9": [
+    68.9,
+    68.9
+   ],
+   "8": [
+    119.5,
+    119.5
+   ],
+   "4": [
+    144.6,
+    144.6
+   ]
+  }
+ },
+ "fetched_at": "2026-11-27T20:51:25+09:00",
+ "day_races": [],
+ "horse_runs": [
+  {
+   "horse_id": "2021103932",
+   "date": "2025-05-08",
+   "venue": "園田",
+   "n_runners": 12.0,
+   "finish": 5.0,
+   "popularity": 3.0
+  },
+  {
+   "horse_id": "2021110164",
+   "date": "2025-11-01",
+   "venue": "デルマー",
+   "n_runners": 16.0,
+   "finish": 6.0,
+   "popularity": 11.0
+  }
+ ]
+}
