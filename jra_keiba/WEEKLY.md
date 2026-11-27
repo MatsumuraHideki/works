@@ -12,8 +12,12 @@ netkeiba の取得はすべて GitHub Actions 経由です（トリガーファ�
 
    ```json
    [{"cmd": "results", "from": "<今月 YYYY-MM>", "to": "<先月 YYYY-MM>", "max_minutes": 60},
-    {"cmd": "odds", "from": "<今月>", "to": "<先月>", "max_minutes": 60, "args": "--op-class --types 1,4,5,7"}]
+    {"cmd": "odds", "from": "<今月>", "to": "<先月>", "max_minutes": 60, "args": "--op-class --types 1,4,5,7"},
+    {"cmd": "horses", "from": "<今月>", "to": "2010-01", "max_minutes": 180}]
    ```
+
+   3 つ目は JRA 以外（地方・海外）の出走の読み直しで、前回読んだあとに JRA で走った馬だけが対象
+   （週に 1,000〜1,500 頭、1〜1.5 時間）。週明けの月曜〜木曜に回すのがよい。
 3. **血統のカバー率を確認**。
 
    ```bash
