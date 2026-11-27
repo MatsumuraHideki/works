@@ -42,8 +42,8 @@ netkeiba の取得はすべて GitHub Actions 経由です（トリガーファ�
 
 ## 土曜・日曜の 9:15：オッズの記録開始
 
-`watch_trigger.json` を `{"date": "", "lead": 15, "requested_at": "<今>"}` にして push する
-（`date` が空ならその日）。`jra-odds-watch` がその日の全レースについて発走 15 分前の単勝オッズを
+`watch_trigger.json` を `{"date": "", "lead": "30,15,10,5", "requested_at": "<今>"}` にして push する
+（`date` が空ならその日）。`jra-odds-watch` がその日の全レースについて発走 30・15・10・5 分前の単勝オッズを
 `data/raw/odds_snapshots/` に記録する（1 レース 1 リクエスト）。確定オッズは翌週の結果取り込みで入るので、
 データがたまったら「予想時→確定」のずれをオッズ帯ごとに集計し、`reports/experiments.md` の
 「1 割ずれ・2 割ずれ」のどちらが実態に近いかを確かめる。

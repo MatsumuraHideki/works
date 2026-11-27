@@ -205,5 +205,35 @@
   ],
   "source": "当日の結果ページ",
   "model_top": "10 ショウナンガレオン"
+ },
+ {
+  "date": "2026-11-28",
+  "race_id": "202608050711",
+  "race": "京都2歳S",
+  "grade": "G3",
+  "odds_time": "2026-11-27 20:46:40",
+  "tickets": 18,
+  "stake": 5000,
+  "settled": false
+ },
+ {
+  "date": "2026-11-29",
+  "race_id": "202605050812",
+  "race": "ジャパンC",
+  "grade": "G1",
+  "odds_time": "2026-11-27 20:35:20",
+  "tickets": 16,
+  "stake": 5000,
+  "settled": false
+ },
+ {
+  "date": "2026-11-29",
+  "race_id": "202608050812",
+  "race": "京阪杯",
+  "grade": "G3",
+  "odds_time": "2026-11-27 20:45:56",
+  "tickets": 0,
+  "stake": 0,
+  "settled": false
  }
 ]
