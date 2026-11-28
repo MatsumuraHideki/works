@@ -1,0 +1,181 @@
+{
+ "race_id": "202608050311",
+ "payouts": [
+  {
+   "bet_type": "単勝",
+   "combo": [
+    5
+   ],
+   "payout": 520.0
+  },
+  {
+   "bet_type": "複勝",
+   "combo": [
+    5
+   ],
+   "payout": 200.0
+  },
+  {
+   "bet_type": "複勝",
+   "combo": [
+    11
+   ],
+   "payout": 160.0
+  },
+  {
+   "bet_type": "複勝",
+   "combo": [
+    7
+   ],
+   "payout": 800.0
+  },
+  {
+   "bet_type": "枠連",
+   "combo": [
+    4,
+    7
+   ],
+   "payout": 840.0
+  },
+  {
+   "bet_type": "馬連",
+   "combo": [
+    5,
+    11
+   ],
+   "payout": 1190.0
+  },
+  {
+   "bet_type": "ワイド",
+   "combo": [
+    5,
+    11
+   ],
+   "payout": 500.0
+  },
+  {
+   "bet_type": "ワイド",
+   "combo": [
+    5,
+    7
+   ],
+   "payout": 3460.0
+  },
+  {
+   "bet_type": "ワイド",
+   "combo": [
+    7,
+    11
+   ],
+   "payout": 2080.0
+  },
+  {
+   "bet_type": "馬単",
+   "combo": [
+    5,
+    11
+   ],
+   "payout": 2720.0
+  },
+  {
+   "bet_type": "三連複",
+   "combo": [
+    5,
+    7,
+    11
+   ],
+   "payout": 16830.0
+  },
+  {
+   "bet_type": "三連単",
+   "combo": [
+    5,
+    11,
+    7
+   ],
+   "payout": 79290.0
+  }
+ ],
+ "order": [
+  {
+   "finish": "1",
+   "number": 5.0,
+   "horse_name": "ブラッドバローズ"
+  },
+  {
+   "finish": "2",
+   "number": 11.0,
+   "horse_name": "シェフザーデ"
+  },
+  {
+   "finish": "3",
+   "number": 7.0,
+   "horse_name": "リュウトウコヤク"
+  },
+  {
+   "finish": "4",
+   "number": 8.0,
+   "horse_name": "キューティボンド"
+  },
+  {
+   "finish": "5",
+   "number": 1.0,
+   "horse_name": "ルースソラール"
+  },
+  {
+   "finish": "6",
+   "number": 6.0,
+   "horse_name": "トップチェッカー"
+  },
+  {
+   "finish": "7",
+   "number": 10.0,
+   "horse_name": "スーサンコルティナ"
+  },
+  {
+   "finish": "8",
+   "number": 2.0,
+   "horse_name": "スマートピナクル"
+  },
+  {
+   "finish": "9",
+   "number": 4.0,
+   "horse_name": "インカルナータ"
+  },
+  {
+   "finish": "10",
+   "number": 13.0,
+   "horse_name": "ブレイクアウェイ"
+  },
+  {
+   "finish": "11",
+   "number": 3.0,
+   "horse_name": "レオンティウス"
+  },
+  {
+   "finish": "12",
+   "number": 9.0,
+   "horse_name": "コルサロ"
+  },
+  {
+   "finish": "13",
+   "number": 12.0,
+   "horse_name": "ヒアカムズザサン"
+  }
+ ],
+ "final_win_odds": {
+  "1": 19.2,
+  "2": 7.5,
+  "3": 20.6,
+  "4": 24.7,
+  "5": 5.2,
+  "6": 14.6,
+  "7": 51.7,
+  "8": 3.6,
+  "9": 76.2,
+  "10": 37.0,
+  "11": 3.5,
+  "12": 139.8,
+  "13": 10.8
+ }
+}

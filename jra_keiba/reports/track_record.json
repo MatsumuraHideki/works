@@ -1,0 +1,253 @@
+[
+ {
+  "date": "2026-11-14",
+  "race_id": "202605050311",
+  "race": "武蔵野S",
+  "grade": "G3",
+  "odds_time": "2026-11-14 14:25:22",
+  "tickets": 50,
+  "stake": 5000,
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [
+   {
+    "number": 12,
+    "horse": "ロックターミガン",
+    "odds": 19.3,
+    "final": 14.4,
+    "ev": 1.065,
+    "ev_final": 0.795
+   }
+  ],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "15 ルヴァレドクール",
+   "1 ダノンフィーゴ",
+   "13 ライノ"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "6 ドンインザムード"
+ },
+ {
+  "date": "2026-11-14",
+  "race_id": "202608050311",
+  "race": "デイリー杯2歳S",
+  "grade": "G2",
+  "odds_time": "2026-11-14 14:40:42",
+  "tickets": 50,
+  "stake": 5000,
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [
+   {
+    "number": 3,
+    "horse": "レオンティウス",
+    "odds": 20.4,
+    "final": 20.6,
+    "ev": 1.122,
+    "ev_final": 1.133
+   },
+   {
+    "number": 7,
+    "horse": "リュウトウコヤク",
+    "odds": 42.4,
+    "final": 51.7,
+    "ev": 1.037,
+    "ev_final": 1.267
+   }
+  ],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "5 ブラッドバローズ",
+   "11 シェフザーデ",
+   "7 リュウトウコヤク"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "8 キューティボンド"
+ },
+ {
+  "date": "2026-11-15",
+  "race_id": "202608050411",
+  "race": "エリザベス女王杯",
+  "grade": "G1",
+  "odds_time": "2026-11-15 15:23:12",
+  "tickets": 50,
+  "stake": 5000,
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [
+   {
+    "number": 6,
+    "horse": "ヴーレヴー",
+    "odds": 12.7,
+    "final": 9.5,
+    "ev": 1.004,
+    "ev_final": 0.751
+   },
+   {
+    "number": 14,
+    "horse": "チェルヴィニア",
+    "odds": 42.2,
+    "final": 50.8,
+    "ev": 1.015,
+    "ev_final": 1.224
+   }
+  ],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "15 ラフターラインズ",
+   "7 カムニャック",
+   "16 アクアヴァーナル"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "7 カムニャック"
+ },
+ {
+  "date": "2026-11-21",
+  "race_id": "202603030511",
+  "race": "福島記念",
+  "grade": "G3",
+  "odds_time": "2026-11-21 15:04:15",
+  "tickets": 16,
+  "stake": 5000,
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [
+   {
+    "number": 14,
+    "horse": "サヴォーナ",
+    "odds": 15.0,
+    "final": 13.1,
+    "ev": 1.006,
+    "ev_final": 0.878
+   },
+   {
+    "number": 7,
+    "horse": "シリウスコルト",
+    "odds": 25.8,
+    "final": 24.6,
+    "ev": 1.022,
+    "ev_final": 0.974
+   }
+  ],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "13 マリアイリダータ",
+   "3 ゼンダンハヤブサ",
+   "1 カラマティアノス"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "13 マリアイリダータ"
+ },
+ {
+  "date": "2026-11-22",
+  "race_id": "202608050611",
+  "race": "マイルCS",
+  "grade": "G1",
+  "odds_time": "2026-11-22 15:24:06",
+  "tickets": 13,
+  "stake": 5000,
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "1 エルデナリ",
+   "2 エンブロイダリー",
+   "14 スターアニス"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "14 スターアニス"
+ },
+ {
+  "date": "2026-11-23",
+  "race_id": "202605050611",
+  "race": "東スポ杯2歳S",
+  "grade": "G2",
+  "odds_time": "2026-11-23 15:14:07",
+  "tickets": 17,
+  "stake": 5000,
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [],
+  "return": 20010,
+  "hits": [
+   "馬連 10-12（600円 → 15,540円）",
+   "三連複 8-10-12（100円 → 4,470円）"
+  ],
+  "top3": [
+   "12 オンユアマークス",
+   "10 ショウナンガレオン",
+   "8 コラリオン"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "10 ショウナンガレオン"
+ },
+ {
+  "date": "2026-11-28",
+  "race_id": "202608050711",
+  "race": "京都2歳S",
+  "grade": "G3",
+  "odds_time": "2026-11-28 15:24:27",
+  "tickets": 14,
+  "stake": 5000,
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "6 ゴールデンプロミス",
+   "8 ノヴァヴェローチェ",
+   "3 ショウナンバトレニ"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "10 ドラゴンバルド"
+ },
+ {
+  "date": "2026-11-29",
+  "race_id": "202605050812",
+  "race": "ジャパンC",
+  "grade": "G1",
+  "odds_time": "2026-11-27 20:35:20",
+  "tickets": 16,
+  "stake": 5000,
+  "settled": false
+ },
+ {
+  "date": "2026-11-29",
+  "race_id": "202608050812",
+  "race": "京阪杯",
+  "grade": "G3",
+  "odds_time": "2026-11-27 20:45:56",
+  "tickets": 0,
+  "stake": 0,
+  "settled": false
+ }
+]

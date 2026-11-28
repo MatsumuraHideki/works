@@ -1,0 +1,211 @@
+{
+ "race_id": "202608050411",
+ "payouts": [
+  {
+   "bet_type": "単勝",
+   "combo": [
+    15
+   ],
+   "payout": 1260.0
+  },
+  {
+   "bet_type": "複勝",
+   "combo": [
+    15
+   ],
+   "payout": 390.0
+  },
+  {
+   "bet_type": "複勝",
+   "combo": [
+    7
+   ],
+   "payout": 180.0
+  },
+  {
+   "bet_type": "複勝",
+   "combo": [
+    16
+   ],
+   "payout": 210.0
+  },
+  {
+   "bet_type": "枠連",
+   "combo": [
+    4,
+    7
+   ],
+   "payout": 850.0
+  },
+  {
+   "bet_type": "馬連",
+   "combo": [
+    7,
+    15
+   ],
+   "payout": 3160.0
+  },
+  {
+   "bet_type": "ワイド",
+   "combo": [
+    7,
+    15
+   ],
+   "payout": 1420.0
+  },
+  {
+   "bet_type": "ワイド",
+   "combo": [
+    15,
+    16
+   ],
+   "payout": 1550.0
+  },
+  {
+   "bet_type": "ワイド",
+   "combo": [
+    7,
+    16
+   ],
+   "payout": 630.0
+  },
+  {
+   "bet_type": "馬単",
+   "combo": [
+    15,
+    7
+   ],
+   "payout": 7400.0
+  },
+  {
+   "bet_type": "三連複",
+   "combo": [
+    7,
+    15,
+    16
+   ],
+   "payout": 5710.0
+  },
+  {
+   "bet_type": "三連単",
+   "combo": [
+    15,
+    7,
+    16
+   ],
+   "payout": 38780.0
+  }
+ ],
+ "order": [
+  {
+   "finish": "1",
+   "number": 15.0,
+   "horse_name": "ラフターラインズ"
+  },
+  {
+   "finish": "2",
+   "number": 7.0,
+   "horse_name": "カムニャック"
+  },
+  {
+   "finish": "3",
+   "number": 16.0,
+   "horse_name": "アクアヴァーナル"
+  },
+  {
+   "finish": "4",
+   "number": 2.0,
+   "horse_name": "レイクラシック"
+  },
+  {
+   "finish": "5",
+   "number": 10.0,
+   "horse_name": "セキトバイースト"
+  },
+  {
+   "finish": "6",
+   "number": 6.0,
+   "horse_name": "ヴーレヴー"
+  },
+  {
+   "finish": "7",
+   "number": 13.0,
+   "horse_name": "ジョスラン"
+  },
+  {
+   "finish": "8",
+   "number": 9.0,
+   "horse_name": "クイーンズウォーク"
+  },
+  {
+   "finish": "9",
+   "number": 12.0,
+   "horse_name": "シャドウメテオ"
+  },
+  {
+   "finish": "10",
+   "number": 17.0,
+   "horse_name": "ケリフレッドアスク"
+  },
+  {
+   "finish": "11",
+   "number": 11.0,
+   "horse_name": "ジュウリョクピエロ"
+  },
+  {
+   "finish": "12",
+   "number": 1.0,
+   "horse_name": "ラヴァンダ"
+  },
+  {
+   "finish": "13",
+   "number": 18.0,
+   "horse_name": "コガネノソラ"
+  },
+  {
+   "finish": "14",
+   "number": 14.0,
+   "horse_name": "チェルヴィニア"
+  },
+  {
+   "finish": "15",
+   "number": 8.0,
+   "horse_name": "レーゼドラマ"
+  },
+  {
+   "finish": "16",
+   "number": 4.0,
+   "horse_name": "エストゥペンダ"
+  },
+  {
+   "finish": "17",
+   "number": 3.0,
+   "horse_name": "ステレンボッシュ"
+  },
+  {
+   "finish": "18",
+   "number": 5.0,
+   "horse_name": "ニシノティアモ"
+  }
+ ],
+ "final_win_odds": {
+  "1": 32.0,
+  "2": 87.3,
+  "3": 115.2,
+  "4": 68.3,
+  "5": 82.5,
+  "6": 9.5,
+  "7": 4.2,
+  "8": 47.8,
+  "9": 7.8,
+  "10": 20.1,
+  "11": 6.0,
+  "12": 17.7,
+  "13": 9.4,
+  "14": 50.8,
+  "15": 12.6,
+  "16": 7.3,
+  "17": 106.8,
+  "18": 16.0
+ }
+}

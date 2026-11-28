@@ -1,0 +1,195 @@
+{
+ "race": {
+  "race_id": "202608050812",
+  "name": "京阪杯",
+  "grade": "G3",
+  "race_no": 12,
+  "place": "京都",
+  "date": "2026-11-29",
+  "start_time": "16:15",
+  "surface": "芝",
+  "distance": 1200,
+  "direction": "右",
+  "inout": null,
+  "weather": null,
+  "going": null,
+  "kai": 5,
+  "day": 8,
+  "cond": "サラ系3歳以上 オープン (国際)(特指) 別定",
+  "class": "OP",
+  "course_raw": "16:15発走 / 芝1200m 右 C\n\n/ 予報 / 直線:弱横風",
+  "n_runners": 18
+ },
+ "odds_kind": "yoso",
+ "odds_time": "2026-11-27 20:45:56",
+ "fetched_at": "2026-11-27T20:51:25+09:00",
+ "runners": [
+  {
+   "number": 7,
+   "horse": "リリージョワ",
+   "horse_id": "2023105312",
+   "p": 0.1872,
+   "p_fundamental": 0.1872,
+   "win_odds": null,
+   "ev": null
+  },
+  {
+   "number": 5,
+   "horse": "レイピア",
+   "horse_id": "2022103066",
+   "p": 0.1426,
+   "p_fundamental": 0.1426,
+   "win_odds": 14.9,
+   "ev": 2.124
+  },
+  {
+   "number": 6,
+   "horse": "インブロリオ",
+   "horse_id": "2022101686",
+   "p": 0.1124,
+   "p_fundamental": 0.1124,
+   "win_odds": 23.8,
+   "ev": 2.675
+  },
+  {
+   "number": 12,
+   "horse": "デアヴェローチェ",
+   "horse_id": "2023107264",
+   "p": 0.0727,
+   "p_fundamental": 0.0727,
+   "win_odds": null,
+   "ev": null
+  },
+  {
+   "number": 1,
+   "horse": "ジェニファー",
+   "horse_id": "2021103932",
+   "p": 0.0724,
+   "p_fundamental": 0.0724,
+   "win_odds": 68.9,
+   "ev": 4.989
+  },
+  {
+   "number": 15,
+   "horse": "フォーゲル",
+   "horse_id": "2023105273",
+   "p": 0.0683,
+   "p_fundamental": 0.0683,
+   "win_odds": null,
+   "ev": null
+  },
+  {
+   "number": 18,
+   "horse": "エーティーマクフィ",
+   "horse_id": "2019105859",
+   "p": 0.0575,
+   "p_fundamental": 0.0575,
+   "win_odds": 7.6,
+   "ev": 0.437
+  },
+  {
+   "number": 14,
+   "horse": "クラスペディア",
+   "horse_id": "2022106394",
+   "p": 0.049,
+   "p_fundamental": 0.049,
+   "win_odds": 9.5,
+   "ev": 0.466
+  },
+  {
+   "number": 16,
+   "horse": "ビッグシーザー",
+   "horse_id": "2020100896",
+   "p": 0.0469,
+   "p_fundamental": 0.0469,
+   "win_odds": 13.2,
+   "ev": 0.619
+  },
+  {
+   "number": 17,
+   "horse": "ナムラクララ",
+   "horse_id": "2022102887",
+   "p": 0.0384,
+   "p_fundamental": 0.0384,
+   "win_odds": 13.5,
+   "ev": 0.518
+  },
+  {
+   "number": 13,
+   "horse": "ヨシノイースター",
+   "horse_id": "2018106055",
+   "p": 0.0308,
+   "p_fundamental": 0.0308,
+   "win_odds": 40.7,
+   "ev": 1.255
+  },
+  {
+   "number": 2,
+   "horse": "モズナナスター",
+   "horse_id": "2022100490",
+   "p": 0.028,
+   "p_fundamental": 0.028,
+   "win_odds": 35.5,
+   "ev": 0.995
+  },
+  {
+   "number": 10,
+   "horse": "ルシード",
+   "horse_id": "2022103592",
+   "p": 0.0231,
+   "p_fundamental": 0.0231,
+   "win_odds": 19.7,
+   "ev": 0.456
+  },
+  {
+   "number": 3,
+   "horse": "ヤブサメ",
+   "horse_id": "2021103116",
+   "p": 0.0218,
+   "p_fundamental": 0.0218,
+   "win_odds": 119.5,
+   "ev": 2.6
+  },
+  {
+   "number": 11,
+   "horse": "インビンシブルパパ",
+   "horse_id": "2021110164",
+   "p": 0.018,
+   "p_fundamental": 0.018,
+   "win_odds": 13.8,
+   "ev": 0.248
+  },
+  {
+   "number": 9,
+   "horse": "メイショウソラフネ",
+   "horse_id": "2019103714",
+   "p": 0.0111,
+   "p_fundamental": 0.0111,
+   "win_odds": 36.7,
+   "ev": 0.407
+  },
+  {
+   "number": 8,
+   "horse": "ゾンニッヒ",
+   "horse_id": "2018101343",
+   "p": 0.0101,
+   "p_fundamental": 0.0101,
+   "win_odds": 25.1,
+   "ev": 0.254
+  },
+  {
+   "number": 4,
+   "horse": "オタルエバー",
+   "horse_id": "2019105658",
+   "p": 0.0097,
+   "p_fundamental": 0.0097,
+   "win_odds": 144.6,
+   "ev": 1.401
+  }
+ ],
+ "validated_strategies": [],
+ "budget": 5000,
+ "win_slip": [],
+ "slip": [],
+ "bets": []
+}

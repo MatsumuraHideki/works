@@ -1,0 +1,63 @@
+name: jra-odds-watch
+# Records the win odds of every JRA race of one day about 15 minutes before post time,
+# so the movement between "when a bet is placed" and the final odds can be measured.
+# One request per race; the job sleeps in between.
+on:
+  push:
+    branches: ["claude/jra-race-prediction-model-ps1z1w"]
+    paths: ["jra_keiba/watch_trigger.json"]
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "YYYYMMDD (default: today in Japan)"
+        default: ""
+permissions:
+  contents: write
+concurrency:
+  group: jra-odds-watch
+  cancel-in-progress: false
+jobs:
+  morning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Watch races starting before 13:00
+        working-directory: jra_keiba
+        env:
+          IN_DATE: ${{ inputs.date }}
+        run: |
+          pip install -q requests beautifulsoup4 lxml pandas
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          DATE="${IN_DATE:-$(jq -r '.date // ""' watch_trigger.json 2>/dev/null)}"
+          LEAD="$(jq -r '.lead // 15' watch_trigger.json 2>/dev/null || echo 15)"
+          python -m keiba.oddswatch ${DATE:+--date "$DATE"} --lead "$LEAD" --to-time 13:00 --push
+  afternoon:
+    needs: morning
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Watch races starting from 13:00
+        working-directory: jra_keiba
+        env:
+          IN_DATE: ${{ inputs.date }}
+        run: |
+          pip install -q requests beautifulsoup4 lxml pandas
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          DATE="${IN_DATE:-$(jq -r '.date // ""' watch_trigger.json 2>/dev/null)}"
+          LEAD="$(jq -r '.lead // 15' watch_trigger.json 2>/dev/null || echo 15)"
+          python -m keiba.oddswatch ${DATE:+--date "$DATE"} --lead "$LEAD" --from-time 13:00 --push
