@@ -211,10 +211,24 @@
   "race_id": "202608050711",
   "race": "京都2歳S",
   "grade": "G3",
-  "odds_time": "2026-11-27 20:46:40",
-  "tickets": 18,
+  "odds_time": "2026-11-28 15:24:27",
+  "tickets": 14,
   "stake": 5000,
-  "settled": false
+  "settled": true,
+  "a_tickets": 0,
+  "a_stake": 0,
+  "a_return": 0,
+  "a_picks": [],
+  "drift": [],
+  "return": 0,
+  "hits": [],
+  "top3": [
+   "6 ゴールデンプロミス",
+   "8 ノヴァヴェローチェ",
+   "3 ショウナンバトレニ"
+  ],
+  "source": "当日の結果ページ",
+  "model_top": "10 ドラゴンバルド"
  },
  {
   "date": "2026-11-29",
